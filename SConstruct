@@ -18,9 +18,5 @@ env = Environment(
 )
 
 
-# compile the LaiNES C++ program itself for testing
-env.Program('build/laines', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))
-
-
 # Compile the shared library for the Python interface
 env.SharedLibrary('build/_nes_env.so', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))

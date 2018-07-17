@@ -7,10 +7,10 @@ class Foo{
     public:
         void bar(wchar_t* path){
             std::wcout << path << std::endl;
-                // initialize the GUI with the given ROM path
+            // convert the wchar_t type to a string
             std::wstring ws(path);
-            // your new String
             std::string str(ws.begin(), ws.end());
+            // initialize the GUI with the given ROM path
             GUI::init(str);
             // run the GUI
             GUI::run();

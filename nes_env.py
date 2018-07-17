@@ -55,7 +55,7 @@ class NesENV(Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
-        raise NotImplementedError('TODO: reset')
+        _LIB.NESEnv_reset(self._env)
 
     def render(self, mode='human'):
         """
@@ -103,15 +103,15 @@ if __name__ == '__main__':
     # create the environment
     env = NesENV(path)
     # run through some random steps in the environment
-    # try:
-    #     done = True
-    #     for _ in range(500):
-    #         if done:
-    #             _ = env.reset()
-    #         action = env.action_space.sample()
-    #         _, reward, done, _ = env.step(action)
-    #         env.render()
-    # except KeyboardInterrupt:
-    #     pass
+    try:
+        done = True
+        for _ in range(500):
+            if done:
+                _ = env.reset()
+            # action = env.action_space.sample()
+            # _, reward, done, _ = env.step(action)
+            # env.render()
+    except KeyboardInterrupt:
+        pass
     # close the environment
     env.close()

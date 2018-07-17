@@ -58,17 +58,17 @@ void init()
     soundQueue->init(96000);
 
     // Initialize graphics structures:
-    window      = SDL_CreateWindow  ("LaiNES",
-                                     SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                                     WIDTH * last_window_size, HEIGHT * last_window_size, 0);
+    window = SDL_CreateWindow("LaiNES",
+                              SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                              WIDTH * last_window_size, HEIGHT * last_window_size, 0);
 
-    renderer    = SDL_CreateRenderer(window, -1,
-                                     SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    renderer = SDL_CreateRenderer(window, -1,
+                                  SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
 
-    gameTexture = SDL_CreateTexture (renderer,
-                                     SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                     WIDTH, HEIGHT);
+    gameTexture = SDL_CreateTexture(renderer,
+                                    SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                    WIDTH, HEIGHT);
 
     font = TTF_OpenFont("res/font.ttf", FONT_SZ);
     keys = SDL_GetKeyboardState(0);

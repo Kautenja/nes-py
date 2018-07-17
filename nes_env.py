@@ -17,5 +17,7 @@ class NesENV(object):
         lib.Foo_bar(self.obj, c_wchar_p(path))
 
 
-f = NesENV()
-f.bar('/Users/jameskauten/Desktop/super-mario-bros-1.nes')
+if __name__ == '__main__':
+    import sys
+    f = NesENV()
+    f.bar(sys.argv[1])

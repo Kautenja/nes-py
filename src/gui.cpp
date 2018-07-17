@@ -18,21 +18,12 @@ SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* gameTexture;
 SDL_Texture* background;
-TTF_Font* font;
 u8 const* keys;
 SDL_Joystick* joystick[] = { nullptr, nullptr };
 
-/* Set the window size multiplier */
-void set_size(int mul)
-{
-    last_window_size = mul;
-    SDL_SetWindowSize(window, WIDTH * mul, HEIGHT * mul);
-    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-}
 
 /* Initialize GUI */
-void init(std::string path)
-{
+void init(std::string path) {
     // Initialize graphics system:
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
@@ -42,7 +33,7 @@ void init(std::string path)
         joystick[i] = SDL_JoystickOpen(i);
 
     // Initialize graphics structures:
-    window = SDL_CreateWindow("LaiNES",
+    window = SDL_CreateWindow("laines-py",
                               SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                               WIDTH * last_window_size, HEIGHT * last_window_size, 0);
 
@@ -54,7 +45,6 @@ void init(std::string path)
                                     SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
                                     WIDTH, HEIGHT);
 
-    font = TTF_OpenFont("res/font.ttf", FONT_SZ);
     keys = SDL_GetKeyboardState(0);
 
     // Initial background:
@@ -68,42 +58,12 @@ void init(std::string path)
     SDL_SetTextureColorMod(gameTexture, 255, 255, 255);
 }
 
-/* Render a texture on screen */
-void render_texture(SDL_Texture* texture, int x, int y)
-{
-    int w, h;
-    SDL_Rect dest;
-
-    SDL_QueryTexture(texture, NULL, NULL, &dest.w, &dest.h);
-    if (x == TEXT_CENTER)
-        dest.x = WIDTH/2 - dest.w/2;
-    else if (x == TEXT_RIGHT)
-        dest.x = WIDTH - dest.w - 10;
-    else
-        dest.x = x + 10;
-    dest.y = y + 5;
-
-    SDL_RenderCopy(renderer, texture, NULL, &dest);
-}
-
-/* Generate a texture from text */
-SDL_Texture* gen_text(std::string text, SDL_Color color)
-{
-    SDL_Surface* surface = TTF_RenderText_Blended(font, text.c_str(), color);
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-    SDL_FreeSurface(surface);
-    return texture;
-}
-
 /* Get the joypad state from SDL */
-u8 get_joypad_state(int n)
-{
+u8 get_joypad_state(int n) {
     const int DEAD_ZONE = 8000;
 
     u8 j = 0;
-    if (useJoystick[n])
-    {
+    if (useJoystick[n]) {
         j |= (SDL_JoystickGetButton(joystick[n], BTN_A[n]))      << 0;  // A.
         j |= (SDL_JoystickGetButton(joystick[n], BTN_B[n]))      << 1;  // B.
         j |= (SDL_JoystickGetButton(joystick[n], BTN_SELECT[n])) << 2;  // Select.
@@ -118,8 +78,7 @@ u8 get_joypad_state(int n)
         j |= (SDL_JoystickGetButton(joystick[n], BTN_RIGHT[n]))  << 7;  // Right.
         j |= (SDL_JoystickGetAxis(joystick[n], 0) >  DEAD_ZONE)  << 7;
     }
-    else
-    {
+    else {
         j |= (keys[KEY_A[n]])      << 0;
         j |= (keys[KEY_B[n]])      << 1;
         j |= (keys[KEY_SELECT[n]]) << 2;
@@ -133,14 +92,12 @@ u8 get_joypad_state(int n)
 }
 
 /* Send the rendered frame to the GUI */
-void new_frame(u32* pixels)
-{
+void new_frame(u32* pixels) {
     SDL_UpdateTexture(gameTexture, NULL, pixels, WIDTH * sizeof(u32));
 }
 
 /* Render the screen */
-void render()
-{
+void render() {
     SDL_RenderClear(renderer);
 
     // Draw the NES screen:
@@ -150,37 +107,6 @@ void render()
         SDL_RenderCopy(renderer, background, NULL, NULL);
 
     SDL_RenderPresent(renderer);
-}
-
-/* Prompt for a key, return the scancode */
-SDL_Scancode query_key()
-{
-    SDL_Texture* prompt = gen_text("Press a key...", { 255, 255, 255 });
-    render_texture(prompt, TEXT_CENTER, HEIGHT - FONT_SZ*4);
-    SDL_RenderPresent(renderer);
-
-    SDL_Event e;
-    while (true)
-    {
-        SDL_PollEvent(&e);
-        if (e.type == SDL_KEYDOWN)
-            return e.key.keysym.scancode;
-    }
-}
-
-int query_button()
-{
-    SDL_Texture* prompt = gen_text("Press a button...", { 255, 255, 255 });
-    render_texture(prompt, TEXT_CENTER, HEIGHT - FONT_SZ*4);
-    SDL_RenderPresent(renderer);
-
-    SDL_Event e;
-    while (true)
-    {
-        SDL_PollEvent(&e);
-        if (e.type == SDL_JOYBUTTONDOWN)
-            return e.jbutton.button;
-    }
 }
 
 /* Run the emulator */

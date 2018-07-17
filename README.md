@@ -1,5 +1,9 @@
-LaiNES
-======
+# laines-py
+
+[![build-status][]][ci-server]
+
+[build-status]: https://travis-ci.com/Kautenja/laines-py.svg?token=FCkX2qMNHzx2qWEzZZMP&branch=master
+[ci-server]: https://travis-ci.com/Kautenja/laines-py
 
 Compact, cycle-accurate NES emulator in ~1000 lines of C++.
 
@@ -17,7 +21,7 @@ There have been some discussions about how the number of lines has been calculat
 ```
 [andrea@manhattan src]$ cloc .
       24 text files.
-      24 unique files.                              
+      24 unique files.
        1 file ignored.
 
 github.com/AlDanial/cloc v 1.70  T=0.03 s (780.3 files/s, 63170.2 lines/s)

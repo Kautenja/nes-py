@@ -1,3 +1,81 @@
-.sconsign.dblite
+# MARK: Project Files
 laines
+
+
+
+# MARK: CPP Project Files
+# https://github.com/github/gitignore/blob/master/C%2B%2B.gitignore
+
+## Prerequisites
+*.d
+
+## Compiled Object files
+*.slo
+*.lo
 *.o
+*.obj
+
+## Precompiled Headers
+*.gch
+*.pch
+
+## Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+## Fortran module files
+*.mod
+*.smod
+
+## Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+## Executables
+*.exe
+*.out
+*.app
+
+
+
+# MARK: scons Files
+# https://github.com/github/gitignore/blob/master/SCons.gitignore
+
+.sconsign.dblite
+.scon*
+config.log
+
+
+
+# MacOS gitignore
+# https://raw.githubusercontent.com/github/gitignore/master/Global/macOS.gitignore
+
+## General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+## Icon must end with two \r
+Icon
+
+## Thumbnails
+._*
+
+## Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+## Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk

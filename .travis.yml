@@ -3,8 +3,6 @@ sudo: required
 compiler: gcc
 install:
   - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev
-  # - sudo apt-get install libsdl1.2-dev libsdl-gfx1.2-dev
-  # - sudo apt-get install build-essential libgtk-3-dev
   - sudo apt-get install libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
 script: scons
 os: linux

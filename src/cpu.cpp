@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include "apu.hpp"
 #include "cartridge.hpp"
 #include "joypad.hpp"
 #include "ppu.hpp"

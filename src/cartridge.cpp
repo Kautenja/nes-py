@@ -1,5 +1,4 @@
 #include <cstdio>
-#include "apu.hpp"
 #include "cpu.hpp"
 #include "mappers/mapper0.hpp"
 #include "mappers/mapper1.hpp"

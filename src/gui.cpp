@@ -2,7 +2,6 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include "Sound_Queue.h"
-#include "apu.hpp"
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "menu.hpp"

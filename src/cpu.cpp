@@ -37,39 +37,39 @@ template<bool wr> inline u8 access(u16 addr, u8 v = 0)
 {
     u8* r;
     switch (addr) {
-        // RAM.
+        // RAM
         case 0x0000 ... 0x1FFF:
             r = &ram[addr % 0x800];
             if (wr) *r = v;
             return *r;
-        // PPU.
+        // PPU
         case 0x2000 ... 0x3FFF:
             return PPU::access<wr>(addr % 8, v);
 
-        // APU:
+        // APU
         case 0x4000 ... 0x4013:
         case            0x4015:
             return 1;
-        // Joypad 1.
+        // Joypad 1
         case 0x4017:
             if (wr)
                 return 1;
             else
                 return Joypad::read_state(1);
-        // OAM DMA.
+        // OAM / DMA
         case 0x4014:
             if (wr) dma_oam(v);
             break;
         case 0x4016:
-            // Joypad strobe.
+            // Joypad strobe
             if (wr) {
                 Joypad::write_strobe(v & 1);
                 break;
             }
-            // Joypad 0.
+            // Joypad 0
             else
                 return Joypad::read_state(0);
-        // Cartridge.
+        // Cartridge
         case 0x4018 ... 0xFFFF:
             return Cartridge::access<wr>(addr, v);
     }

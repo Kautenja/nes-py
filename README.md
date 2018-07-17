@@ -30,10 +30,7 @@ brew install scons sdl2 sdl2_image sdl2_ttf
 
 ### Compilation
 
-<!-- TODO: update -->
-
 ```shell
-git clone --recursive https://github.com/AndreaOrru/LaiNES && cd LaiNES
 scons
 ```
 

@@ -43,7 +43,7 @@ void set_size(int mul)
 }
 
 /* Initialize GUI */
-void init()
+void init(std::string path)
 {
     // Initialize graphics system:
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
@@ -75,60 +75,8 @@ void init()
     SDL_SetTextureColorMod(background, 60, 60, 60);
     SDL_FreeSurface(backSurface);
 
-    // Menus:
-    mainMenu = new Menu;
-    mainMenu->add(new Entry("Load ROM", []{ menu = fileMenu; }));
-    mainMenu->add(new Entry("Settings", []{ menu = settingsMenu; }));
-    mainMenu->add(new Entry("Exit",     []{ exit(0); }));
-
-    settingsMenu = new Menu;
-    settingsMenu->add(new Entry("<",            []{ menu = mainMenu; }));
-    settingsMenu->add(new Entry("Video",        []{ menu = videoMenu; }));
-    settingsMenu->add(new Entry("Controller 1", []{ menu = useJoystick[0] ? joystickMenu[0] : keyboardMenu[0]; }));
-    settingsMenu->add(new Entry("Controller 2", []{ menu = useJoystick[1] ? joystickMenu[1] : keyboardMenu[1]; }));
-    settingsMenu->add(new Entry("Save Settings", []{ save_settings(); menu = mainMenu; }));
-
-    videoMenu = new Menu;
-    videoMenu->add(new Entry("<",       []{ menu = settingsMenu; }));
-    videoMenu->add(new Entry("Size 1x", []{ set_size(1); }));
-    videoMenu->add(new Entry("Size 2x", []{ set_size(2); }));
-    videoMenu->add(new Entry("Size 3x", []{ set_size(3); }));
-    videoMenu->add(new Entry("Size 4x", []{ set_size(4); }));
-
-    for (int i = 0; i < 2; i++)
-    {
-        keyboardMenu[i] = new Menu;
-        keyboardMenu[i]->add(new Entry("<", []{ menu = settingsMenu; }));
-        if (joystick[i] != nullptr)
-            keyboardMenu[i]->add(new Entry("Joystick >", [=]{ menu = joystickMenu[i]; useJoystick[i] = true; }));
-        keyboardMenu[i]->add(new ControlEntry("Up",     &KEY_UP[i]));
-        keyboardMenu[i]->add(new ControlEntry("Down",   &KEY_DOWN[i]));
-        keyboardMenu[i]->add(new ControlEntry("Left",   &KEY_LEFT[i]));
-        keyboardMenu[i]->add(new ControlEntry("Right",  &KEY_RIGHT[i]));
-        keyboardMenu[i]->add(new ControlEntry("A",      &KEY_A[i]));
-        keyboardMenu[i]->add(new ControlEntry("B",      &KEY_B[i]));
-        keyboardMenu[i]->add(new ControlEntry("Start",  &KEY_START[i]));
-        keyboardMenu[i]->add(new ControlEntry("Select", &KEY_SELECT[i]));
-
-        if (joystick[i] != nullptr)
-        {
-            joystickMenu[i] = new Menu;
-            joystickMenu[i]->add(new Entry("<", []{ menu = settingsMenu; }));
-            joystickMenu[i]->add(new Entry("< Keyboard", [=]{ menu = keyboardMenu[i]; useJoystick[i] = false; }));
-            joystickMenu[i]->add(new ControlEntry("Up",     &BTN_UP[i]));
-            joystickMenu[i]->add(new ControlEntry("Down",   &BTN_DOWN[i]));
-            joystickMenu[i]->add(new ControlEntry("Left",   &BTN_LEFT[i]));
-            joystickMenu[i]->add(new ControlEntry("Right",  &BTN_RIGHT[i]));
-            joystickMenu[i]->add(new ControlEntry("A",      &BTN_A[i]));
-            joystickMenu[i]->add(new ControlEntry("B",      &BTN_B[i]));
-            joystickMenu[i]->add(new ControlEntry("Start",  &BTN_START[i]));
-            joystickMenu[i]->add(new ControlEntry("Select", &BTN_SELECT[i]));
-        }
-    }
-
-    fileMenu = new FileMenu;
-
-    menu = mainMenu;
+    // load the cartridge based on the given path
+    Cartridge::load(path.c_str()); toggle_pause();
 }
 
 /* Render a texture on screen */

@@ -1,10 +1,10 @@
 #include "gui.hpp"
-#include "config.hpp"
 
-int main(int argc, char *argv[])
-{
-    GUI::load_settings();
-    GUI::init();
+
+int main(int argc, char *argv[]) {
+    // initialize the GUI with the given ROM path
+    GUI::init(argv[1]);
+    // run the GUI
     GUI::run();
 
     return 0;

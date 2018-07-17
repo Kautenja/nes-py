@@ -72,50 +72,6 @@ const char* get_config_path(char * buf, int buflen)
 }
 
 
-/* Load settings */
-void load_settings()
-{
-    /* Files */
-    char path[CONFIG_PATH_MAX];
-    ini.LoadFile(get_config_path(path, sizeof(path)));
-
-    /* Screen settings */
-    int screen_size = atoi(ini.GetValue("screen", "size", "1"));
-    if (screen_size < 1 || screen_size > 4)
-        screen_size = 1;
-
-    set_size(screen_size);
-
-    /* Control settings */
-    for (int p = 0; p < 1; p++)
-    {
-        const char* section = p==0?"controls p1":"controls p2";
-
-        useJoystick[p] = (ini.GetValue(section, "usejoy", "no"))[0] == 'y';
-        if (useJoystick[p])
-        {
-            BTN_UP[p] = atoi(ini.GetValue(section, "UP", "-1"));
-            BTN_DOWN[p] = atoi(ini.GetValue(section, "DOWN", "-1"));
-            BTN_LEFT[p] = atoi(ini.GetValue(section, "LEFT", "-1"));
-            BTN_RIGHT[p] = atoi(ini.GetValue(section, "RIGHT", "-1"));
-            BTN_A[p] = atoi(ini.GetValue(section, "A", "-1"));
-            BTN_B[p] = atoi(ini.GetValue(section, "B", "-1"));
-            BTN_SELECT[p] = atoi(ini.GetValue(section, "SELECT", "-1"));
-            BTN_START[p] = atoi(ini.GetValue(section, "START", "-1"));
-        } else {
-            KEY_UP[p] = (SDL_Scancode)atoi(ini.GetValue(section, "UP", "82"));
-            KEY_DOWN[p] = (SDL_Scancode)atoi(ini.GetValue(section, "DOWN", "81"));
-            KEY_LEFT[p] = (SDL_Scancode)atoi(ini.GetValue(section, "LEFT", "80"));
-            KEY_RIGHT[p] = (SDL_Scancode)atoi(ini.GetValue(section, "RIGHT", "79"));
-            KEY_A[p] = (SDL_Scancode)atoi(ini.GetValue(section, "A", "4"));
-            KEY_B[p] = (SDL_Scancode)atoi(ini.GetValue(section, "B", "22"));
-            KEY_SELECT[p] = (SDL_Scancode)atoi(ini.GetValue(section, "SELECT", "44"));
-            KEY_START[p] = (SDL_Scancode)atoi(ini.GetValue(section, "START", "40"));
-        }
-    }
-}
-
-
 /* Save settings */
 void save_settings()
 {
@@ -147,7 +103,7 @@ void save_settings()
         ini.SetValue("section", "START", buf);
         ini.SetValue("section", "usejoy", useJoystick[p]?"yes":"no");
     }
-   
+
     char path[CONFIG_PATH_MAX];
     ini.SaveFile(get_config_path(path, sizeof(path)));
 }

@@ -3,15 +3,13 @@
 // TODO organize imports
 
 // #include <iostream>
-#include <cstdint>
 #include <string>
 
 #include <SDL2/SDL.h>
 // #include <SDL2/SDL_image.h>
 
 #include "cartridge.hpp"
-
-
+#include "cpu.hpp"
 
 /// An OpenAI Gym like interface to the LaiNES emulator.
 class NESEnv{
@@ -61,6 +59,15 @@ private:
         );
     }
 
+    /// Render the screen using SDL.
+    void renderSDL() {
+        // Clear the screen
+        SDL_RenderClear(this->renderer);
+        // Draw the NES screen:
+        SDL_RenderCopy(this->renderer, this->gameTexture, NULL, NULL);
+        SDL_RenderPresent(this->renderer);
+    }
+
 public:
 
     /// the width of the screen in pixels
@@ -105,8 +112,11 @@ public:
         0: A
 
     */
-    void step(uint8_t action) {
-
+    void step(unsigned char action) {
+        // run a frame on the CPU
+        // CPU::run_frame();
+        // render the frame on the SDL surface
+        // this->renderSDL();
     }
 
     /**
@@ -124,12 +134,15 @@ public:
 
 // definitions of functions for the Python interface to access
 extern "C" {
-    /// the initializer to return a new NESEnv with a given path
+    /// The initializer to return a new NESEnv with a given path.
     NESEnv* NESEnv_init(wchar_t* path){ return new NESEnv(path); }
 
-    /// the function to reset the environment
+    /// The function to reset the environment.
     void NESEnv_reset(NESEnv* env) { env->reset(); }
 
-    /// the function to destroy an NESEnv and clear it from memory
+    /// The function to perform a step on the emulator.
+    void NESEnv_step(NESEnv* env, unsigned char action) { env->step(action); }
+
+    /// The function to destroy an NESEnv and clear it from memory.
     void NESEnv_close(NESEnv* env) { delete env; }
 }

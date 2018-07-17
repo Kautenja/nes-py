@@ -1,10 +1,11 @@
 """A CTypes interface to the C++ NES environment."""
-from ctypes import cdll, c_wchar_p
+import ctypes
+# from ctypes import cdll, c_wchar_p
 from gym import Env
 
 
 # load the library from the shared object file
-_LIB = cdll.LoadLibrary('build/lib_nes_env.so')
+_LIB = ctypes.cdll.LoadLibrary('build/lib_nes_env.so')
 
 
 class NesENV(Env):
@@ -28,7 +29,7 @@ class NesENV(Env):
         """
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
-        self._env = _LIB.NESEnv_init(c_wchar_p(self._rom_path))
+        self._env = _LIB.NESEnv_init(ctypes.c_wchar_p(self._rom_path))
 
     def step(self, action):
         """
@@ -45,7 +46,12 @@ class NesENV(Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
-        raise NotImplementedError('TODO: step')
+        # pass the action to the emulator
+        _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
+        # TODO: call method for getting frame
+        # TODO: call method for reward
+        # TODO: call method for done
+        return None, 0, False, {}
 
     def reset(self):
         """
@@ -55,7 +61,10 @@ class NesENV(Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
+        # call reset on the emulator
         _LIB.NESEnv_reset(self._env)
+        # TODO: call method for getting frame and return it
+        return None
 
     def render(self, mode='human'):
         """
@@ -108,8 +117,8 @@ if __name__ == '__main__':
         for _ in range(500):
             if done:
                 _ = env.reset()
-            # action = env.action_space.sample()
-            # _, reward, done, _ = env.step(action)
+            action = 16 # env.action_space.sample()
+            _, reward, done, _ = env.step(action)
             # env.render()
     except KeyboardInterrupt:
         pass

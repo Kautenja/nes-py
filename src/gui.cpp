@@ -207,11 +207,6 @@ void new_frame(u32* pixels)
     SDL_UpdateTexture(gameTexture, NULL, pixels, WIDTH * sizeof(u32));
 }
 
-void new_samples(const blip_sample_t* samples, size_t count)
-{
-
-}
-
 /* Render the screen */
 void render()
 {

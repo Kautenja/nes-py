@@ -37,14 +37,4 @@ template <bool write> u8 access(int elapsed, u16 addr, u8 v)
 }
 template u8 access<0>(int, u16, u8); template u8 access<1>(int, u16, u8);
 
-void run_frame(int elapsed)
-{
-    apu.end_frame(elapsed);
-    buf.end_frame(elapsed);
-
-    if (buf.samples_avail() >= OUT_SIZE)
-        GUI::new_samples(outBuf, buf.read_samples(outBuf, OUT_SIZE));
-}
-
-
 }

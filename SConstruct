@@ -12,7 +12,7 @@ env = Environment(
     CPPFLAGS = ['-Wno-unused-value'],
     CXXFLAGS = flags,
     LINKFLAGS = flags,
-    CPPPATH = ['#simpleini', '#src/include'],
+    CPPPATH = ['#src/include'],
     LIBS = ['SDL2', 'SDL2_image']
 )
 

@@ -1,7 +1,6 @@
 #include <csignal>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include "Sound_Queue.h"
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "gui.hpp"

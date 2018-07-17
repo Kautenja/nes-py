@@ -1,0 +1,11 @@
+language: cpp
+sudo: required
+compiler: gcc
+install:
+  - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev
+  - sudo apt-get install libsdl1.2-dev libsdl-gfx1.2-dev
+  - sudo apt-get install build-essential libgtk-3-dev
+script: scons
+os: linux
+notifications:
+  email: false

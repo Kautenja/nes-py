@@ -23,4 +23,4 @@ env.Program('build/laines', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))
 
 
 # Compile the shared library for the Python interface
-env.SharedLibrary('build/lainesmodule.so', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))
+env.SharedLibrary('build/_nes_env.so', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))

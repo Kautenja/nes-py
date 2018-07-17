@@ -8,16 +8,16 @@
 
 namespace CPU {
 
-
 /* CPU state */
 u8 ram[0x800];
 u8 A, X, Y, S;
 u16 PC;
 Flags P;
+// non-mask-able interrupt and interrupt request flag
 bool nmi, irq;
 
-// Remaining clocks to end frame:
-// Original value is 29781. New value overclocks the CPU
+// Remaining clocks to end frame
+// Original value is 29781. New value over-clocks the CPU
 const int TOTAL_CYCLES = 500000;
 int remainingCycles;
 
@@ -36,21 +36,42 @@ void dma_oam(u8 bank);
 template<bool wr> inline u8 access(u16 addr, u8 v = 0)
 {
     u8* r;
-    switch (addr)
-    {
-        case 0x0000 ... 0x1FFF:  r = &ram[addr % 0x800]; if (wr) *r = v; return *r;  // RAM.
-        case 0x2000 ... 0x3FFF:  return PPU::access<wr>(addr % 8, v);                // PPU.
+    switch (addr) {
+        // RAM.
+        case 0x0000 ... 0x1FFF:
+            r = &ram[addr % 0x800];
+            if (wr) *r = v;
+            return *r;
+        // PPU.
+        case 0x2000 ... 0x3FFF:
+            return PPU::access<wr>(addr % 8, v);
 
         // APU:
         case 0x4000 ... 0x4013:
-        case            0x4015:          return 1;
-        case            0x4017:  if (wr) return 1;
-                                 else return Joypad::read_state(1);                  // Joypad 1.
-
-        case            0x4014:  if (wr) dma_oam(v); break;                          // OAM DMA.
-        case            0x4016:  if (wr) { Joypad::write_strobe(v & 1); break; }     // Joypad strobe.
-                                 else return Joypad::read_state(0);                  // Joypad 0.
-        case 0x4018 ... 0xFFFF:  return Cartridge::access<wr>(addr, v);              // Cartridge.
+        case            0x4015:
+            return 1;
+        // Joypad 1.
+        case 0x4017:
+            if (wr)
+                return 1;
+            else
+                return Joypad::read_state(1);
+        // OAM DMA.
+        case 0x4014:
+            if (wr) dma_oam(v);
+            break;
+        case 0x4016:
+            // Joypad strobe.
+            if (wr) {
+                Joypad::write_strobe(v & 1);
+                break;
+            }
+            // Joypad 0.
+            else
+                return Joypad::read_state(0);
+        // Cartridge.
+        case 0x4018 ... 0xFFFF:
+            return Cartridge::access<wr>(addr, v);
     }
     return 0;
 }
@@ -131,11 +152,11 @@ void RTS() { T; T;  PC = (pop() | (pop() << 8)) + 1; T; }
 void RTI() { PLP(); PC =  pop() | (pop() << 8);         }
 
 template<Flag f, bool v> void flag() { P[f] = v; T; }  // Clear and set flags.
-template<IntType t> void INT()
-{
-    T; if (t != BRK) T;  // BRK already performed the fetch.
-    if (t != RESET)  // Writes on stack are inhibited on RESET.
-    {
+template<IntType t> void INT() {
+    // BRK already performed the fetch.
+    T; if (t != BRK) T;
+    // Writes on stack are inhibited on RESET.
+    if (t != RESET) {
         push(PC >> 8); push(PC & 0xFF);
         push(P.get() | ((t == BRK) << 4));  // Set B if BRK.
     }
@@ -149,10 +170,9 @@ template<IntType t> void INT()
 void NOP() { T; }
 
 /* Execute a CPU instruction */
-void exec()
-{
-    switch (rd(PC++))  // Fetch the opcode.
-    {
+void exec() {
+    // Fetch the opcode and switch over it
+    switch (rd(PC++)) {
         // Select the right function to emulate the instruction:
         case 0x00: return INT<BRK>()  ;  case 0x01: return ORA<izx>()  ;
         case 0x05: return ORA<zp>()   ;  case 0x06: return ASL<zp>()   ;
@@ -230,10 +250,15 @@ void exec()
         case 0xF6: return INC<zpx>()  ;  case 0xF8: return flag<D,1>() ;
         case 0xF9: return SBC<aby>()  ;  case 0xFD: return SBC<abx>()  ;
         case 0xFE: return INC<_abx>() ;
-        default:
-        {
-          std::cout << "Invalid OPcode! PC: " << PC << " OPcode: 0x" << std::hex << (int)rd(PC-1) << "\n";
-          return NOP();
+        default: {
+            std::cout <<
+                "Invalid OPcode! PC: " <<
+                PC <<
+                " OPcode: 0x" <<
+                std::hex <<
+                (int)rd(PC-1) <<
+                std::endl;
+            return NOP();
         }
     }
 }
@@ -242,8 +267,7 @@ void set_nmi(bool v) { nmi = v; }
 void set_irq(bool v) { irq = v; }
 
 /* Turn on the CPU */
-void power()
-{
+void power() {
     remainingCycles = 0;
 
     P.set(0x04);
@@ -255,12 +279,10 @@ void power()
 }
 
 /* Run the CPU for roughly a frame */
-void run_frame()
-{
+void run_frame() {
     remainingCycles += TOTAL_CYCLES;
 
-    while (remainingCycles > 0)
-    {
+    while (remainingCycles > 0) {
         if (nmi) INT<NMI>();
         else if (irq and !P[I]) INT<IRQ>();
 

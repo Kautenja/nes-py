@@ -16,6 +16,7 @@ namespace CPU {
 
     public:
 
+        /** Handle accessing this object using brackets */
         bool& operator[] (const int i) { return f[i]; }
 
         /** Return the flags as a byte */

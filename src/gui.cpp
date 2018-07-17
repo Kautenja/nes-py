@@ -21,7 +21,6 @@ SDL_Texture* gameTexture;
 SDL_Texture* background;
 TTF_Font* font;
 u8 const* keys;
-Sound_Queue* soundQueue;
 SDL_Joystick* joystick[] = { nullptr, nullptr };
 
 // Menus:
@@ -53,9 +52,6 @@ void init()
 
     for (int i = 0; i < SDL_NumJoysticks(); i++)
         joystick[i] = SDL_JoystickOpen(i);
-
-    soundQueue = new Sound_Queue;
-    soundQueue->init(96000);
 
     // Initialize graphics structures:
     window = SDL_CreateWindow("LaiNES",

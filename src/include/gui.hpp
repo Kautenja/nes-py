@@ -11,5 +11,6 @@ namespace GUI {
 
     u8 get_joypad_state(int n);
     void new_frame(u32* pixels);
+    void render();
 
 }

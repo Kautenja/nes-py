@@ -5,15 +5,14 @@
 
 #define CONFIG_DIR_DEFAULT_MODE      S_IRWXU | S_IRGRP |  S_IXGRP | S_IROTH | S_IXOTH
 #define USE_CONFIG_DIR true
-#define CONFIG_DIR_NAME "LaiNES" 
+#define CONFIG_DIR_NAME "LaiNES"
 #define CONFIG_FALLBACK ".laines-settings"
 /* PATH_MAX is a portability nightmare. */
-#define CONFIG_PATH_MAX 1024 
+#define CONFIG_PATH_MAX 1024
 
 namespace GUI {
 
 /* Loading and saving */
-void load_settings();
 void save_settings();
 const char* get_config_path(char * buf, int buflen);
 

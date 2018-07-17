@@ -1,0 +1,10 @@
+language: cpp
+sudo: required
+compiler: gcc
+install:
+  - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev
+  - sudo apt-get install libsdl2-dev libsdl2-image-dev
+script: scons
+os: linux
+notifications:
+  email: false

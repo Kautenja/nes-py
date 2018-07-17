@@ -241,8 +241,6 @@ void exec()
 void set_nmi(bool v) { nmi = v; }
 void set_irq(bool v) { irq = v; }
 
-int dmc_read(void*, cpu_addr_t addr) { return access<0>(addr); }
-
 /* Turn on the CPU */
 void power()
 {

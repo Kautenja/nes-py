@@ -27,7 +27,6 @@ void init(std::string path) {
     // Initialize graphics system:
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-    TTF_Init();
 
     for (int i = 0; i < SDL_NumJoysticks(); i++)
         joystick[i] = SDL_JoystickOpen(i);
@@ -47,15 +46,8 @@ void init(std::string path) {
 
     keys = SDL_GetKeyboardState(0);
 
-    // Initial background:
-    SDL_Surface* backSurface  = IMG_Load("res/init.png");
-    background = SDL_CreateTextureFromSurface(renderer, backSurface);
-    SDL_SetTextureColorMod(background, 60, 60, 60);
-    SDL_FreeSurface(backSurface);
-
     // load the cartridge based on the given path
     Cartridge::load(path.c_str());
-    SDL_SetTextureColorMod(gameTexture, 255, 255, 255);
 }
 
 /* Get the joypad state from SDL */

@@ -13,7 +13,7 @@ class NesENV(object):
         """Create a new LaiNES environment."""
         self.obj = lib.Foo_new()
 
-    def bar(self, path: str):
+    def bar(self, path):
         lib.Foo_bar(self.obj, c_wchar_p(path))
 
 

@@ -12,6 +12,7 @@
 
 /**
     Print a usage string for this application to the command line.
+
     @return the code for a failed execution of the application (-1)
 */
 int print_usage() {

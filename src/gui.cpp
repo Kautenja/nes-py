@@ -209,8 +209,7 @@ void new_frame(u32* pixels)
 
 void new_samples(const blip_sample_t* samples, size_t count)
 {
-    // uncomment this line to enable audio output
-    // soundQueue->write(samples, count);
+
 }
 
 /* Render the screen */

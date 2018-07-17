@@ -18,9 +18,9 @@ Flags P;
 bool nmi, irq;
 
 // Remaining clocks to end frame:
-const int TOTAL_CYCLES = 29781;
+// Original value is 29781. New value overclocks the CPU
+const int TOTAL_CYCLES = 500000;
 int remainingCycles;
-inline int elapsed() { return TOTAL_CYCLES - remainingCycles; }
 
 /* Cycle emulation */
 #define T   tick()
@@ -44,8 +44,8 @@ template<bool wr> inline u8 access(u16 addr, u8 v = 0)
 
         // APU:
         case 0x4000 ... 0x4013:
-        case            0x4015:          return APU::access<wr>(elapsed(), addr, v);
-        case            0x4017:  if (wr) return APU::access<wr>(elapsed(), addr, v);
+        case            0x4015:          return 1;
+        case            0x4017:  if (wr) return 1;
                                  else return Joypad::read_state(1);                  // Joypad 1.
 
         case            0x4014:  if (wr) dma_oam(v); break;                          // OAM DMA.
@@ -269,9 +269,6 @@ void run_frame()
 
         exec();
     }
-
-    APU::run_frame(elapsed());
 }
-
 
 }

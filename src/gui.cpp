@@ -76,7 +76,8 @@ void init(std::string path)
     SDL_FreeSurface(backSurface);
 
     // load the cartridge based on the given path
-    Cartridge::load(path.c_str()); toggle_pause();
+    Cartridge::load(path.c_str());
+    SDL_SetTextureColorMod(gameTexture, 255, 255, 255);
 }
 
 /* Render a texture on screen */
@@ -160,22 +161,7 @@ void render()
     else
         SDL_RenderCopy(renderer, background, NULL, NULL);
 
-    // Draw the menu:
-    if (pause) menu->render();
-
     SDL_RenderPresent(renderer);
-}
-
-/* Play/stop the game */
-void toggle_pause()
-{
-    pause = not pause;
-    menu  = mainMenu;
-
-    if (pause)
-        SDL_SetTextureColorMod(gameTexture,  60,  60,  60);
-    else
-        SDL_SetTextureColorMod(gameTexture, 255, 255, 255);
 }
 
 /* Prompt for a key, return the scancode */
@@ -210,25 +196,18 @@ int query_button()
 }
 
 /* Run the emulator */
-void run()
-{
+void run() {
     SDL_Event e;
 
-    while (true)
-    {
-        // Handle events:
+    while (true) {
+        // Handle events
         while (SDL_PollEvent(&e))
-            switch (e.type)
-            {
+            switch (e.type) {
                 case SDL_QUIT: return;
-                case SDL_KEYDOWN:
-                    if (keys[SDL_SCANCODE_ESCAPE] and Cartridge::loaded())
-                        toggle_pause();
-                    else if (pause)
-                        menu->update(keys);
+                case SDL_KEYDOWN: if (keys[SDL_SCANCODE_ESCAPE]) return;
             }
-
-        if (not pause) CPU::run_frame();
+        // run a frame and render it
+        CPU::run_frame();
         render();
     }
 }

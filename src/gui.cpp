@@ -55,7 +55,6 @@ void init()
     for (int i = 0; i < SDL_NumJoysticks(); i++)
         joystick[i] = SDL_JoystickOpen(i);
 
-    APU::init();
     soundQueue = new Sound_Queue;
     soundQueue->init(96000);
 

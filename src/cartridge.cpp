@@ -61,7 +61,6 @@ void load(const char* fileName)
 
     CPU::power();
     PPU::reset();
-    APU::reset();
 }
 
 bool loaded()

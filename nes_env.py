@@ -82,7 +82,13 @@ class NesENV(Env):
 
     def close(self):
         """Close the environment."""
-        raise NotImplementedError('TODO: close method')
+        # make sure the environment hasn't already been closed
+        if self._env is None:
+            raise ValueError('env has already been closed.')
+        # purge the environment from C++ memory
+        _LIB.NESEnv_close(self._env)
+        # deallocate the object locally
+        self._env = None
 
 
 # explicitly define the outward facing API of this module

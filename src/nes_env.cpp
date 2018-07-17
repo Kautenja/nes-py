@@ -17,6 +17,8 @@ public:
         Initialize a new NESEnv.
 
         @param path the path to the ROM for the emulator to load
+        @returns a new instance of NESEnv for a given ROM
+
     */
     NESEnv(wchar_t* path) {
         // convert the wchar_t type to a string

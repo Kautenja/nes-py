@@ -1,3 +1,8 @@
+/**
+    The main entry point for the LaiNES command line application.
+    @author Andrea Orru
+    @author Christian Kauten
+*/
 #include <iostream>
 #include <sys/stat.h>
 #include <string>

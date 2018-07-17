@@ -4,7 +4,6 @@
 #include "Sound_Queue.h"
 #include "cartridge.hpp"
 #include "cpu.hpp"
-#include "menu.hpp"
 #include "gui.hpp"
 #include "config.hpp"
 
@@ -22,17 +21,6 @@ SDL_Texture* background;
 TTF_Font* font;
 u8 const* keys;
 SDL_Joystick* joystick[] = { nullptr, nullptr };
-
-// Menus:
-Menu* menu;
-Menu* mainMenu;
-Menu* settingsMenu;
-Menu* videoMenu;
-Menu* keyboardMenu[2];
-Menu* joystickMenu[2];
-FileMenu* fileMenu;
-
-bool pause = true;
 
 /* Set the window size multiplier */
 void set_size(int mul)

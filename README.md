@@ -19,13 +19,13 @@ tools.
 #### Debian-based systems:
 
 ```shell
-sudo apt-get install clang scons libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev
+sudo apt-get install clang scons libsdl2-dev libsdl2-image-dev
 ```
 
 #### MacOS:
 
 ```shell
-brew install scons sdl2 sdl2_image sdl2_ttf
+brew install scons sdl2 sdl2_image
 ```
 
 ### Compilation

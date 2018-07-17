@@ -18,4 +18,4 @@ env = Environment(
 )
 
 
-env.Program('laines', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))
+env.Program('build/laines', Glob('build/*/*.cpp') + Glob('build/*/*/*.cpp'))

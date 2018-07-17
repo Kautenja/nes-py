@@ -1,5 +1,5 @@
 """A CTypes interface to the C++ NES environment."""
-from ctypes import cdll
+from ctypes import cdll, c_wchar_p
 
 
 # load the library from the shared object file
@@ -13,9 +13,9 @@ class NesENV(object):
         """Create a new LaiNES environment."""
         self.obj = lib.Foo_new()
 
-    def bar(self):
-        lib.Foo_bar(self.obj)
+    def bar(self, path: str):
+        lib.Foo_bar(self.obj, c_wchar_p(path))
 
 
 f = NesENV()
-f.bar() #and you will see "Hello" on the screen
+f.bar('/Users/jameskauten/Desktop/super-mario-bros-1.nes')

@@ -1,7 +1,7 @@
 """A CTypes interface to the C++ NES environment."""
 import sys
 import ctypes
-from gym import Env
+import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
 
@@ -31,13 +31,29 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-class NesENV(Env):
+# the height in pixels of the NES screen
+SCREEN_HEIGHT = _LIB.NESEnv_height()
+# the width in pixels of the NES screen
+SCREEN_WIDTH = _LIB.NESEnv_width()
+# the shape of the screen as 24-bit RGB (standard for NumPy)
+SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
+# the shape of the screen as 32-bit RGB (C++ memory arrangement)
+SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
+
+
+class NesENV(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
     # relevant metadata about the environment
-    metadata = {
-        'render.modes': ['rgb_array', 'human']
-    }
+    metadata = { 'render.modes': ['rgb_array', 'human'] }
+
+    # the observation space for the environment is static across all instances
+    observation_space = gym.spaces.Box(
+        low=0,
+        high=255,
+        shape=SCREEN_SHAPE_24_BIT,
+        dtype=np.uint8
+    )
 
     def __init__(self, rom_path):
         """
@@ -58,17 +74,7 @@ class NesENV(Env):
         self._is_little_endian = sys.byteorder == 'little'
 
     @property
-    def screen_width(self):
-        """Return the width of the NES screen in pixels."""
-        return _LIB.NESEnv_width()
-
-    @property
-    def screen_height(self):
-        """Return the height of the NES screen in pixels."""
-        return _LIB.NESEnv_height()
-
-    @property
-    def _screen_rgb(self):
+    def _screen(self):
         """
         Return screen data in RGB format.
 
@@ -82,10 +88,8 @@ class NesENV(Env):
             a numpy array with the screen's RGB data
 
         """
-        # get the shape of the screen in RGB (or BGR) format
-        screen_shape = self.screen_height, self.screen_width, 4
         # create a frame for the screen data
-        screen_data = np.empty(screen_shape, dtype=np.uint8)
+        screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
         # fill the screen data array with values from the emulator
         _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
 
@@ -125,7 +129,7 @@ class NesENV(Env):
         # reset the emulator
         _LIB.NESEnv_reset(self._env)
         # return the screen from the emulator
-        return self._screen_rgb
+        return self._screen
 
     def step(self, action):
         """
@@ -145,7 +149,7 @@ class NesENV(Env):
         # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
         # return the screen from the emulator and other relevant data
-        return self._screen_rgb, self._reward, self._done, {}
+        return self._screen, self._reward, self._done, {}
 
     def close(self):
         """Close the environment."""

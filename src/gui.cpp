@@ -20,11 +20,12 @@ namespace GUI {
 
 
     /* Initialize GUI */
-    void init(std::string path) {
+    void init() {
         // Initialize graphics system:
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
 
+        // TODO: destroy
         for (int i = 0; i < SDL_NumJoysticks(); i++)
             joystick[i] = SDL_JoystickOpen(i);
 
@@ -53,10 +54,8 @@ namespace GUI {
             HEIGHT
         );
 
+        // TODO: destroy
         keys = SDL_GetKeyboardState(0);
-
-        // load the cartridge based on the given path
-        Cartridge::load(path.c_str());
     }
 
     /* Get the joypad state from SDL */

@@ -5,7 +5,7 @@
 
 namespace GUI {
 
-    void init(std::string path);
+    void init();
     void run();
 
     u8 get_joypad_state(int n);

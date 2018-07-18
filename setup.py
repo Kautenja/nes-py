@@ -22,7 +22,7 @@ setup(
         'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: BSD License',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 2',
@@ -34,7 +34,7 @@ setup(
     url='https://github.com/Kautenja/nes-py',
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
-    license='MIT',
+    license='2-Clause BSD',
     packages=find_packages(),
     zip_safe=False,
     install_requires=[

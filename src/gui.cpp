@@ -3,7 +3,6 @@
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "gui.hpp"
-#include "config.hpp"
 
 namespace GUI {
 
@@ -15,19 +14,12 @@ namespace GUI {
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* gameTexture;
-    u8 const* keys;
-    SDL_Joystick* joystick[] = { nullptr, nullptr };
-
 
     /* Initialize GUI */
     void init() {
         // Initialize graphics system:
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-
-        // TODO: destroy
-        for (int i = 0; i < SDL_NumJoysticks(); i++)
-            joystick[i] = SDL_JoystickOpen(i);
 
         // Initialize graphics structures:
         window = SDL_CreateWindow(
@@ -54,8 +46,6 @@ namespace GUI {
             HEIGHT
         );
 
-        // TODO: destroy
-        keys = SDL_GetKeyboardState(0);
     }
 
     /* Send the rendered frame to the GUI */

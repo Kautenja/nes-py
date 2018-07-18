@@ -10,6 +10,7 @@
 
 #include "cartridge.hpp"
 #include "cpu.hpp"
+#include "joypad.hpp"
 #include "gui.hpp"
 
 /// An OpenAI Gym like interface to the LaiNES emulator.
@@ -48,8 +49,8 @@ public:
         @param action the controller bitmap of which buttons to press.
         The parameter uses 1 for "pressed" and 0 for "not pressed".
         It uses the following mapping of bits to buttons:
-        7: LEFT
-        6: RIGHT
+        7: RIGHT
+        6: LEFT
         5: DOWN
         4: UP
         3: START
@@ -59,6 +60,13 @@ public:
 
     */
     void step(unsigned char action) {
+        // TODO: without these two lines the window stops responding. is
+        // this necessary to have? especially once the window is hidden?
+        // SDL_Event e;
+        // SDL_PollEvent(&e);
+
+        // write the action to the player's joypad
+        Joypad::write_buttons(0, action);
         // run a frame on the CPU
         CPU::run_frame();
         // render the frame on the SDL surface

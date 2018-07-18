@@ -14,14 +14,14 @@ namespace GUI {
     unsigned get_height() { return HEIGHT; }
 
     /// the pixels representing a frame (the screen)
-    u32 screen[WIDTH][HEIGHT];
+    u32 screen[HEIGHT][WIDTH];
 
     /// Send the PPU rendered frame to the SDL GUI.
     void new_frame(u32* pixels) {
         // TODO: vectorize this operation / determine fastest caches access
         for (int h = 0; h < HEIGHT; h++)
             for (int w = 0; w < WIDTH; w++)
-                screen[w][h] = *(pixels + w + (h * HEIGHT));
+                screen[h][w] = *(pixels + h + (w * WIDTH));
     }
 
     /// Return the screen.

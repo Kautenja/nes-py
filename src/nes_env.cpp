@@ -68,12 +68,6 @@ extern "C" {
         int height = GUI::get_height();
 
         memcpy(output_buffer, screen, width * height * sizeof(u32));
-        // size_t w = ale->getScreen().width();
-        // size_t h = ale->getScreen().height();
-        // size_t screen_size = w*h;
-        // pixel_t *ale_screen_data = ale->getScreen().getArray();
-
-        // ale->theOSystem->colourPalette().applyPaletteRGB(output_buffer, ale_screen_data, screen_size);
     }
 
     /// The function to reset the environment.

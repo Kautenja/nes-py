@@ -2,7 +2,7 @@
 // TODO consider defining the extern "C" in a separate file?
 // TODO organize imports
 
-// #include <iostream>
+#include <iostream>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -10,6 +10,8 @@
 
 #include "cartridge.hpp"
 #include "cpu.hpp"
+#include "joypad.hpp"
+#include "gui.hpp"
 
 /// An OpenAI Gym like interface to the LaiNES emulator.
 class NESEnv{
@@ -18,62 +20,7 @@ private:
     /// the path to the ROM for the emulator to run
     std::string path;
 
-    /// the window to send frames to
-    SDL_Window* window;
-    /// the renderer for generating frames
-    SDL_Renderer* renderer;
-    /// the texture (surface) to render frames on
-    SDL_Texture* gameTexture;
-
-    /// Setup the graphics components for the emulator
-    void setupSDL() {
-        // Initialize graphics system:
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-
-        // Initialize the window to render to
-        this->window = SDL_CreateWindow(
-            "laines-py",
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
-            this->WIDTH,
-            this->HEIGHT,
-            0
-        );
-
-        // initialize the renderer for sending frames to the window
-        this->renderer = SDL_CreateRenderer(
-            this->window,
-            -1,
-            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-        );
-        SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
-
-        // initialize the surface for game frames to blit to
-        this->gameTexture = SDL_CreateTexture(
-            this->renderer,
-            SDL_PIXELFORMAT_ARGB8888,
-            SDL_TEXTUREACCESS_STREAMING,
-            this->WIDTH,
-            this->HEIGHT
-        );
-    }
-
-    /// Render the screen using SDL.
-    void renderSDL() {
-        // Clear the screen
-        SDL_RenderClear(this->renderer);
-        // Draw the NES screen:
-        SDL_RenderCopy(this->renderer, this->gameTexture, NULL, NULL);
-        SDL_RenderPresent(this->renderer);
-    }
-
 public:
-
-    /// the width of the screen in pixels
-    const unsigned WIDTH  = 256;
-    /// the height of the screen in pixels
-    const unsigned HEIGHT = 240;
 
     /**
         Initialize a new NESEnv.
@@ -87,7 +34,7 @@ public:
         std::wstring ws(path);
         std::string str(ws.begin(), ws.end());
         this->path = str;
-        this->setupSDL();
+        GUI::init();
     }
 
     /// Reset the emulator to its initial state.
@@ -102,21 +49,28 @@ public:
         @param action the controller bitmap of which buttons to press.
         The parameter uses 1 for "pressed" and 0 for "not pressed".
         It uses the following mapping of bits to buttons:
-        7: UP
+        7: RIGHT
         6: LEFT
         5: DOWN
-        4: RIGHT
-        3: SELECT
-        2: START
+        4: UP
+        3: START
+        2: SELECT
         1: B
         0: A
 
     */
     void step(unsigned char action) {
+        // TODO: without these two lines the window stops responding. is
+        // this necessary to have? especially once the window is hidden?
+        // SDL_Event e;
+        // SDL_PollEvent(&e);
+
+        // write the action to the player's joypad
+        Joypad::write_buttons(0, action);
         // run a frame on the CPU
-        // CPU::run_frame();
+        CPU::run_frame();
         // render the frame on the SDL surface
-        // this->renderSDL();
+        GUI::render();
     }
 
     /**
@@ -136,6 +90,22 @@ public:
 extern "C" {
     /// The initializer to return a new NESEnv with a given path.
     NESEnv* NESEnv_init(wchar_t* path){ return new NESEnv(path); }
+
+    /// The width of the NES screen.
+    unsigned NESEnv_width() { return GUI::get_width(); }
+
+    /// The height of the NES screen.
+    unsigned NESEnv_height() { return GUI::get_height(); }
+
+    /// Return the screen of the emulator as a tensor of RGB data
+    void NESEnv_screen_rgb(NESEnv* env, unsigned char *output_buffer) {
+        // size_t w = ale->getScreen().width();
+        // size_t h = ale->getScreen().height();
+        // size_t screen_size = w*h;
+        // pixel_t *ale_screen_data = ale->getScreen().getArray();
+
+        // ale->theOSystem->colourPalette().applyPaletteRGB(output_buffer, ale_screen_data, screen_size);
+    }
 
     /// The function to reset the environment.
     void NESEnv_reset(NESEnv* env) { env->reset(); }

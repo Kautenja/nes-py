@@ -3,30 +3,31 @@
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "gui.hpp"
-#include "config.hpp"
 
+/// The graphics interface to SDL
 namespace GUI {
 
-    // Screen size
+    /// the width of the screen in pixels
     const unsigned WIDTH  = 256;
+    /// Return the width of the screen.
+    unsigned get_width() { return WIDTH; }
+    /// the height of the screen in pixels
     const unsigned HEIGHT = 240;
+    /// Return the height of the screen.
+    unsigned get_height() { return HEIGHT; }
 
-    // SDL structures
+    /// the SDL window to send surfaces to
     SDL_Window* window;
+    /// the render for drawing on surfaces
     SDL_Renderer* renderer;
+    /// the text to draw the game frames onto
     SDL_Texture* gameTexture;
-    u8 const* keys;
-    SDL_Joystick* joystick[] = { nullptr, nullptr };
 
-
-    /* Initialize GUI */
-    void init(std::string path) {
+    /// Initialize the graphical interface.
+    void init() {
         // Initialize graphics system:
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
         SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-
-        for (int i = 0; i < SDL_NumJoysticks(); i++)
-            joystick[i] = SDL_JoystickOpen(i);
 
         // Initialize graphics structures:
         window = SDL_CreateWindow(
@@ -35,7 +36,7 @@ namespace GUI {
             SDL_WINDOWPOS_CENTERED,
             WIDTH,
             HEIGHT,
-            0
+            0 // SDL_WINDOW_HIDDEN
         );
 
         renderer = SDL_CreateRenderer(
@@ -53,81 +54,20 @@ namespace GUI {
             HEIGHT
         );
 
-        keys = SDL_GetKeyboardState(0);
-
-        // load the cartridge based on the given path
-        Cartridge::load(path.c_str());
     }
 
-    /* Get the joypad state from SDL */
-    u8 get_joypad_state(int n) {
-        const int DEAD_ZONE = 8000;
-
-        u8 j = 0;
-        if (useJoystick[n]) {
-            // A
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_A[n]))      << 0;
-            // B
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_B[n]))      << 1;
-            // Select
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_SELECT[n])) << 2;
-            // Start
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_START[n]))  << 3;
-            // Up
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_UP[n]))     << 4;
-            j |= (SDL_JoystickGetAxis(joystick[n], 1) < -DEAD_ZONE)  << 4;
-            // Down
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_DOWN[n]))   << 5;
-            j |= (SDL_JoystickGetAxis(joystick[n], 1) >  DEAD_ZONE)  << 5;
-            // Left
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_LEFT[n]))   << 6;
-            j |= (SDL_JoystickGetAxis(joystick[n], 0) < -DEAD_ZONE)  << 6;
-            // Right
-            j |= (SDL_JoystickGetButton(joystick[n], BTN_RIGHT[n]))  << 7;
-            j |= (SDL_JoystickGetAxis(joystick[n], 0) >  DEAD_ZONE)  << 7;
-        }
-        else {
-            j |= (keys[KEY_A[n]])      << 0;
-            j |= (keys[KEY_B[n]])      << 1;
-            j |= (keys[KEY_SELECT[n]]) << 2;
-            j |= (keys[KEY_START[n]])  << 3;
-            j |= (keys[KEY_UP[n]])     << 4;
-            j |= (keys[KEY_DOWN[n]])   << 5;
-            j |= (keys[KEY_LEFT[n]])   << 6;
-            j |= (keys[KEY_RIGHT[n]])  << 7;
-        }
-        return j;
-    }
-
-    /* Send the rendered frame to the GUI */
+    /// Send the PPU rendered frame to the SDL GUI.
     void new_frame(u32* pixels) {
         SDL_UpdateTexture(gameTexture, NULL, pixels, WIDTH * sizeof(u32));
     }
 
-    /* Render the screen */
+    /// Render the screen.
     void render() {
         // Clear the screen
         SDL_RenderClear(renderer);
         // Draw the NES screen:
         SDL_RenderCopy(renderer, gameTexture, NULL, NULL);
         SDL_RenderPresent(renderer);
-    }
-
-    /* Run the emulator */
-    void run() {
-        SDL_Event e;
-
-        while (true) {
-            // Handle events
-            while (SDL_PollEvent(&e))
-                switch (e.type) {
-                    case SDL_QUIT: return;
-                    case SDL_KEYDOWN: if (keys[SDL_SCANCODE_ESCAPE]) return;
-                }
-            // run a frame and render it
-            CPU::run_frame();
-            render();
-        }
     }
 
 }

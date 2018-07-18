@@ -5,10 +5,10 @@
 
 namespace GUI {
 
-    void init(std::string path);
-    void run();
+    unsigned get_width();
+    unsigned get_height();
 
-    u8 get_joypad_state(int n);
+    void init();
     void new_frame(u32* pixels);
     void render();
 

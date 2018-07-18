@@ -6,6 +6,7 @@
 #include "ppu.hpp"
 #include "cpu.hpp"
 
+/// The CPU (MOS6502) for the NES
 namespace CPU {
 
 /* CPU state */
@@ -17,8 +18,8 @@ Flags P;
 bool nmi, irq;
 
 // Remaining clocks to end frame
-// Original value is 29781. New value over-clocks the CPU
-const int TOTAL_CYCLES = 500000;
+// Original value is 29781. New value over-clocks the CPU (500000 is fast)
+const int TOTAL_CYCLES = 29781;
 int remainingCycles;
 
 /* Cycle emulation */
@@ -33,8 +34,7 @@ inline bool cross(u16 a, u8 i) { return ((a+i) & 0xFF00) != ((a & 0xFF00)); }
 
 /* Memory access */
 void dma_oam(u8 bank);
-template<bool wr> inline u8 access(u16 addr, u8 v = 0)
-{
+template<bool wr> inline u8 access(u16 addr, u8 v = 0) {
     u8* r;
     switch (addr) {
         // RAM

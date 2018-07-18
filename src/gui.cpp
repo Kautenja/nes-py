@@ -1,4 +1,5 @@
 #include <csignal>
+#include <iostream>
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "gui.hpp"
@@ -6,18 +7,57 @@
 /// The graphics interface to SDL
 namespace GUI {
 
-    /// the width of the screen in pixels
-    const unsigned WIDTH  = 256;
     /// Return the width of the screen.
     unsigned get_width() { return WIDTH; }
-    /// the height of the screen in pixels
-    const unsigned HEIGHT = 240;
+
     /// Return the height of the screen.
     unsigned get_height() { return HEIGHT; }
 
+    /// the pixels representing a frame (the screen)
+    u32 screen[WIDTH][HEIGHT];
+
     /// Send the PPU rendered frame to the SDL GUI.
     void new_frame(u32* pixels) {
-        // SDL_UpdateTexture(gameTexture, NULL, pixels, WIDTH * sizeof(u32));
+        // TODO: vectorize this operation / determine fastest caches access
+        for (int h = 0; h < HEIGHT; h++)
+            for (int w = 0; w < WIDTH; w++)
+                screen[w][h] = *(pixels + w + (h * HEIGHT));
     }
+
+    /// Return the screen.
+    u32* get_screen() {
+        return *screen;
+    }
+
+
+
+    // /// the pixels representing a frame (the screen)
+    // u32* screen;
+
+    // /// Send the PPU rendered frame to the SDL GUI.
+    // void new_frame(u32* pixels) {
+    //     screen = pixels;
+    // }
+
+    // /// Return the screen.
+    // u32* get_screen() {
+    //     return screen;
+    // }
+
+
+
+
+    // /// the pixels representing a frame (the screen)
+    // u32 screen;
+
+    // /// Send the PPU rendered frame to the screen.
+    // void new_frame(u32* pixels) {
+    //     screen = *pixels;
+    // }
+
+    // /// Return the screen.
+    // u32 get_screen() {
+    //     return screen;
+    // }
 
 }

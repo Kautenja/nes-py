@@ -58,13 +58,32 @@ class NesENV(Env):
 
         """
         # get the shape of the screen in RGB (or BGR) format
-        screen_shape = self.screen_height, self.screen_width, 3
+        screen_shape = self.screen_height, self.screen_width, 4
         # create a frame for the screen data
         screen_data = np.empty(screen_shape, dtype=np.uint8)
         # fill the screen data array with values from the emulator
         _LIB.NESEnv_screen_rgb(self._env, as_ctypes(screen_data[:]))
 
+        # print(screen_data.sum(axis=(0, 1)))
+
+        # remove the 4th axis (padding from storing colors in 32 bit values)
+        screen_data = screen_data[:, :, :3]
+        from PIL import Image
+        Image.fromarray(screen_data).save('screen.png')
+
         return screen_data
+
+    @property
+    def _reward(self):
+        """
+        """
+        return 0
+
+    @property
+    def _done(self):
+        """
+        """
+        return False
 
     def reset(self):
         """
@@ -74,9 +93,9 @@ class NesENV(Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
-        # call reset on the emulator
+        # reset the emulator
         _LIB.NESEnv_reset(self._env)
-        # TODO: call method for getting frame and return it
+        # return the screen from the emulator
         return self._screen_rgb
 
     def step(self, action):
@@ -94,12 +113,10 @@ class NesENV(Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
-        # pass the action to the emulator
+        # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
-        # TODO: call method for getting frame
-        # TODO: call method for reward
-        # TODO: call method for done
-        return self._screen_rgb, 0, False, {}
+        # return the screen from the emulator and other relevant data
+        return self._screen_rgb, self._reward, self._done, {}
 
     def close(self):
         """Close the environment."""

@@ -4,6 +4,8 @@
 #include "joypad.hpp"
 #include "gui.hpp"
 
+#include <cstring>
+
 /**
     Initialize a new NESEnv.
 
@@ -61,6 +63,11 @@ extern "C" {
 
     /// Return the screen of the emulator as a tensor of RGB data
     void NESEnv_screen_rgb(NESEnv* env, unsigned char *output_buffer) {
+        u32* screen = GUI::get_screen();
+        int width = GUI::get_width();
+        int height = GUI::get_height();
+
+        memcpy(output_buffer, screen, width * height * sizeof(u32));
         // size_t w = ale->getScreen().width();
         // size_t h = ale->getScreen().height();
         // size_t screen_size = w*h;

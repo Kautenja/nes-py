@@ -1,9 +1,21 @@
 # nes-py
 
 [![build-status][]][ci-server]
+[![PackageVersion][pypi-version]][pypi-home]
+[![PythonVersion][python-version]][python-home]
+[![Stable][pypi-status]][pypi-home]
+[![Format][pypi-format]][pypi-home]
+[![License][pypi-license]](LICENSE)
 
-[build-status]: https://travis-ci.com/Kautenja/laines-py.svg?token=FCkX2qMNHzx2qWEzZZMP&branch=master
-[ci-server]: https://travis-ci.com/Kautenja/laines-py
+[build-status]: https://travis-ci.com/Kautenja/nes-py.svg?token=FCkX2qMNHzx2qWEzZZMP&branch=master
+[ci-server]: https://travis-ci.com/Kautenja/nes-py
+[pypi-version]: https://badge.fury.io/py/nes-py.svg
+[pypi-license]: https://img.shields.io/pypi/l/nes-py.svg
+[pypi-status]: https://img.shields.io/pypi/status/nes-py.svg
+[pypi-format]: https://img.shields.io/pypi/format/nes-py.svg
+[pypi-home]: https://badge.fury.io/py/nes-py
+[python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
+[python-home]: https://python.org
 
 ## Usage
 

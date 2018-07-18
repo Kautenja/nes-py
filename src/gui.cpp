@@ -9,8 +9,12 @@ namespace GUI {
 
     /// the width of the screen in pixels
     const unsigned WIDTH  = 256;
+    /// Return the width of the screen.
+    unsigned get_width() { return WIDTH; }
     /// the height of the screen in pixels
     const unsigned HEIGHT = 240;
+    /// Return the height of the screen.
+    unsigned get_height() { return HEIGHT; }
 
     /// the SDL window to send surfaces to
     SDL_Window* window;
@@ -32,7 +36,7 @@ namespace GUI {
             SDL_WINDOWPOS_CENTERED,
             WIDTH,
             HEIGHT,
-            0
+            0 // SDL_WINDOW_HIDDEN
         );
 
         renderer = SDL_CreateRenderer(

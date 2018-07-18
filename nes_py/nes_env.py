@@ -2,6 +2,7 @@
 import os
 import sys
 import ctypes
+import itertools
 import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
@@ -221,6 +222,44 @@ class NesENV(gym.Env):
             render_modes = [repr(x) for x in self.metadata['render.modes']]
             msg = 'valid render modes are: {}'.format(', '.join(render_modes))
             raise NotImplementedError(msg)
+
+    def get_keys_to_action(self) -> dict:
+        """Return the dictionary of keyboard keys to actions."""
+        # Mapping of buttons on the NES joy-pad to keyboard keys
+        right =  ord('d')
+        left =   ord('a')
+        down =   ord('s')
+        up =     ord('w')
+        start =  ord('\r')
+        select = ord(' ')
+        B =      ord('p')
+        A =      ord('o')
+
+        buttons = np.array([
+            right,
+            left,
+            down,
+            up,
+            start,
+            select,
+            B,
+            A
+        ])
+
+        # the dictionary of key presses to controller codes
+        keys_to_action = {}
+        # the combination map of values for the controller
+        values = 8 * [[0, 1]]
+        # iterate over all the combinations
+        for combination in itertools.product(*values):
+            # unpack the tuple of bits into an integer
+            byte = int(''.join(map(str, combination)), 2)
+            # unwrap the pressed buttons based on the bitmap
+            pressed = buttons[list(map(bool, combination))]
+            # assign the pressed buttons to the output byte
+            keys_to_action[tuple(sorted(pressed))] = byte
+
+        return keys_to_action
 
 
 # explicitly define the outward facing API of this module

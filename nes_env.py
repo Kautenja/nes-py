@@ -7,6 +7,27 @@ from numpy.ctypeslib import as_ctypes
 
 # load the library from the shared object file
 _LIB = ctypes.cdll.LoadLibrary('build/lib_nes_env.so')
+# setup the argument and return types for NESEnv_init
+_LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
+_LIB.NESEnv_init.restype = ctypes.c_void_p
+# setup the argument and return types for NESEnv_width
+_LIB.NESEnv_width.argtypes = None
+_LIB.NESEnv_width.restype = ctypes.c_uint
+# setup the argument and return types for NESEnv_height
+_LIB.NESEnv_height.argtypes = None
+_LIB.NESEnv_height.restype = ctypes.c_uint
+# setup the argument and return types for NESEnv_screen
+_LIB.NESEnv_screen.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_screen.restype = None
+# setup the argument and return types for NESEnv_reset
+_LIB.NESEnv_reset.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_reset.restype = None
+# setup the argument and return types for NESEnv_step
+_LIB.NESEnv_step.argtypes = [ctypes.c_ubyte]
+_LIB.NESEnv_step.restype = None
+# setup the argument and return types for NESEnv_close
+_LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_close.restype = None
 
 
 class NesENV(Env):
@@ -30,7 +51,7 @@ class NesENV(Env):
         """
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
-        self._env = _LIB.NESEnv_init(ctypes.c_wchar_p(self._rom_path))
+        self._env = _LIB.NESEnv_init(self._rom_path)
 
     @property
     def screen_width(self):

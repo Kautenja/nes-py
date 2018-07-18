@@ -41,9 +41,9 @@ setup(
     install_requires=[
         'gym>=0.10.5',
         'numpy>=1.14.2',
-        'pygame',
+        'pygame>=1.9.3',
         'pyglet>=1.3.2',
-        'tqdm',
+        'tqdm>=4.19.5',
     ],
     entry_points={
         'console_scripts': [

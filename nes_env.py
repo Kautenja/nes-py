@@ -107,6 +107,7 @@ __all__ = [NesENV.__name__]
 # handle running this environment as the main script
 if __name__ == '__main__':
     import sys
+    from tqdm import tqdm
     path = sys.argv[1]
 
     # create the environment
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     # run through some random steps in the environment
     try:
         done = True
-        for _ in range(500):
+        for _ in tqdm(range(500)):
             if done:
                 _ = env.reset()
             action = 8 # env.action_space.sample()

@@ -53,13 +53,16 @@ extern "C" {
     /// The initializer to return a new NESEnv with a given path.
     NESEnv* NESEnv_init(wchar_t* path){ return new NESEnv(path); }
 
+    /// The number of buttons on the NES joypad.
+    unsigned NESEnv_num_buttons() { return Joypad::get_num_buttons(); }
+
     /// The width of the NES screen.
     unsigned NESEnv_width() { return GUI::get_width(); }
 
     /// The height of the NES screen.
     unsigned NESEnv_height() { return GUI::get_height(); }
 
-    /// Return the screen of the emulator as a tensor of RGB data
+    /// Copy the screen of the emulator to an output buffer (NumPy array)
     void NESEnv_screen(unsigned char *output_buffer) {
         GUI::copy_screen(output_buffer);
     }

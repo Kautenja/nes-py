@@ -34,7 +34,7 @@ setup(
     url='https://github.com/Kautenja/nes-py',
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
-    license='2-Clause BSD',
+    license='BSD-2-Clause',
     packages=find_packages(),
     zip_safe=False,
     install_requires=[

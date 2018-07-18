@@ -91,6 +91,12 @@ extern "C" {
     /// The initializer to return a new NESEnv with a given path.
     NESEnv* NESEnv_init(wchar_t* path){ return new NESEnv(path); }
 
+    /// The width of the NES screen.
+    unsigned NESEnv_width() { return GUI::get_width(); }
+
+    /// The height of the NES screen.
+    unsigned NESEnv_height() { return GUI::get_height(); }
+
     /// The function to reset the environment.
     void NESEnv_reset(NESEnv* env) { env->reset(); }
 

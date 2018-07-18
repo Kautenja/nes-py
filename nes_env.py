@@ -31,6 +31,29 @@ class NesENV(Env):
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(ctypes.c_wchar_p(self._rom_path))
 
+    @property
+    def screen_width(self):
+        """Return the width of the NES screen in pixels."""
+        return _LIB.NESEnv_width()
+
+    @property
+    def screen_height(self):
+        """Return the height of the NES screen in pixels."""
+        return _LIB.NESEnv_height()
+
+    def reset(self):
+        """
+        Reset the state of the environment and returns an initial observation.
+
+        Returns:
+            state (np.ndarray): next frame as a result of the given action
+
+        """
+        # call reset on the emulator
+        _LIB.NESEnv_reset(self._env)
+        # TODO: call method for getting frame and return it
+        return None
+
     def step(self, action):
         """
         Run one frame of the NES and return the relevant observation data.
@@ -53,18 +76,15 @@ class NesENV(Env):
         # TODO: call method for done
         return None, 0, False, {}
 
-    def reset(self):
-        """
-        Reset the state of the environment and returns an initial observation.
-
-        Returns:
-            state (np.ndarray): next frame as a result of the given action
-
-        """
-        # call reset on the emulator
-        _LIB.NESEnv_reset(self._env)
-        # TODO: call method for getting frame and return it
-        return None
+    def close(self):
+        """Close the environment."""
+        # make sure the environment hasn't already been closed
+        if self._env is None:
+            raise ValueError('env has already been closed.')
+        # purge the environment from C++ memory
+        _LIB.NESEnv_close(self._env)
+        # deallocate the object locally
+        self._env = None
 
     def render(self, mode='human'):
         """
@@ -88,16 +108,6 @@ class NesENV(Env):
             render_modes = self.metadata['render.modes']
             msg = 'valid render modes are {}'.format(render_modes)
             raise NotImplementedError(msg)
-
-    def close(self):
-        """Close the environment."""
-        # make sure the environment hasn't already been closed
-        if self._env is None:
-            raise ValueError('env has already been closed.')
-        # purge the environment from C++ memory
-        _LIB.NESEnv_close(self._env)
-        # deallocate the object locally
-        self._env = None
 
 
 # explicitly define the outward facing API of this module

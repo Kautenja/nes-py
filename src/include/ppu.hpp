@@ -3,91 +3,111 @@
 
 namespace PPU {
 
+    /// Scanline configuration options
+    enum Scanline  { VISIBLE, POST, NMI, PRE };
+    /// Mirroring configuration options
+    enum Mirroring { VERTICAL, HORIZONTAL };
 
-enum Scanline  { VISIBLE, POST, NMI, PRE };
-enum Mirroring { VERTICAL, HORIZONTAL };
-
-/* Sprite buffer */
-struct Sprite
-{
-    u8 id;     // Index in OAM.
-    u8 x;      // X position.
-    u8 y;      // Y position.
-    u8 tile;   // Tile index.
-    u8 attr;   // Attributes.
-    u8 dataL;  // Tile data (low).
-    u8 dataH;  // Tile data (high).
-};
-
-/* PPUCTRL ($2000) register */
-union Ctrl
-{
-    struct
-    {
-        unsigned nt     : 2;  // Nametable ($2000 / $2400 / $2800 / $2C00).
-        unsigned incr   : 1;  // Address increment (1 / 32).
-        unsigned sprTbl : 1;  // Sprite pattern table ($0000 / $1000).
-        unsigned bgTbl  : 1;  // BG pattern table ($0000 / $1000).
-        unsigned sprSz  : 1;  // Sprite size (8x8 / 8x16).
-        unsigned slave  : 1;  // PPU master/slave.
-        unsigned nmi    : 1;  // Enable NMI.
+    /// Sprite buffer
+    struct Sprite {
+        /// Index in OAM
+        u8 id;
+        /// X position
+        u8 x;
+        /// Y position
+        u8 y;
+        /// Tile index
+        u8 tile;
+        /// Attributes
+        u8 attr;
+        /// Tile data (low)
+        u8 dataL;
+        /// Tile data (high)
+        u8 dataH;
     };
-    u8 r;
-};
 
-/* PPUMASK ($2001) register */
-union Mask
-{
-    struct
-    {
-        unsigned gray    : 1;  // Grayscale.
-        unsigned bgLeft  : 1;  // Show background in leftmost 8 pixels.
-        unsigned sprLeft : 1;  // Show sprite in leftmost 8 pixels.
-        unsigned bg      : 1;  // Show background.
-        unsigned spr     : 1;  // Show sprites.
-        unsigned red     : 1;  // Intensify reds.
-        unsigned green   : 1;  // Intensify greens.
-        unsigned blue    : 1;  // Intensify blues.
+    /// PPUCTRL ($2000) register
+    union Ctrl {
+        struct {
+            /// Nametable ($2000 / $2400 / $2800 / $2C00)
+            unsigned nt     : 2;
+            /// Address increment (1 / 32)
+            unsigned incr   : 1;
+            /// Sprite pattern table ($0000 / $1000)
+            unsigned sprTbl : 1;
+            /// BG pattern table ($0000 / $1000)
+            unsigned bgTbl  : 1;
+            /// Sprite size (8x8 / 8x16)
+            unsigned sprSz  : 1;
+            /// PPU master/slave
+            unsigned slave  : 1;
+            /// Enable NMI
+            unsigned nmi    : 1;
+        };
+        u8 r;
     };
-    u8 r;
-};
 
-/* PPUSTATUS ($2002) register */
-union Status
-{
-    struct
-    {
-        unsigned bus    : 5;  // Not significant.
-        unsigned sprOvf : 1;  // Sprite overflow.
-        unsigned sprHit : 1;  // Sprite 0 Hit.
-        unsigned vBlank : 1;  // In VBlank?
+    /// PPUMASK ($2001) register
+    union Mask {
+        struct {
+            /// Grayscale
+            unsigned gray    : 1;
+            /// Show background in leftmost 8 pixels
+            unsigned bgLeft  : 1;
+            /// Show sprite in leftmost 8 pixels
+            unsigned sprLeft : 1;
+            /// Show background
+            unsigned bg      : 1;
+            /// Show sprites
+            unsigned spr     : 1;
+            /// Intensify reds
+            unsigned red     : 1;
+            /// Intensify greens
+            unsigned green   : 1;
+            /// Intensify blues
+            unsigned blue    : 1;
+        };
+        u8 r;
     };
-    u8 r;
-};
 
-/* Loopy's VRAM address */
-union Addr
-{
-    struct
-    {
-        unsigned cX : 5;  // Coarse X.
-        unsigned cY : 5;  // Coarse Y.
-        unsigned nt : 2;  // Nametable.
-        unsigned fY : 3;  // Fine Y.
+    /// PPUSTATUS ($2002) register
+    union Status {
+        struct {
+            /// Not significant
+            unsigned bus    : 5;
+            /// Sprite overflow
+            unsigned sprOvf : 1;
+            /// Sprite 0 Hit
+            unsigned sprHit : 1;
+            /// In VBlank?
+            unsigned vBlank : 1;
+        };
+        u8 r;
     };
-    struct
-    {
-        unsigned l : 8;
-        unsigned h : 7;
+
+    /// Loopy's VRAM address
+    union Addr {
+        struct {
+            // Coarse X
+            unsigned cX : 5;
+            // Coarse Y
+            unsigned cY : 5;
+            // Nametable
+            unsigned nt : 2;
+            // Fine Y
+            unsigned fY : 3;
+        };
+        struct {
+            unsigned l : 8;
+            unsigned h : 7;
+        };
+        unsigned addr : 14;
+        unsigned r : 15;
     };
-    unsigned addr : 14;
-    unsigned r : 15;
-};
 
-template <bool write> u8 access(u16 index, u8 v = 0);
-void set_mirroring(Mirroring mode);
-void step();
-void reset();
-
+    template <bool write> u8 access(u16 index, u8 v = 0);
+    void set_mirroring(Mirroring mode);
+    void step();
+    void reset();
 
 }

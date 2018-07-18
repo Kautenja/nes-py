@@ -10,6 +10,12 @@ namespace Joypad {
     /// Joypad strobe latch.
     bool strobe;
 
+    /// Return the number of buttons on the joypad
+    unsigned get_num_buttons() {
+        // a u8 should be 1 byte, with 8-bits per byte
+        return sizeof(u8) * 8;
+    }
+
     /**
         Write a button state to the given joypad.
 

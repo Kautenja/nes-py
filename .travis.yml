@@ -1,10 +1,10 @@
 language: cpp
-sudo: required
-compiler: gcc
-install:
-  - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev
-  - sudo apt-get install libsdl2-dev libsdl2-image-dev
+compiler: clang
 script: scons
-os: linux
+os:
+  - linux
+  - osx
+install:
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install scons; fi
 notifications:
   email: false

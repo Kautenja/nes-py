@@ -1,16 +1,30 @@
 """A CTypes interface to the C++ NES environment."""
+import os
 import sys
 import ctypes
+import itertools
 import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
+from .spaces import Bitmap
 
 
+# the path to the directory this
+_MODULE_PATH = os.path.dirname(__file__)
+# the relative path to the C++ shared object library
+_SO_PATH = 'laines/build/lib_nes_env.so'
+# the absolute path to the C++ shared object library
+_LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
 # load the library from the shared object file
-_LIB = ctypes.cdll.LoadLibrary('build/lib_nes_env.so')
+_LIB = ctypes.cdll.LoadLibrary(_LIB_PATH)
+
+
 # setup the argument and return types for NESEnv_init
 _LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
 _LIB.NESEnv_init.restype = ctypes.c_void_p
+# setup the argument and return types for NESEnv_num_buttons
+_LIB.NESEnv_num_buttons.argtypes = None
+_LIB.NESEnv_num_buttons.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_width
 _LIB.NESEnv_width.argtypes = None
 _LIB.NESEnv_width.restype = ctypes.c_uint
@@ -31,13 +45,15 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-# the height in pixels of the NES screen
+# the number of buttons on the NES joypad
+NUM_BUTTONS = _LIB.NESEnv_num_buttons()
+# height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
-# the width in pixels of the NES screen
+# width in pixels of the NES screen
 SCREEN_WIDTH = _LIB.NESEnv_width()
-# the shape of the screen as 24-bit RGB (standard for NumPy)
+# shape of the screen as 24-bit RGB (standard for NumPy)
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
-# the shape of the screen as 32-bit RGB (C++ memory arrangement)
+# shape of the screen as 32-bit RGB (C++ memory arrangement)
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 
@@ -45,15 +61,21 @@ class NesENV(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
     # relevant metadata about the environment
-    metadata = { 'render.modes': ['rgb_array', 'human'] }
+    metadata = {
+        'render.modes': ['rgb_array', 'human'],
+        'video.frames_per_second': 60
+    }
 
-    # the observation space for the environment is static across all instances
+    # observation space for the environment is static across all instances
     observation_space = gym.spaces.Box(
         low=0,
         high=255,
         shape=SCREEN_SHAPE_24_BIT,
         dtype=np.uint8
     )
+
+    # action space is a bitmap of button press values for the 8 NES buttons
+    action_space = Bitmap(NUM_BUTTONS)
 
     def __init__(self, rom_path):
         """
@@ -66,46 +88,37 @@ class NesENV(gym.Env):
             None
 
         """
+        # ensure that rom_path is a string
+        if not isinstance(rom_path, str):
+            raise TypeError('rom_path should be of type: str')
+        # ensure that rom_path points to an existing .nes file
+        if not '.nes' in rom_path or not os.path.isfile(rom_path):
+            raise ValueError('rom_path should point to a ".nes" file')
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
         # setup a boolean for whether to flip from BGR to RGB based on machine
         # byte order
         self._is_little_endian = sys.byteorder == 'little'
-        # setup the frame rate for the environment
-        self.metadata['video.frames_per_second'] = 60
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
+        # create a frame for the screen data (32-bit format from C++)
+        self._screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
+        # setup the screen for the environment (24-bit RGB format for Python)
+        self.screen = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
 
-    @property
-    def _screen(self):
-        """
-        Return screen data in RGB format.
-
-        Note:
-            -   On little-endian machines like x86, the channels are BGR
-                order: screen_data[x, y, 0:3] is [blue, green, red]
-            -   On big-endian machines (rare in 2017) the channels would be
-                the opposite order.
-
-        Returns:
-            a numpy array with the screen's RGB data
-
-        """
-        # create a frame for the screen data
-        screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
+    def _copy_screen(self):
+        """Copy screen data from the C++ shared object library."""
         # fill the screen data array with values from the emulator
-        _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
-
+        _LIB.NESEnv_screen(as_ctypes(self._screen_data))
+        # copy the screen data to the screen
+        self.screen = self._screen_data
         # flip the bytes if the machine is little endian (which it likely is)
         if self._is_little_endian:
             # invert the little-endian BGR channels to RGB
-            screen_data = screen_data[:, :, ::-1]
-
+            self.screen = self.screen[:, :, ::-1]
         # remove the 0th axis (padding from storing colors in 32 bit)
-        screen_data = screen_data[:, :, 1:]
-
-        return screen_data
+        self.screen = self.screen[:, :, 1:]
 
     @property
     def _reward(self):
@@ -129,8 +142,10 @@ class NesENV(gym.Env):
         """
         # reset the emulator
         _LIB.NESEnv_reset(self._env)
+        # copy the screen from the emulator
+        self._copy_screen()
         # return the screen from the emulator
-        return self._screen
+        return self.screen
 
     def step(self, action):
         """
@@ -149,8 +164,10 @@ class NesENV(gym.Env):
         """
         # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
+        # copy the screen from the emulator
+        self._copy_screen()
         # return the screen from the emulator and other relevant data
-        return self._screen, self._reward, self._done, {}
+        return self.screen, self._reward, self._done, {}
 
     def close(self):
         """Close the environment."""
@@ -180,45 +197,61 @@ class NesENV(gym.Env):
 
         """
         if mode == 'human':
+            # if the viewer isn't setup, import it and create one
             if self.viewer is None:
-                from _image_viewer import ImageViewer
+                from ._image_viewer import ImageViewer
+                # get the caption for the ImageViewer
+                if self.spec is None:
+                    # if there is no spec, just use the .nes filename
+                    caption = self._rom_path.split('/')[-1]
+                else:
+                    # set the caption to the OpenAI Gym id
+                    caption = self.spec.id
+                # create the ImageViewer to display frames
                 self.viewer = ImageViewer(
-                    # caption=self.spec.id,
-                    caption='TODO',
+                    caption=caption,
                     height=SCREEN_HEIGHT,
                     width=SCREEN_WIDTH,
                 )
-            self.viewer.show(self._screen)
-            return None
+            # show the screen on the image viewer
+            self.viewer.show(self.screen)
         elif mode == 'rgb_array':
-            raise NotImplementedError('TODO: rgb_array mode')
+            return self.screen
         else:
-            render_modes = self.metadata['render.modes']
-            msg = 'valid render modes are {}'.format(render_modes)
+            # unpack the modes as comma delineated strings ('a', 'b', ...)
+            render_modes = [repr(x) for x in self.metadata['render.modes']]
+            msg = 'valid render modes are: {}'.format(', '.join(render_modes))
             raise NotImplementedError(msg)
+
+    def get_keys_to_action(self) -> dict:
+        """Return the dictionary of keyboard keys to actions."""
+        # keyboard keys in an array ordered by their byte order in the bitmap
+        # i.e. right = 7, left = 6, ..., B = 1, A = 0
+        buttons = np.array([
+            ord('d'),  # right
+            ord('a'),  # left
+            ord('s'),  # down
+            ord('w'),  # up
+            ord('\r'), # start
+            ord(' '),  # select
+            ord('p'),  # B
+            ord('o'),  # A
+        ])
+        # the dictionary of key presses to controller codes
+        keys_to_action = {}
+        # the combination map of values for the controller
+        values = 8 * [[0, 1]]
+        # iterate over all the combinations
+        for combination in itertools.product(*values):
+            # unpack the tuple of bits into an integer
+            byte = int(''.join(map(str, combination)), 2)
+            # unwrap the pressed buttons based on the bitmap
+            pressed = buttons[list(map(bool, combination))]
+            # assign the pressed buttons to the output byte
+            keys_to_action[tuple(sorted(pressed))] = byte
+
+        return keys_to_action
 
 
 # explicitly define the outward facing API of this module
 __all__ = [NesENV.__name__]
-
-
-# handle running this environment as the main script
-if __name__ == '__main__':
-    from tqdm import tqdm
-    path = sys.argv[1]
-
-    # create the environment
-    env = NesENV(path)
-    # run through some random steps in the environment
-    try:
-        done = True
-        for _ in tqdm(range(500)):
-            if done:
-                _ = env.reset()
-            action = 8 # env.action_space.sample()
-            _, reward, done, _ = env.step(action)
-            env.render()
-    except KeyboardInterrupt:
-        pass
-    # close the environment
-    env.close()

@@ -7,8 +7,8 @@ class Bitmap(MultiBinary):
     """A space for converting multi binary output to a bitmap."""
 
     def sample(self):
-        """Return a sample from the space."""
-        np.packbits(super(Bitmap, self).sample())[0]
+        """Return a sample from the space as an int."""
+        return np.packbits(super(Bitmap, self).sample())[0]
 
 
 # explicitly define the outward facing API for this module

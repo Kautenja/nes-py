@@ -48,12 +48,12 @@ public:
         @param action the controller bitmap of which buttons to press.
         The parameter uses 1 for "pressed" and 0 for "not pressed".
         It uses the following mapping of bits to buttons:
-        7: UP
-        6: LEFT
+        7: LEFT
+        6: RIGHT
         5: DOWN
-        4: RIGHT
-        3: SELECT
-        2: START
+        4: UP
+        3: START
+        2: SELECT
         1: B
         0: A
 

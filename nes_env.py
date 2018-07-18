@@ -89,18 +89,16 @@ class NesENV(Env):
         # fill the screen data array with values from the emulator
         _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
 
-        # format the frame based on the machine's endian-ness
+        # flip the bytes if the machine is little endian (which it likely is)
         if self._is_little_endian:
-            # remove the 4th axis (padding from storing colors in 32 bit)
-            screen_data = screen_data[:, :, :3]
             # invert the little-endian BGR channels to RGB
             screen_data = screen_data[:, :, ::-1]
-        else:
-            # remove the 0th axis (padding from storing colors in 32 bit)
-            screen_data = screen_data[:, :, 1:]
 
-        # from PIL import Image
-        # Image.fromarray(screen_data).save('screen.png')
+        # remove the 0th axis (padding from storing colors in 32 bit)
+        screen_data = screen_data[:, :, 1:]
+
+        from PIL import Image
+        Image.fromarray(screen_data).save('screen.png')
 
         return screen_data
 

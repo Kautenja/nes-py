@@ -13,7 +13,6 @@ env = Environment(
     CXXFLAGS = flags,
     LINKFLAGS = flags,
     CPPPATH = ['#src/include'],
-    LIBS = ['SDL2', 'SDL2_image'],
 )
 
 

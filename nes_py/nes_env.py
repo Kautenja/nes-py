@@ -196,6 +196,7 @@ class NesENV(gym.Env):
 
         """
         if mode == 'human':
+            # if the viewer isn't setup, import it and create one
             if self.viewer is None:
                 from ._image_viewer import ImageViewer
                 # get the caption for the ImageViewer
@@ -213,12 +214,12 @@ class NesENV(gym.Env):
                 )
             # show the screen on the image viewer
             self.viewer.show(self._screen)
-            return None
         elif mode == 'rgb_array':
             return self._screen
         else:
-            render_modes = self.metadata['render.modes']
-            msg = 'valid render modes are {}'.format(render_modes)
+            # unpack the modes as comma delineated strings ('a', 'b', ...)
+            render_modes = [repr(x) for x in self.metadata['render.modes']]
+            msg = 'valid render modes are: {}'.format(', '.join(render_modes))
             raise NotImplementedError(msg)
 
 

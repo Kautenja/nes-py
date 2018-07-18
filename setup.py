@@ -38,11 +38,11 @@ setup(
     license='MIT',
     packages=find_packages(),
     zip_safe=False,
-    # install_requires=[
-    #     'gym>=0.10.5',
-    #     'numpy>=1.14.2',
-    #     'pyglet>=1.3.2',
-    # ],
+    install_requires=[
+        'gym>=0.10.5',
+        'numpy>=1.14.2',
+        'pyglet>=1.3.2',
+    ],
     entry_points={
         'console_scripts': [
             'nes_py = nes_py._app.cli:main',

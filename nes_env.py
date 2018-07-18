@@ -72,6 +72,10 @@ class NesENV(gym.Env):
         # setup a boolean for whether to flip from BGR to RGB based on machine
         # byte order
         self._is_little_endian = sys.byteorder == 'little'
+        # setup the frame rate for the environment
+        self.metadata['video.frames_per_second'] = 60
+        # setup a placeholder for a 'human' render mode viewer
+        self.viewer = None
 
     @property
     def _screen(self):
@@ -100,9 +104,6 @@ class NesENV(gym.Env):
 
         # remove the 0th axis (padding from storing colors in 32 bit)
         screen_data = screen_data[:, :, 1:]
-
-        from PIL import Image
-        Image.fromarray(screen_data).save('screen.png')
 
         return screen_data
 
@@ -160,6 +161,9 @@ class NesENV(gym.Env):
         _LIB.NESEnv_close(self._env)
         # deallocate the object locally
         self._env = None
+        # if there is an image viewer open, delete it
+        if self.viewer is not None:
+            self.viewer.close()
 
     def render(self, mode='human'):
         """
@@ -176,7 +180,16 @@ class NesENV(gym.Env):
 
         """
         if mode == 'human':
-            raise NotImplementedError('TODO: human mode')
+            if self.viewer is None:
+                from _image_viewer import ImageViewer
+                self.viewer = ImageViewer(
+                    # caption=self.spec.id,
+                    caption='TODO',
+                    height=SCREEN_HEIGHT,
+                    width=SCREEN_WIDTH,
+                )
+            self.viewer.show(self._screen)
+            return None
         elif mode == 'rgb_array':
             raise NotImplementedError('TODO: rgb_array mode')
         else:
@@ -204,7 +217,7 @@ if __name__ == '__main__':
                 _ = env.reset()
             action = 8 # env.action_space.sample()
             _, reward, done, _ = env.step(action)
-            # env.render()
+            env.render()
     except KeyboardInterrupt:
         pass
     # close the environment

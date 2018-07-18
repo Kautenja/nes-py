@@ -1,5 +1,7 @@
 language: cpp
-compiler: gcc
+compiler:
+  - gcc
+  - clang
 script: scons
 os: linux
 notifications:

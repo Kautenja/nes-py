@@ -1,7 +1,8 @@
 """A CTypes interface to the C++ NES environment."""
 import ctypes
-# from ctypes import cdll, c_wchar_p
 from gym import Env
+import numpy as np
+from numpy.ctypeslib import as_ctypes
 
 
 # load the library from the shared object file
@@ -41,6 +42,30 @@ class NesENV(Env):
         """Return the height of the NES screen in pixels."""
         return _LIB.NESEnv_height()
 
+    @property
+    def _screen_rgb(self):
+        """
+        Return screen data in RGB format.
+
+        Note:
+            -   On little-endian machines like x86, the channels are BGR
+                order: screen_data[x, y, 0:3] is [blue, green, red]
+            -   On big-endian machines (rare in 2017) the channels would be
+                the opposite order.
+
+        Returns:
+            a numpy array with the screen's RGB data
+
+        """
+        # get the shape of the screen in RGB (or BGR) format
+        screen_shape = self.screen_height, self.screen_width, 3
+        # create a frame for the screen data
+        screen_data = np.empty(screen_shape, dtype=np.uint8)
+        # fill the screen data array with values from the emulator
+        _LIB.NESEnv_screen_rgb(self._env, as_ctypes(screen_data[:]))
+
+        return screen_data
+
     def reset(self):
         """
         Reset the state of the environment and returns an initial observation.
@@ -52,7 +77,7 @@ class NesENV(Env):
         # call reset on the emulator
         _LIB.NESEnv_reset(self._env)
         # TODO: call method for getting frame and return it
-        return None
+        return self._screen_rgb
 
     def step(self, action):
         """
@@ -74,7 +99,7 @@ class NesENV(Env):
         # TODO: call method for getting frame
         # TODO: call method for reward
         # TODO: call method for done
-        return None, 0, False, {}
+        return self._screen_rgb, 0, False, {}
 
     def close(self):
         """Close the environment."""

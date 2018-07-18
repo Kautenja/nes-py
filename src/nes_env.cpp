@@ -2,7 +2,7 @@
 // TODO consider defining the extern "C" in a separate file?
 // TODO organize imports
 
-// #include <iostream>
+#include <iostream>
 #include <string>
 
 #include <SDL2/SDL.h>
@@ -96,6 +96,16 @@ extern "C" {
 
     /// The height of the NES screen.
     unsigned NESEnv_height() { return GUI::get_height(); }
+
+    /// Return the screen of the emulator as a tensor of RGB data
+    void NESEnv_screen_rgb(NESEnv* env, unsigned char *output_buffer) {
+        // size_t w = ale->getScreen().width();
+        // size_t h = ale->getScreen().height();
+        // size_t screen_size = w*h;
+        // pixel_t *ale_screen_data = ale->getScreen().getArray();
+
+        // ale->theOSystem->colourPalette().applyPaletteRGB(output_buffer, ale_screen_data, screen_size);
+    }
 
     /// The function to reset the environment.
     void NESEnv_reset(NESEnv* env) { env->reset(); }

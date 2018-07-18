@@ -92,36 +92,23 @@ class NesENV(gym.Env):
         self._is_little_endian = sys.byteorder == 'little'
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
+        # setup the screen for the environment
+        self.screen = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
 
-    @property
-    def _screen(self):
-        """
-        Return screen data in RGB format.
-
-        Note:
-            -   On little-endian machines like x86, the channels are BGR
-                order: screen_data[x, y, 0:3] is [blue, green, red]
-            -   On big-endian machines (rare in 2017) the channels would be
-                the opposite order.
-
-        Returns:
-            a numpy array with the screen's RGB data
-
-        """
+    def _copy_screen(self):
+        """Copy screen data from the C++ shared object library."""
         # create a frame for the screen data
         screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
         # fill the screen data array with values from the emulator
         _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
-
         # flip the bytes if the machine is little endian (which it likely is)
         if self._is_little_endian:
             # invert the little-endian BGR channels to RGB
             screen_data = screen_data[:, :, ::-1]
-
         # remove the 0th axis (padding from storing colors in 32 bit)
         screen_data = screen_data[:, :, 1:]
-
-        return screen_data
+        # copy the screen data to the screen
+        self.screen = screen_data
 
     @property
     def _reward(self):
@@ -145,8 +132,10 @@ class NesENV(gym.Env):
         """
         # reset the emulator
         _LIB.NESEnv_reset(self._env)
+        # copy the screen from the emulator
+        self._copy_screen()
         # return the screen from the emulator
-        return self._screen
+        return self.screen
 
     def step(self, action):
         """
@@ -165,8 +154,10 @@ class NesENV(gym.Env):
         """
         # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
+        # copy the screen from the emulator
+        self._copy_screen()
         # return the screen from the emulator and other relevant data
-        return self._screen, self._reward, self._done, {}
+        return self.screen, self._reward, self._done, {}
 
     def close(self):
         """Close the environment."""
@@ -213,9 +204,9 @@ class NesENV(gym.Env):
                     width=SCREEN_WIDTH,
                 )
             # show the screen on the image viewer
-            self.viewer.show(self._screen)
+            self.viewer.show(self.screen)
         elif mode == 'rgb_array':
-            return self._screen
+            return self.screen
         else:
             # unpack the modes as comma delineated strings ('a', 'b', ...)
             render_modes = [repr(x) for x in self.metadata['render.modes']]

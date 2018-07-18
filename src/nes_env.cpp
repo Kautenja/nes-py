@@ -1,13 +1,4 @@
-// TODO define header file and cleanup this massive file
-// TODO consider defining the extern "C" in a separate file?
-// TODO organize imports
-
-#include <iostream>
 #include <string>
-
-#include <SDL2/SDL.h>
-// #include <SDL2/SDL_image.h>
-
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "joypad.hpp"
@@ -34,7 +25,6 @@ public:
         std::wstring ws(path);
         std::string str(ws.begin(), ws.end());
         this->path = str;
-        GUI::init();
     }
 
     /// Reset the emulator to its initial state.
@@ -69,8 +59,6 @@ public:
         Joypad::write_buttons(0, action);
         // run a frame on the CPU
         CPU::run_frame();
-        // render the frame on the SDL surface
-        GUI::render();
     }
 
     /**

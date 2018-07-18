@@ -92,23 +92,23 @@ class NesENV(gym.Env):
         self._is_little_endian = sys.byteorder == 'little'
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
-        # setup the screen for the environment
+        # create a frame for the screen data (32-bit format from C++)
+        self._screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
+        # setup the screen for the environment (24-bit RGB format for Python)
         self.screen = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
 
     def _copy_screen(self):
         """Copy screen data from the C++ shared object library."""
-        # create a frame for the screen data
-        screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
         # fill the screen data array with values from the emulator
-        _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
+        _LIB.NESEnv_screen(as_ctypes(self._screen_data))
+        # copy the screen data to the screen
+        self.screen = self._screen_data
         # flip the bytes if the machine is little endian (which it likely is)
         if self._is_little_endian:
             # invert the little-endian BGR channels to RGB
-            screen_data = screen_data[:, :, ::-1]
+            self.screen = self.screen[:, :, ::-1]
         # remove the 0th axis (padding from storing colors in 32 bit)
-        screen_data = screen_data[:, :, 1:]
-        # copy the screen data to the screen
-        self.screen = screen_data
+        self.screen = self.screen[:, :, 1:]
 
     @property
     def _reward(self):

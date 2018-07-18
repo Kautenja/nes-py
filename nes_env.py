@@ -67,7 +67,7 @@ class NesENV(Env):
         # print(screen_data.sum(axis=(0, 1)))
 
         # remove the 4th axis (padding from storing colors in 32 bit values)
-        screen_data = screen_data[:, :, :3]
+        screen_data = screen_data[:, :, :3][:, :, ::-1]
         from PIL import Image
         Image.fromarray(screen_data).save('screen.png')
 

@@ -1,4 +1,5 @@
 """A CTypes interface to the C++ NES environment."""
+import sys
 import ctypes
 from gym import Env
 import numpy as np
@@ -52,6 +53,9 @@ class NesENV(Env):
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
+        # setup a boolean for whether to flip from BGR to RGB based on machine
+        # byte order
+        self._is_little_endian = sys.byteorder == 'little'
 
     @property
     def screen_width(self):
@@ -85,12 +89,18 @@ class NesENV(Env):
         # fill the screen data array with values from the emulator
         _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
 
-        # print(screen_data.sum(axis=(0, 1)))
+        # format the frame based on the machine's endian-ness
+        if self._is_little_endian:
+            # remove the 4th axis (padding from storing colors in 32 bit)
+            screen_data = screen_data[:, :, :3]
+            # invert the little-endian BGR channels to RGB
+            screen_data = screen_data[:, :, ::-1]
+        else:
+            # remove the 0th axis (padding from storing colors in 32 bit)
+            screen_data = screen_data[:, :, 1:]
 
-        # remove the 4th axis (padding from storing colors in 32 bit values)
-        screen_data = screen_data[:, :, :3][:, :, ::-1]
-        from PIL import Image
-        Image.fromarray(screen_data).save('screen.png')
+        # from PIL import Image
+        # Image.fromarray(screen_data).save('screen.png')
 
         return screen_data
 
@@ -179,7 +189,6 @@ __all__ = [NesENV.__name__]
 
 # handle running this environment as the main script
 if __name__ == '__main__':
-    import sys
     from tqdm import tqdm
     path = sys.argv[1]
 

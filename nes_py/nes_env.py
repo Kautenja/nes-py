@@ -225,27 +225,18 @@ class NesENV(gym.Env):
 
     def get_keys_to_action(self) -> dict:
         """Return the dictionary of keyboard keys to actions."""
-        # Mapping of buttons on the NES joy-pad to keyboard keys
-        right =  ord('d')
-        left =   ord('a')
-        down =   ord('s')
-        up =     ord('w')
-        start =  ord('\r')
-        select = ord(' ')
-        B =      ord('p')
-        A =      ord('o')
-
+        # keyboard keys in an array ordered by their byte order in the bitmap
+        # i.e. right = 7, left = 6, ..., B = 1, A = 0
         buttons = np.array([
-            right,
-            left,
-            down,
-            up,
-            start,
-            select,
-            B,
-            A
+            ord('d'),  # right
+            ord('a'),  # left
+            ord('s'),  # down
+            ord('w'),  # up
+            ord('\r'), # start
+            ord(' '),  # select
+            ord('p'),  # B
+            ord('o'),  # A
         ])
-
         # the dictionary of key presses to controller codes
         keys_to_action = {}
         # the combination map of values for the controller

@@ -10,6 +10,7 @@
 
 #include "cartridge.hpp"
 #include "cpu.hpp"
+#include "gui.hpp"
 
 /// An OpenAI Gym like interface to the LaiNES emulator.
 class NESEnv{
@@ -18,62 +19,7 @@ private:
     /// the path to the ROM for the emulator to run
     std::string path;
 
-    /// the window to send frames to
-    SDL_Window* window;
-    /// the renderer for generating frames
-    SDL_Renderer* renderer;
-    /// the texture (surface) to render frames on
-    SDL_Texture* gameTexture;
-
-    /// Setup the graphics components for the emulator
-    void setupSDL() {
-        // Initialize graphics system:
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
-        SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "linear");
-
-        // Initialize the window to render to
-        this->window = SDL_CreateWindow(
-            "laines-py",
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
-            this->WIDTH,
-            this->HEIGHT,
-            0
-        );
-
-        // initialize the renderer for sending frames to the window
-        this->renderer = SDL_CreateRenderer(
-            this->window,
-            -1,
-            SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-        );
-        SDL_RenderSetLogicalSize(renderer, WIDTH, HEIGHT);
-
-        // initialize the surface for game frames to blit to
-        this->gameTexture = SDL_CreateTexture(
-            this->renderer,
-            SDL_PIXELFORMAT_ARGB8888,
-            SDL_TEXTUREACCESS_STREAMING,
-            this->WIDTH,
-            this->HEIGHT
-        );
-    }
-
-    /// Render the screen using SDL.
-    void renderSDL() {
-        // Clear the screen
-        SDL_RenderClear(this->renderer);
-        // Draw the NES screen:
-        SDL_RenderCopy(this->renderer, this->gameTexture, NULL, NULL);
-        SDL_RenderPresent(this->renderer);
-    }
-
 public:
-
-    /// the width of the screen in pixels
-    const unsigned WIDTH  = 256;
-    /// the height of the screen in pixels
-    const unsigned HEIGHT = 240;
 
     /**
         Initialize a new NESEnv.
@@ -87,7 +33,7 @@ public:
         std::wstring ws(path);
         std::string str(ws.begin(), ws.end());
         this->path = str;
-        this->setupSDL();
+        GUI::init();
     }
 
     /// Reset the emulator to its initial state.
@@ -114,9 +60,9 @@ public:
     */
     void step(unsigned char action) {
         // run a frame on the CPU
-        // CPU::run_frame();
+        CPU::run_frame();
         // render the frame on the SDL surface
-        // this->renderSDL();
+        GUI::render();
     }
 
     /**

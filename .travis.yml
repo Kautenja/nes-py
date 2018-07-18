@@ -1,7 +1,5 @@
 language: cpp
-compiler:
-  - gcc
-  - clang
+compiler: clang
 script: scons
 os:
   - linux

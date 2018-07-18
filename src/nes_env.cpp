@@ -4,8 +4,6 @@
 #include "joypad.hpp"
 #include "gui.hpp"
 
-#include <cstring>
-
 /**
     Initialize a new NESEnv.
 
@@ -62,12 +60,8 @@ extern "C" {
     unsigned NESEnv_height() { return GUI::get_height(); }
 
     /// Return the screen of the emulator as a tensor of RGB data
-    void NESEnv_screen_rgb(NESEnv* env, unsigned char *output_buffer) {
-        u32* screen = GUI::get_screen();
-        int width = GUI::get_width();
-        int height = GUI::get_height();
-
-        memcpy(output_buffer, screen, width * height * sizeof(u32));
+    void NESEnv_screen(unsigned char *output_buffer) {
+        GUI::copy_screen(output_buffer);
     }
 
     /// The function to reset the environment.

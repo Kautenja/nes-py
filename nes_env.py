@@ -62,7 +62,7 @@ class NesENV(Env):
         # create a frame for the screen data
         screen_data = np.empty(screen_shape, dtype=np.uint8)
         # fill the screen data array with values from the emulator
-        _LIB.NESEnv_screen_rgb(self._env, as_ctypes(screen_data[:]))
+        _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
 
         # print(screen_data.sum(axis=(0, 1)))
 

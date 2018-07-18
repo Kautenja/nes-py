@@ -4,18 +4,22 @@
 #include "cpu.hpp"
 #include "gui.hpp"
 
+/// The graphics interface to SDL
 namespace GUI {
 
-    // Screen size
+    /// the width of the screen in pixels
     const unsigned WIDTH  = 256;
+    /// the height of the screen in pixels
     const unsigned HEIGHT = 240;
 
-    // SDL structures
+    /// the SDL window to send surfaces to
     SDL_Window* window;
+    /// the render for drawing on surfaces
     SDL_Renderer* renderer;
+    /// the text to draw the game frames onto
     SDL_Texture* gameTexture;
 
-    /* Initialize GUI */
+    /// Initialize the graphical interface.
     void init() {
         // Initialize graphics system:
         SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_JOYSTICK);
@@ -48,12 +52,12 @@ namespace GUI {
 
     }
 
-    /* Send the rendered frame to the GUI */
+    /// Send the PPU rendered frame to the SDL GUI.
     void new_frame(u32* pixels) {
         SDL_UpdateTexture(gameTexture, NULL, pixels, WIDTH * sizeof(u32));
     }
 
-    /* Render the screen */
+    /// Render the screen.
     void render() {
         // Clear the screen
         SDL_RenderClear(renderer);

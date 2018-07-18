@@ -1,3 +1,4 @@
+#include <cstring>
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "gui.hpp"
@@ -9,7 +10,7 @@ namespace PPU {
 
     /// Mirroring mode
     Mirroring mirroring;
-    /// VRAM for nametables
+    /// VRAM for name-tables
     u8 ciRam[0x800];
     /// VRAM for palettes
     u8 cgRam[0x20];

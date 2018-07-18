@@ -1,4 +1,4 @@
-# laines-py
+# nes-py
 
 [![build-status][]][ci-server]
 
@@ -9,35 +9,28 @@
 
 ### Requirements
 
-LaiNES should run on any Unix system that is compatible with the following
+nes-py should run on any Unix system that is compatible with the following
 tools.
 
 -   SConstruct
 -   C++11 compatible compiler (e.g. `clang++`)
--   SDL2 (including `sdl2-image`)
 
 #### Debian-based systems:
 
 ```shell
-sudo apt-get install clang scons libsdl2-dev libsdl2-image-dev
+sudo apt-get install clang scons
 ```
 
 #### MacOS:
 
 ```shell
-brew install scons sdl2 sdl2_image
+brew install scons
 ```
 
 ### Compilation
 
 ```shell
 scons
-```
-
-### Execution
-
-```shell
-./laines <nes_rom_path>
 ```
 
 ## Compatibility

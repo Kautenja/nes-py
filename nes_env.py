@@ -1,21 +1,59 @@
 """A CTypes interface to the C++ NES environment."""
+import sys
 import ctypes
-from gym import Env
+import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
 
 
 # load the library from the shared object file
 _LIB = ctypes.cdll.LoadLibrary('build/lib_nes_env.so')
+# setup the argument and return types for NESEnv_init
+_LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
+_LIB.NESEnv_init.restype = ctypes.c_void_p
+# setup the argument and return types for NESEnv_width
+_LIB.NESEnv_width.argtypes = None
+_LIB.NESEnv_width.restype = ctypes.c_uint
+# setup the argument and return types for NESEnv_height
+_LIB.NESEnv_height.argtypes = None
+_LIB.NESEnv_height.restype = ctypes.c_uint
+# setup the argument and return types for NESEnv_screen
+_LIB.NESEnv_screen.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_screen.restype = None
+# setup the argument and return types for NESEnv_reset
+_LIB.NESEnv_reset.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_reset.restype = None
+# setup the argument and return types for NESEnv_step
+_LIB.NESEnv_step.argtypes = [ctypes.c_ubyte]
+_LIB.NESEnv_step.restype = None
+# setup the argument and return types for NESEnv_close
+_LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_close.restype = None
 
 
-class NesENV(Env):
+# the height in pixels of the NES screen
+SCREEN_HEIGHT = _LIB.NESEnv_height()
+# the width in pixels of the NES screen
+SCREEN_WIDTH = _LIB.NESEnv_width()
+# the shape of the screen as 24-bit RGB (standard for NumPy)
+SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
+# the shape of the screen as 32-bit RGB (C++ memory arrangement)
+SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
+
+
+class NesENV(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
     # relevant metadata about the environment
-    metadata = {
-        'render.modes': ['rgb_array', 'human']
-    }
+    metadata = { 'render.modes': ['rgb_array', 'human'] }
+
+    # the observation space for the environment is static across all instances
+    observation_space = gym.spaces.Box(
+        low=0,
+        high=255,
+        shape=SCREEN_SHAPE_24_BIT,
+        dtype=np.uint8
+    )
 
     def __init__(self, rom_path):
         """
@@ -30,20 +68,17 @@ class NesENV(Env):
         """
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
-        self._env = _LIB.NESEnv_init(ctypes.c_wchar_p(self._rom_path))
+        self._env = _LIB.NESEnv_init(self._rom_path)
+        # setup a boolean for whether to flip from BGR to RGB based on machine
+        # byte order
+        self._is_little_endian = sys.byteorder == 'little'
+        # setup the frame rate for the environment
+        self.metadata['video.frames_per_second'] = 60
+        # setup a placeholder for a 'human' render mode viewer
+        self.viewer = None
 
     @property
-    def screen_width(self):
-        """Return the width of the NES screen in pixels."""
-        return _LIB.NESEnv_width()
-
-    @property
-    def screen_height(self):
-        """Return the height of the NES screen in pixels."""
-        return _LIB.NESEnv_height()
-
-    @property
-    def _screen_rgb(self):
+    def _screen(self):
         """
         Return screen data in RGB format.
 
@@ -57,14 +92,32 @@ class NesENV(Env):
             a numpy array with the screen's RGB data
 
         """
-        # get the shape of the screen in RGB (or BGR) format
-        screen_shape = self.screen_height, self.screen_width, 3
         # create a frame for the screen data
-        screen_data = np.empty(screen_shape, dtype=np.uint8)
+        screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
         # fill the screen data array with values from the emulator
-        _LIB.NESEnv_screen_rgb(self._env, as_ctypes(screen_data[:]))
+        _LIB.NESEnv_screen(as_ctypes(screen_data[:]))
+
+        # flip the bytes if the machine is little endian (which it likely is)
+        if self._is_little_endian:
+            # invert the little-endian BGR channels to RGB
+            screen_data = screen_data[:, :, ::-1]
+
+        # remove the 0th axis (padding from storing colors in 32 bit)
+        screen_data = screen_data[:, :, 1:]
 
         return screen_data
+
+    @property
+    def _reward(self):
+        """
+        """
+        return 0
+
+    @property
+    def _done(self):
+        """
+        """
+        return False
 
     def reset(self):
         """
@@ -74,10 +127,10 @@ class NesENV(Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
-        # call reset on the emulator
+        # reset the emulator
         _LIB.NESEnv_reset(self._env)
-        # TODO: call method for getting frame and return it
-        return self._screen_rgb
+        # return the screen from the emulator
+        return self._screen
 
     def step(self, action):
         """
@@ -94,12 +147,10 @@ class NesENV(Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
-        # pass the action to the emulator
+        # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
-        # TODO: call method for getting frame
-        # TODO: call method for reward
-        # TODO: call method for done
-        return self._screen_rgb, 0, False, {}
+        # return the screen from the emulator and other relevant data
+        return self._screen, self._reward, self._done, {}
 
     def close(self):
         """Close the environment."""
@@ -110,6 +161,9 @@ class NesENV(Env):
         _LIB.NESEnv_close(self._env)
         # deallocate the object locally
         self._env = None
+        # if there is an image viewer open, delete it
+        if self.viewer is not None:
+            self.viewer.close()
 
     def render(self, mode='human'):
         """
@@ -126,7 +180,16 @@ class NesENV(Env):
 
         """
         if mode == 'human':
-            raise NotImplementedError('TODO: human mode')
+            if self.viewer is None:
+                from _image_viewer import ImageViewer
+                self.viewer = ImageViewer(
+                    # caption=self.spec.id,
+                    caption='TODO',
+                    height=SCREEN_HEIGHT,
+                    width=SCREEN_WIDTH,
+                )
+            self.viewer.show(self._screen)
+            return None
         elif mode == 'rgb_array':
             raise NotImplementedError('TODO: rgb_array mode')
         else:
@@ -141,7 +204,6 @@ __all__ = [NesENV.__name__]
 
 # handle running this environment as the main script
 if __name__ == '__main__':
-    import sys
     from tqdm import tqdm
     path = sys.argv[1]
 
@@ -155,7 +217,7 @@ if __name__ == '__main__':
                 _ = env.reset()
             action = 8 # env.action_space.sample()
             _, reward, done, _ = env.step(action)
-            # env.render()
+            env.render()
     except KeyboardInterrupt:
         pass
     # close the environment

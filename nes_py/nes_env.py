@@ -5,6 +5,7 @@ import ctypes
 import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
+from .spaces import Bitmap
 
 
 # the path to the directory this
@@ -20,6 +21,9 @@ _LIB = ctypes.cdll.LoadLibrary(_LIB_PATH)
 # setup the argument and return types for NESEnv_init
 _LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
 _LIB.NESEnv_init.restype = ctypes.c_void_p
+# setup the argument and return types for NESEnv_num_buttons
+_LIB.NESEnv_num_buttons.argtypes = None
+_LIB.NESEnv_num_buttons.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_width
 _LIB.NESEnv_width.argtypes = None
 _LIB.NESEnv_width.restype = ctypes.c_uint
@@ -40,13 +44,15 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-# the height in pixels of the NES screen
+# the number of buttons on the NES joypad
+NUM_BUTTONS = _LIB.NESEnv_num_buttons()
+# height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
-# the width in pixels of the NES screen
+# width in pixels of the NES screen
 SCREEN_WIDTH = _LIB.NESEnv_width()
-# the shape of the screen as 24-bit RGB (standard for NumPy)
+# shape of the screen as 24-bit RGB (standard for NumPy)
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
-# the shape of the screen as 32-bit RGB (C++ memory arrangement)
+# shape of the screen as 32-bit RGB (C++ memory arrangement)
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 
@@ -59,13 +65,16 @@ class NesENV(gym.Env):
         'video.frames_per_second': 60
     }
 
-    # the observation space for the environment is static across all instances
+    # observation space for the environment is static across all instances
     observation_space = gym.spaces.Box(
         low=0,
         high=255,
         shape=SCREEN_SHAPE_24_BIT,
         dtype=np.uint8
     )
+
+    # action space is a bitmap of button press values for the 8 NES buttons
+    action_space = Bitmap(NUM_BUTTONS)
 
     def __init__(self, rom_path):
         """

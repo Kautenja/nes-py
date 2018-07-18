@@ -117,7 +117,7 @@ if __name__ == '__main__':
         for _ in range(500):
             if done:
                 _ = env.reset()
-            action = 16 # env.action_space.sample()
+            action = 8 # env.action_space.sample()
             _, reward, done, _ = env.step(action)
             # env.render()
     except KeyboardInterrupt:

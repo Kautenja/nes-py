@@ -3,6 +3,8 @@ compiler:
   - gcc
   - clang
 script: scons
-os: linux
+os:
+  - linux
+  - osx
 notifications:
   email: false

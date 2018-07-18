@@ -17,8 +17,8 @@ Flags P;
 bool nmi, irq;
 
 // Remaining clocks to end frame
-// Original value is 29781. New value over-clocks the CPU
-const int TOTAL_CYCLES = 500000;
+// Original value is 29781. New value over-clocks the CPU (500000 is fast)
+const int TOTAL_CYCLES = 29781;
 int remainingCycles;
 
 /* Cycle emulation */

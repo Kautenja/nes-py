@@ -1,4 +1,5 @@
 """A CTypes interface to the C++ NES environment."""
+import os
 import sys
 import ctypes
 import gym
@@ -6,8 +7,16 @@ import numpy as np
 from numpy.ctypeslib import as_ctypes
 
 
+# the path to the directory this
+_MODULE_PATH = os.path.dirname(__file__)
+# the relative path to the C++ shared object library
+_SO_PATH = 'laines/build/lib_nes_env.so'
+# the absolute path to the C++ shared object library
+_LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
 # load the library from the shared object file
-_LIB = ctypes.cdll.LoadLibrary('build/lib_nes_env.so')
+_LIB = ctypes.cdll.LoadLibrary(_LIB_PATH)
+
+
 # setup the argument and return types for NESEnv_init
 _LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
 _LIB.NESEnv_init.restype = ctypes.c_void_p
@@ -45,7 +54,10 @@ class NesENV(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
     # relevant metadata about the environment
-    metadata = { 'render.modes': ['rgb_array', 'human'] }
+    metadata = {
+        'render.modes': ['rgb_array', 'human'],
+        'video.frames_per_second': 60
+    }
 
     # the observation space for the environment is static across all instances
     observation_space = gym.spaces.Box(
@@ -66,14 +78,18 @@ class NesENV(gym.Env):
             None
 
         """
+        # ensure that rom_path is a string
+        if not isinstance(rom_path, str):
+            raise TypeError('rom_path should be of type: str')
+        # ensure that rom_path points to an existing .nes file
+        if not '.nes' in rom_path or not os.path.isfile(rom_path):
+            raise ValueError('rom_path should point to a ".nes" file')
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
         # setup a boolean for whether to flip from BGR to RGB based on machine
         # byte order
         self._is_little_endian = sys.byteorder == 'little'
-        # setup the frame rate for the environment
-        self.metadata['video.frames_per_second'] = 60
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
 
@@ -181,17 +197,25 @@ class NesENV(gym.Env):
         """
         if mode == 'human':
             if self.viewer is None:
-                from _image_viewer import ImageViewer
+                from ._image_viewer import ImageViewer
+                # get the caption for the ImageViewer
+                if self.spec is None:
+                    # if there is no spec, just use the .nes filename
+                    caption = self._rom_path.split('/')[-1]
+                else:
+                    # set the caption to the OpenAI Gym id
+                    caption = self.spec.id
+                # create the ImageViewer to display frames
                 self.viewer = ImageViewer(
-                    # caption=self.spec.id,
-                    caption='TODO',
+                    caption=caption,
                     height=SCREEN_HEIGHT,
                     width=SCREEN_WIDTH,
                 )
+            # show the screen on the image viewer
             self.viewer.show(self._screen)
             return None
         elif mode == 'rgb_array':
-            raise NotImplementedError('TODO: rgb_array mode')
+            return self._screen
         else:
             render_modes = self.metadata['render.modes']
             msg = 'valid render modes are {}'.format(render_modes)
@@ -200,25 +224,3 @@ class NesENV(gym.Env):
 
 # explicitly define the outward facing API of this module
 __all__ = [NesENV.__name__]
-
-
-# handle running this environment as the main script
-if __name__ == '__main__':
-    from tqdm import tqdm
-    path = sys.argv[1]
-
-    # create the environment
-    env = NesENV(path)
-    # run through some random steps in the environment
-    try:
-        done = True
-        for _ in tqdm(range(500)):
-            if done:
-                _ = env.reset()
-            action = 8 # env.action_space.sample()
-            _, reward, done, _ = env.step(action)
-            env.render()
-    except KeyboardInterrupt:
-        pass
-    # close the environment
-    env.close()

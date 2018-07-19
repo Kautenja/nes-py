@@ -57,6 +57,11 @@ SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 
+# the magic bytes expected at the first four bytes of the iNES ROM header.
+# It spells "NES<END>"
+MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
+
+
 class NESEnv(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
@@ -94,6 +99,12 @@ class NESEnv(gym.Env):
         # ensure that rom_path points to an existing .nes file
         if not '.nes' in rom_path or not os.path.isfile(rom_path):
             raise ValueError('rom_path should point to a ".nes" file')
+        # make sure the magic characters are in the iNES file
+        with open(rom_path, 'rb') as nes_file:
+            raw_data = nes_file.read()
+            magic = raw_data[:4]
+        if magic != MAGIC:
+            raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
@@ -163,7 +174,7 @@ class NESEnv(gym.Env):
 
         """
         # pass the action to the emulator as an unsigned byte
-        _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
+        _LIB.NESEnv_step(self._env, action)
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator and other relevant data

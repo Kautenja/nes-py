@@ -1,5 +1,5 @@
 <p align="center">
-<img 
+<img
     src="https://user-images.githubusercontent.com/2184469/42918029-a8364c66-8ad1-11e8-8147-2653091ccd38.png"
     width="50%"
 />
@@ -22,37 +22,57 @@
 [python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
 [python-home]: https://python.org
 
-## Usage
+nes-py is an NES emulator and OpenAI Gym interface based on the
+[LaiNES](https://github.com/AndreaOrru/LaiNES) emulator.
 
-### Requirements
+# Installation
 
-nes-py should run on any Unix system that is compatible with the following
-tools.
-
--   SConstruct
--   C++11 compatible compiler (e.g. `clang++`)
-
-#### Debian-based systems:
+The preferred installation of `nes-py` is from `pip`:
 
 ```shell
-sudo apt-get install clang scons
+pip install nes-py
 ```
 
-#### MacOS:
+# Usage
+
+To access the NES emulator from the command line use the following command.
 
 ```shell
-brew install scons
+nes_py -r <path_to_rom>
 ```
 
-### Compilation
+To print out documentation for the command line interface execute:
 
 ```shell
-scons
+nes_py -h
 ```
 
-## Compatibility
+## Controls
 
-LaiNES implements the most common mappers, which should be enough for a good
+| Keyboard Key | NES Joypad |
+|:-------------|:-----------|
+| W            | Up         |
+| A            | Left       |
+| S            | Down       |
+| D            | Right      |
+| O            | A          |
+| P            | B          |
+| Enter        | Start      |
+| Space        | Select     |
+
+# Development
+
+To design a custom environment using `nes-py`, introduce new features, or fix
+a bug, please refer to the [Wiki](https://github.com/Kautenja/nes-py/wiki).
+There you will find instructions for:
+
+-   setting up the development environment
+-   designing environments based on the `NESEnv` class
+-   reference material for the `NESEnv` API
+
+# Compatibility
+
+nes-py implements the most common mappers, which should be enough for a good
 percentage of the games:
 
 -   NROM (Mapper 000)
@@ -62,4 +82,4 @@ percentage of the games:
 -   MMC3, MMC6 / TxROM (Mapper 004)
 
 You can check the compatibility for each ROM in the following
-[list](http://tuxnes.sourceforge.net/nesmapper.txt)
+[list](nesmapper.txt)

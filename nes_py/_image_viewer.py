@@ -7,14 +7,14 @@ from pyglet.image import ImageData
 class ImageViewer(object):
     """A simple class for viewing images using pyglet."""
 
-    def __init__(self, caption: str, height: int, width: int):
+    def __init__(self, caption, height, width):
         """
         Initialize a new image viewer.
 
         Args:
-            caption: the caption/title for the window
-            height: the height of the window
-            width: the width of the window
+            caption (str): the caption/title for the window
+            height (int): the height of the window
+            width (int): the width of the window
 
         Returns:
             None

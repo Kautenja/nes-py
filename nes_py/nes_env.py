@@ -223,7 +223,7 @@ class NesENV(gym.Env):
             msg = 'valid render modes are: {}'.format(', '.join(render_modes))
             raise NotImplementedError(msg)
 
-    def get_keys_to_action(self) -> dict:
+    def get_keys_to_action(self):
         """Return the dictionary of keyboard keys to actions."""
         # keyboard keys in an array ordered by their byte order in the bitmap
         # i.e. right = 7, left = 6, ..., B = 1, A = 0

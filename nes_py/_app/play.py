@@ -4,12 +4,12 @@ import gym
 from .play_human import play
 
 
-def play_human(env: gym.Env) -> None:
+def play_human(env):
     """
     Play the environment using keyboard as a human.
 
     Args:
-        env: the initialized gym environment to play
+        env (gym.Env): the initialized gym environment to play
 
     Returns:
         None
@@ -21,19 +21,19 @@ def play_human(env: gym.Env) -> None:
     except KeyboardInterrupt:
         pass
     # reset and close the environment
-    env.reset()
     env.close()
 
 
-def play_random(env: gym.Env) -> None:
+def play_random(env):
     """
     Play the environment making uniformly random decisions.
 
     Args:
-        env: the initialized gym environment to play
+        env (gym.Env): the initialized gym environment to play
 
     Returns:
         None
+
     """
     try:
         done = True

@@ -4,9 +4,9 @@ compiler: clang
 os: linux
 install:
   - sudo apt-get install libegl1-mesa-dev libgles2-mesa-dev
-  - sudo apt-get install libsdl1.2-dev
-  - sudo apt-get install python-pygame
-  - sudo apt-get install python3-pygame
+  - sudo apt-get install libsdl1.2-dev libsdl-image1.2-dev libsdl-mixer1.2-dev
+  - sudo apt-get install libsdl-ttf2.0-dev libsmpeg-dev libportmidi-dev
+  - sudo apt-get install libavformat-dev libswscale-dev libjpeg-dev libfreetype6-dev
   - sudo apt-get install python3 python3-pip
   - sudo pip install -r requirements.txt
   - sudo pip3 install -r requirements.txt

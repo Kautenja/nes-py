@@ -1,10 +1,13 @@
 language: cpp
 compiler: clang
-script: scons
 os:
   - linux
   - osx
 install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install scons; fi
+script:
+  - scons
+  - python setup.py test
+  - python3 setup.py test
 notifications:
   email: false

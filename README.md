@@ -82,4 +82,4 @@ percentage of the games:
 -   MMC3, MMC6 / TxROM (Mapper 004)
 
 You can check the compatibility for each ROM in the following
-[list](nesmapper.txt)
+[list](https://github.com/Kautenja/nes-py/blob/master/nesmapper.txt)

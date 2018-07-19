@@ -140,6 +140,33 @@ class NESEnv(gym.Env):
         # remove the 0th axis (padding from storing colors in 32 bit)
         self.screen = self.screen[:, :, 1:]
 
+    def _read_mem(self, address):
+        """
+        Read a byte from the given memory address.
+
+        Args:
+            address: the 16-bit address to read from
+
+        Returns:
+            the 8-bit value at the given memory address
+
+        """
+        return _LIB.NESEnv_read_mem(address)
+
+    def _write_mem(self, address, value):
+        """
+        Write a byte to the given memory address.
+
+        Args:
+            address: the 16-bit address to write to
+            value: the 8-bit value to write to memory
+
+        Returns:
+            None
+
+        """
+        _LIB.NESEnv_write_mem(address, value)
+
     @property
     def _reward(self):
         """
@@ -182,10 +209,6 @@ class NESEnv(gym.Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
-        # print(_LIB.NESEnv_read_mem(0x000e))
-        # _LIB.NESEnv_write_mem(0x000e, 0)
-        # print(_LIB.NESEnv_read_mem(0x000e))
-
         # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, action)
         # copy the screen from the emulator

@@ -1,11 +1,18 @@
-"""NES emulator for OpenAI Gym."""
+"""Command line interface to nes-py NES emulator."""
 import argparse
 from .play import play_human, play_random
 from ..nes_env import NESEnv
 
 
-def create_argparser():
-    """Create and return an argument parser for this command line interface."""
+# The play modes for the system
+_PLAY_MODES = {
+    'human': play_human,
+    'random': play_random
+}
+
+
+def _get_args():
+    """Parse arguments from the command line and return them."""
     parser = argparse.ArgumentParser(description=__doc__)
     # add the argument for the Super Mario Bros environment to run
     parser.add_argument('--rom', '-r',
@@ -21,21 +28,17 @@ def create_argparser():
         help='The execution mode for the emulation.',
     )
 
-    return parser
+    return parser.parse_args()
 
 
 def main():
     """The main entry point for the command line interface."""
-    # parse arguments from the command line (argparse validates arguments)
-    args = create_argparser().parse_args()
-    # select the method for playing the game
-    if args.mode == 'human':
-        play = play_human
-    elif args.mode == 'random':
-        play = play_random
-    # play the game
+    # get arguments from the command line
+    args = _get_args()
+    # create the environment
     env = NESEnv(args.rom)
-    play(env)
+    # play the environment with the given mode
+    _PLAY_MODES[args.mode](env)
 
 
 # explicitly define the outward facing API of this module

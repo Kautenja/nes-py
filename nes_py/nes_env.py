@@ -145,10 +145,10 @@ class NESEnv(gym.Env):
         Read a byte from the given memory address.
 
         Args:
-            address: the 16-bit address to read from
+            address (int): the 16-bit address to read from
 
         Returns:
-            the 8-bit value at the given memory address
+            (int) the 8-bit value at the given memory address
 
         """
         return _LIB.NESEnv_read_mem(address)
@@ -158,8 +158,8 @@ class NESEnv(gym.Env):
         Write a byte to the given memory address.
 
         Args:
-            address: the 16-bit address to write to
-            value: the 8-bit value to write to memory
+            address (int): the 16-bit address to write to
+            value (int): the 8-bit value to write to memory
 
         Returns:
             None

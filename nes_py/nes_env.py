@@ -3,6 +3,7 @@ import os
 import sys
 import ctypes
 import itertools
+from glob import glob
 import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
@@ -11,12 +12,14 @@ from .spaces import Bitmap
 
 # the path to the directory this
 _MODULE_PATH = os.path.dirname(__file__)
-# the relative path to the C++ shared object library
-_SO_PATH = 'laines/build/lib_nes_env.so'
+# the relative path to the C++ shared object library. it can be built on
+# many different systems so all we know is the defined prefix
+_SO_PATH = 'laines/build/lib_nes_env*'
 # the absolute path to the C++ shared object library
 _LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
-# load the library from the shared object file
-_LIB = ctypes.cdll.LoadLibrary(_LIB_PATH)
+# load the library from the shared object file. use a glob to locate the
+# .so file based on the build systems nomenclature
+_LIB = ctypes.cdll.LoadLibrary(glob(_LIB_PATH)[0])
 
 
 # setup the argument and return types for NESEnv_init

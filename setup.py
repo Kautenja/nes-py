@@ -1,5 +1,6 @@
 """The setup script for installing and distributing the nes-py package."""
-from setuptools import setup, find_packages
+from glob import glob
+from setuptools import setup, find_packages, Extension
 
 
 def README():
@@ -8,12 +9,30 @@ def README():
         return README_file.read()
 
 
+# The prefix name for the .so library to build. It will follow the format
+# lib_nes_env.*.so where the * changes depending on the build system
+lib_name = 'nes_py/laines/build/lib_nes_env'
+# The source files for building the extension. Globs locate all the cpp files
+# used by the LaiNES subproject. MANIFEST.in has to include the blanket
+# "laines" directory to ensure that the .inc file gets included too
+cpp = glob('nes_py/laines/*.cpp') + glob('nes_py/laines/mappers/*.cpp')
+# The directory pointing to header files used by the LaiNES cpp files.
+# This directory has to be included using MANIFEST.in too to include the
+# headers with sdist
+hpp = ['nes_py/laines/include']
+# Additional build arguments to pass to the compiler
+compile_args = ['-O3', '-march=native', '-std=c++14']
+# The official extension using the name, source, headers, and build args
+lib_nes_env = Extension(lib_name,
+    sources=cpp,
+    include_dirs=hpp,
+    extra_compile_args=compile_args,
+)
+
+
 setup(
     name='nes_py',
-    setup_requires=[
-        'very-good-setuptools-git-version'
-    ],
-    version_format='{tag}',
+    version_format='0.2.5',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README(),
     long_description_content_type='text/markdown',
@@ -36,6 +55,7 @@ setup(
     author_email='kautencreations@gmail.com',
     license='BSD-2-Clause',
     packages=find_packages(),
+    ext_modules=[lib_nes_env],
     zip_safe=False,
     install_requires=[
         'gym>=0.10.5',

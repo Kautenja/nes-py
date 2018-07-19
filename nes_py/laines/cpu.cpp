@@ -9,17 +9,44 @@
 /// The CPU (MOS6502) for the NES
 namespace CPU {
 
-/* CPU state */
+/// The RAM module for the CPU
 u8 ram[0x800];
+
+/**
+    Return the value of the given memory address.
+    This is meant as a public getter to the memory of the machine for RAM hacks.
+
+    @param address the 16-bit address to read from memory
+    @returns the byte located at the given address
+
+*/
+u8 read_mem(u16 address) { return ram[address % 0x800]; }
+
+/**
+    Return the value of the given memory address.
+    This is meant as a public getter to the memory of the machine for RAM hacks.
+
+    @param address the 16-bit address to read from memory
+    @param value the 8-bit value to write to the given memory address
+
+*/
+void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
+
+/// accumulator, index x, index y, and the stack pointer
 u8 A, X, Y, S;
+/// the program counter for the machine instructions
 u16 PC;
+/// the flags register
 Flags P;
-// non-mask-able interrupt and interrupt request flag
+/// non-mask-able interrupt and interrupt request flag
 bool nmi, irq;
 
-// Remaining clocks to end frame
-// Original value is 29781. New value over-clocks the CPU (500000 is fast)
+/**
+    The total number of CPU cycle per emulated frame.
+    Original value is 29781. New value over-clocks the CPU (500000 is fast)
+*/
 const int TOTAL_CYCLES = 29781;
+/// Remaining clocks to end frame
 int remainingCycles;
 
 /* Cycle emulation */

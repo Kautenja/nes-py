@@ -34,6 +34,12 @@ _LIB.NESEnv_width.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_height
 _LIB.NESEnv_height.argtypes = None
 _LIB.NESEnv_height.restype = ctypes.c_uint
+# setup the argument and return types for NESEnv_read_mem
+_LIB.NESEnv_read_mem.argtypes = [ctypes.c_ushort]
+_LIB.NESEnv_read_mem.restype = ctypes.c_ubyte
+# setup the argument and return types for NESEnv_write_mem
+_LIB.NESEnv_write_mem.argtypes = [ctypes.c_ushort, ctypes.c_ubyte]
+_LIB.NESEnv_write_mem.restype = None
 # setup the argument and return types for NESEnv_screen
 _LIB.NESEnv_screen.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_screen.restype = None
@@ -133,6 +139,33 @@ class NESEnv(gym.Env):
             self.screen = self.screen[:, :, ::-1]
         # remove the 0th axis (padding from storing colors in 32 bit)
         self.screen = self.screen[:, :, 1:]
+
+    def _read_mem(self, address):
+        """
+        Read a byte from the given memory address.
+
+        Args:
+            address (int): the 16-bit address to read from
+
+        Returns:
+            (int) the 8-bit value at the given memory address
+
+        """
+        return _LIB.NESEnv_read_mem(address)
+
+    def _write_mem(self, address, value):
+        """
+        Write a byte to the given memory address.
+
+        Args:
+            address (int): the 16-bit address to write to
+            value (int): the 8-bit value to write to memory
+
+        Returns:
+            None
+
+        """
+        _LIB.NESEnv_write_mem(address, value)
 
     @property
     def _reward(self):

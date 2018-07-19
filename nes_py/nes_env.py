@@ -34,6 +34,12 @@ _LIB.NESEnv_width.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_height
 _LIB.NESEnv_height.argtypes = None
 _LIB.NESEnv_height.restype = ctypes.c_uint
+# setup the argument and return types for NESEnv_read_mem
+_LIB.NESEnv_read_mem.argtypes = [ctypes.c_ushort]
+_LIB.NESEnv_read_mem.restype = ctypes.c_ubyte
+# setup the argument and return types for NESEnv_write_mem
+_LIB.NESEnv_write_mem.argtypes = [ctypes.c_ushort, ctypes.c_ubyte]
+_LIB.NESEnv_write_mem.restype = None
 # setup the argument and return types for NESEnv_screen
 _LIB.NESEnv_screen.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_screen.restype = None
@@ -176,6 +182,10 @@ class NESEnv(gym.Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
+        # print(_LIB.NESEnv_read_mem(0x000e))
+        # _LIB.NESEnv_write_mem(0x000e, 0)
+        # print(_LIB.NESEnv_read_mem(0x000e))
+
         # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, action)
         # copy the screen from the emulator

@@ -1,11 +1,26 @@
 """The setup script for installing and distributing the nes-py package."""
-from setuptools import setup, find_packages
+from glob import glob
+from setuptools import setup, find_packages, Extension
 
 
 def README():
     """Return the contents of the README file for this project."""
     with open('README.md') as README_file:
         return README_file.read()
+
+
+lib_name = 'nes_py/laines/build/lib_nes_env'
+src = glob('nes_py/laines/*.cpp') + glob('nes_py/laines/mappers/*.cpp')
+include = ['nes_py/laines/include', 'nes_py/laines/include/mappers']
+compile_args = ['-O3', '-march=native', '-std=c++14']
+# language = 'c++14'
+
+lib_nes_env = Extension(lib_name,
+    include_dirs=include,
+    sources=src,
+    extra_compile_args=compile_args,
+    # language=language,
+)
 
 
 setup(
@@ -36,14 +51,15 @@ setup(
     author_email='kautencreations@gmail.com',
     license='BSD-2-Clause',
     packages=find_packages(),
-    package_data={
-        'nes_py': [
-            'laines/*',
-            'laines/mappers/*',
-            'laines/include/*',
-            'laines/include/mappers/*',
-        ]
-    },
+    # package_data={
+    #     'nes_py': [
+    #         'laines/*',
+    #         'laines/mappers/*',
+    #         'laines/include/*',
+    #         'laines/include/mappers/*',
+    #     ]
+    # },
+    ext_modules=[lib_nes_env],
     zip_safe=False,
     install_requires=[
         'gym>=0.10.5',

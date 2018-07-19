@@ -1,10 +1,9 @@
-<center>
+<p align="center">
 <img 
     src="https://user-images.githubusercontent.com/2184469/42917952-58525e1a-8ad1-11e8-81ad-51333da439fa.png"
-    align="center"
     width="50%"
 />
-</center>
+</p>
 
 [![build-status][]][ci-server]
 [![PackageVersion][pypi-version]][pypi-home]

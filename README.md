@@ -1,4 +1,9 @@
-# nes-py
+<p align="center">
+<img 
+    src="https://user-images.githubusercontent.com/2184469/42918029-a8364c66-8ad1-11e8-8147-2653091ccd38.png"
+    width="50%"
+/>
+</p>
 
 [![build-status][]][ci-server]
 [![PackageVersion][pypi-version]][pypi-home]

@@ -10,16 +10,14 @@ def README():
 
 
 lib_name = 'nes_py/laines/build/lib_nes_env'
-src = glob('nes_py/laines/*.cpp') + glob('nes_py/laines/mappers/*.cpp')
-include = ['nes_py/laines/include', 'nes_py/laines/include/mappers']
+cpp = glob('nes_py/laines/*.cpp') + glob('nes_py/laines/mappers/*.cpp')
+hpp = ['nes_py/laines/include']
 compile_args = ['-O3', '-march=native', '-std=c++14']
-# language = 'c++14'
 
 lib_nes_env = Extension(lib_name,
-    include_dirs=include,
-    sources=src,
+    sources=cpp,
+    include_dirs=hpp,
     extra_compile_args=compile_args,
-    # language=language,
 )
 
 

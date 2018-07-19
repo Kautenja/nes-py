@@ -42,6 +42,8 @@ namespace CPU {
 
     };
 
+    u8 read_mem(u16 address);
+    void write_mem(u16 address, u8 value);
     void set_nmi(bool v = true);
     void set_irq(bool v = true);
     void power();

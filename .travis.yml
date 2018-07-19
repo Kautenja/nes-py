@@ -6,10 +6,8 @@ os:
   - osx
 install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install scons; fi
-  - sudo pip install setuptools
-  - python setup.py develop
-  - sudo pip3 install setuptools
-  - python3 setup.py develop
+  - pip install -r requirements.txt
+  - pip3 install -r requirements.txt
 script:
   - scons
 notifications:

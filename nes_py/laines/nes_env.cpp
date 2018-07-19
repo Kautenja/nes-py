@@ -63,10 +63,12 @@ extern "C" {
     unsigned NESEnv_height() { return GUI::get_height(); }
 
     /// The getter for RAM access
-    u8 NESEnv_read_mem(u16 address) { return 0; }
+    u8 NESEnv_read_mem(u16 address) { return CPU::read_mem(address); }
 
     /// The setter for RAM access
-    void NESEnv_write_mem(u16 address, u8 value) { }
+    void NESEnv_write_mem(u16 address, u8 value) {
+        CPU::write_mem(address, value);
+    }
 
     /// Copy the screen of the emulator to an output buffer (NumPy array)
     void NESEnv_screen(unsigned char *output_buffer) {

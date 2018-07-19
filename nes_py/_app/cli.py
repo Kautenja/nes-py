@@ -10,14 +10,15 @@ def create_argparser():
     # add the argument for the Super Mario Bros environment to run
     parser.add_argument('--rom', '-r',
         type=str,
-        help='The path to the ROM to play.'
+        help='The path to the ROM to play.',
+        required=True,
     )
     # add the argument for the mode of execution as either human or random
     parser.add_argument('--mode', '-m',
         type=str,
         default='human',
         choices=['human', 'random'],
-        help='The execution mode for the emulation.'
+        help='The execution mode for the emulation.',
     )
 
     return parser

@@ -36,6 +36,14 @@ setup(
     author_email='kautencreations@gmail.com',
     license='BSD-2-Clause',
     packages=find_packages(),
+    package_data={
+        'nes_py': [
+            'laines/*',
+            'laines/mappers/*',
+            'laines/include/*',
+            'laines/include/mappers/*',
+        ]
+    },
     zip_safe=False,
     install_requires=[
         'gym>=0.10.5',

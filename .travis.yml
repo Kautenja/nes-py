@@ -1,3 +1,4 @@
+sudo: required
 language: cpp
 compiler: clang
 os:
@@ -5,9 +6,11 @@ os:
   - osx
 install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install scons; fi
+  - sudo pip install setuptools
+  - python setup.py develop
+  - sudo pip3 install setuptools
+  - python3 setup.py develop
 script:
   - scons
-  - python setup.py test
-  - python3 setup.py test
 notifications:
   email: false

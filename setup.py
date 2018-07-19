@@ -32,7 +32,7 @@ lib_nes_env = Extension(lib_name,
 
 setup(
     name='nes_py',
-    version_format='0.2.5',
+    version='0.2.5',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README(),
     long_description_content_type='text/markdown',

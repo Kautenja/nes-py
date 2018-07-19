@@ -57,7 +57,7 @@ SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 
-class NesENV(gym.Env):
+class NESEnv(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
     # relevant metadata about the environment
@@ -254,4 +254,4 @@ class NesENV(gym.Env):
 
 
 # explicitly define the outward facing API of this module
-__all__ = [NesENV.__name__]
+__all__ = [NESEnv.__name__]

@@ -1,7 +1,7 @@
 """NES emulator for OpenAI Gym."""
 import argparse
 from .play import play_human, play_random
-from ..nes_env import NesENV
+from ..nes_env import NESEnv
 
 
 def create_argparser():
@@ -33,7 +33,7 @@ def main():
     elif args.mode == 'random':
         play = play_random
     # play the game
-    env = NesENV(args.rom)
+    env = NESEnv(args.rom)
     play(env)
 
 

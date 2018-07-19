@@ -1,10 +1,10 @@
 """NES emulator for OpenAI Gym."""
 import argparse
 from .play import play_human, play_random
-from ..nes_env import NesENV
+from ..nes_env import NESEnv
 
 
-def create_argparser() -> argparse.ArgumentParser:
+def create_argparser():
     """Create and return an argument parser for this command line interface."""
     parser = argparse.ArgumentParser(description=__doc__)
     # add the argument for the Super Mario Bros environment to run
@@ -23,7 +23,7 @@ def create_argparser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main():
     """The main entry point for the command line interface."""
     # parse arguments from the command line (argparse validates arguments)
     args = create_argparser().parse_args()
@@ -33,7 +33,7 @@ def main() -> None:
     elif args.mode == 'random':
         play = play_random
     # play the game
-    env = NesENV(args.rom)
+    env = NESEnv(args.rom)
     play(env)
 
 

@@ -1,10 +1,8 @@
+sudo: required
 language: cpp
 compiler: clang
-script: scons
-os:
-  - linux
-  - osx
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install scons; fi
+os: linux
+script:
+  - scons
 notifications:
   email: false

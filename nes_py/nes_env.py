@@ -57,7 +57,12 @@ SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 
-class NesENV(gym.Env):
+# the magic bytes expected at the first four bytes of the iNES ROM header.
+# It spells "NES<END>"
+MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
+
+
+class NESEnv(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
     # relevant metadata about the environment
@@ -94,6 +99,12 @@ class NesENV(gym.Env):
         # ensure that rom_path points to an existing .nes file
         if not '.nes' in rom_path or not os.path.isfile(rom_path):
             raise ValueError('rom_path should point to a ".nes" file')
+        # make sure the magic characters are in the iNES file
+        with open(rom_path, 'rb') as nes_file:
+            raw_data = nes_file.read()
+            magic = raw_data[:4]
+        if magic != MAGIC:
+            raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
@@ -163,7 +174,7 @@ class NesENV(gym.Env):
 
         """
         # pass the action to the emulator as an unsigned byte
-        _LIB.NESEnv_step(self._env, ctypes.c_ubyte(action))
+        _LIB.NESEnv_step(self._env, action)
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator and other relevant data
@@ -223,7 +234,7 @@ class NesENV(gym.Env):
             msg = 'valid render modes are: {}'.format(', '.join(render_modes))
             raise NotImplementedError(msg)
 
-    def get_keys_to_action(self) -> dict:
+    def get_keys_to_action(self):
         """Return the dictionary of keyboard keys to actions."""
         # keyboard keys in an array ordered by their byte order in the bitmap
         # i.e. right = 7, left = 6, ..., B = 1, A = 0
@@ -254,4 +265,4 @@ class NesENV(gym.Env):
 
 
 # explicitly define the outward facing API of this module
-__all__ = [NesENV.__name__]
+__all__ = [NESEnv.__name__]

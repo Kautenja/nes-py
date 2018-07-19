@@ -8,7 +8,7 @@ class Bitmap(MultiBinary):
 
     def sample(self):
         """Return a sample from the space as an int."""
-        return np.packbits(super(Bitmap, self).sample())[0]
+        return int(np.packbits(super(Bitmap, self).sample())[0])
 
 
 # explicitly define the outward facing API for this module

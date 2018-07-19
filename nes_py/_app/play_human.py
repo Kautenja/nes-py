@@ -1,25 +1,19 @@
 """A method to play gym environments using human IO inputs."""
 import os
-from typing import Callable
 import gym
 import pygame
 import numpy as np
 
 
-def display_arr(
-    screen: pygame.Surface,
-    arr: np.ndarray,
-    video_size: tuple,
-    transpose: bool
-) -> None:
+def display_arr(screen, arr, video_size, transpose):
     """
     Display an image to the pygame screen.
 
     Args:
-        screen: the pygame surface to write frames to
-        arr: the numpy array representing a single frame of gameplay
-        video_size: the size to render the frame as
-        transpose: whether to transpose the frame before displaying
+        screen (pygame.Surface): the pygame surface to write frames to
+        arr (np.ndarray): numpy array representing a single frame of gameplay
+        video_size (tuple): the size to render the frame as
+        transpose (bool): whether to transpose the frame before displaying
 
     Returns:
         None
@@ -36,19 +30,14 @@ def display_arr(
     screen.blit(pyg_img, (0, 0))
 
 
-def play(env: gym.Env,
-    transpose: bool=True,
-    fps: int=30,
-    callback: Callable=None,
-    nop_: any=0,
-) -> None:
+def play(env, transpose=True, fps=30, callback=None, nop_=0):
     """Play the game using the keyboard as a human.
 
     Args:
-        env: the environment to use for playing
-        transpose: whether to transpose frame before viewing them
-        fps: Max number of steps of the environment to execute every second
-        callback: a callback to execute after every step.
+        env (gym.Env): the environment to use for playing
+        transpose (bool): whether to transpose frame before viewing them
+        fps (int): number of steps of the environment to execute every second
+        callback (Callable): a callback to execute after every step.
             It takes the following inputs:
             - state: observation before performing action
             - next_state: observation after performing action
@@ -56,7 +45,7 @@ def play(env: gym.Env,
             - reward: reward from the action taken
             - done: a flag to determine if the episode is over
             - info: extra information from the environment
-        nop_: the object to use as a null op action for the environment
+        nop_ (any): the object to use as a null op action for the environment
 
     Returns:
         None
@@ -115,6 +104,7 @@ def play(env: gym.Env,
             if event.type == pygame.KEYDOWN:
                 if event.key in relevant_keys:
                     pressed_keys.append(event.key)
+                # ASCII code 27 is the "escape" key
                 elif event.key == 27:
                     running = False
             elif event.type == pygame.KEYUP:

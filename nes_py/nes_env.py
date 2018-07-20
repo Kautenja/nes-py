@@ -91,7 +91,7 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Bitmap(NUM_BUTTONS)
 
-    def __init__(self, rom_path, frameskip=4):
+    def __init__(self, rom_path, frameskip=1):
         """
         Create a new NES environment.
 

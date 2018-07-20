@@ -81,6 +81,9 @@ class NESEnv(gym.Env):
         'video.frames_per_second': 60
     }
 
+    # the legal range for rewards for this environment
+    reward_range = (-float('inf'), float('inf'))
+
     # observation space for the environment is static across all instances
     observation_space = gym.spaces.Box(
         low=0,

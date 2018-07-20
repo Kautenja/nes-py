@@ -167,6 +167,19 @@ class NESEnv(gym.Env):
         """
         _LIB.NESEnv_write_mem(address, value)
 
+    def _frame_advance(self, action):
+        """
+        Advance a frame in the emulator with an action.
+
+        Args:
+            action: the action to press on the joypad
+
+        Returns:
+            None
+
+        """
+        _LIB.NESEnv_step(self._env, action)
+
     @property
     def _reward(self):
         """
@@ -179,6 +192,10 @@ class NESEnv(gym.Env):
         """
         return False
 
+    def _will_reset(self):
+        """Handle any RAM hacking after a reset occurs."""
+        pass
+
     def reset(self):
         """
         Reset the state of the environment and returns an initial observation.
@@ -187,12 +204,20 @@ class NESEnv(gym.Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
+        # call the before reset callback
+        self._will_reset()
         # reset the emulator
         _LIB.NESEnv_reset(self._env)
+        # call the after reset callback
+        self._did_reset_()
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator
         return self.screen
+
+    def _did_reset_(self):
+        """Handle any RAM hacking after a reset occurs."""
+        pass
 
     def step(self, action):
         """

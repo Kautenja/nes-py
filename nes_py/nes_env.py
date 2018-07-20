@@ -182,14 +182,12 @@ class NESEnv(gym.Env):
 
     @property
     def _reward(self):
-        """
-        """
+        """Return the reward after a step occurs."""
         return 0
 
     @property
     def _done(self):
-        """
-        """
+        """Return True if the episode is over, False otherwise."""
         return False
 
     def _will_reset(self):
@@ -236,10 +234,16 @@ class NESEnv(gym.Env):
         """
         # pass the action to the emulator as an unsigned byte
         _LIB.NESEnv_step(self._env, action)
+        # call the after step callback
+        self._did_step()
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator and other relevant data
         return self.screen, self._reward, self._done, {}
+
+    def _did_step(self):
+        """Handle any RAM hacking after a step occurs."""
+        pass
 
     def close(self):
         """Close the environment."""

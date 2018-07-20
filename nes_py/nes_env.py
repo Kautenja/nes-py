@@ -81,6 +81,9 @@ class NESEnv(gym.Env):
         'video.frames_per_second': 60
     }
 
+    # the legal range for rewards for this environment
+    reward_range = (-float('inf'), float('inf'))
+
     # observation space for the environment is static across all instances
     observation_space = gym.spaces.Box(
         low=0,
@@ -268,6 +271,11 @@ class NESEnv(gym.Env):
         # set the done flag to true if the steps are past the max
         if self._steps >= self._max_episode_steps:
             done = True
+        # bound the reward in [min, max]
+        if reward < self.reward_range[0]:
+            reward = self.reward_range[0]
+        elif reward > self.reward_range[1]:
+            reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
         return self.screen, reward, done, info
 

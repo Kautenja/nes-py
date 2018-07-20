@@ -54,7 +54,7 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-# the number of buttons on the NES joypad
+# the number of buttons on the NES joy-pad
 NUM_BUTTONS = _LIB.NESEnv_num_buttons()
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
@@ -74,7 +74,7 @@ MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
 class NESEnv(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
-    # relevant metadata about the environment
+    # relevant meta-data about the environment
     metadata = {
         'render.modes': ['rgb_array', 'human'],
         'video.frames_per_second': 60
@@ -109,12 +109,6 @@ class NESEnv(gym.Env):
         # ensure that rom_path points to an existing .nes file
         if not '.nes' in rom_path or not os.path.isfile(rom_path):
             raise ValueError('rom_path should point to a ".nes" file')
-        # check the frame skip variable
-        if not isinstance(frameskip, int):
-            raise TypeError('frameskip must be of type: int')
-        if not frameskip > 0:
-            raise ValueError('frameskip must be > 0')
-        self._frameskip = frameskip
         # make sure the magic characters are in the iNES file
         with open(rom_path, 'rb') as nes_file:
             raw_data = nes_file.read()
@@ -122,6 +116,14 @@ class NESEnv(gym.Env):
         if magic != MAGIC:
             raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
         self._rom_path = rom_path
+
+        # check the frame skip variable
+        if not isinstance(frameskip, int):
+            raise TypeError('frameskip must be of type: int')
+        if not frameskip > 0:
+            raise ValueError('frameskip must be > 0')
+        self._frameskip = frameskip
+
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
         # setup a boolean for whether to flip from BGR to RGB based on machine
@@ -140,7 +142,7 @@ class NESEnv(gym.Env):
         _LIB.NESEnv_screen(as_ctypes(self._screen_data))
         # copy the screen data to the screen
         self.screen = self._screen_data
-        # flip the bytes if the machine is little endian (which it likely is)
+        # flip the bytes if the machine is little-endian (which it likely is)
         if self._is_little_endian:
             # invert the little-endian BGR channels to RGB
             self.screen = self.screen[:, :, ::-1]
@@ -179,7 +181,7 @@ class NESEnv(gym.Env):
         Advance a frame in the emulator with an action.
 
         Args:
-            action: the action to press on the joypad
+            action: the action to press on the joy-pad
 
         Returns:
             None

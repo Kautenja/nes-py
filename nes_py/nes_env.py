@@ -54,7 +54,7 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-# the number of buttons on the NES joypad
+# the number of buttons on the NES joy-pad
 NUM_BUTTONS = _LIB.NESEnv_num_buttons()
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
@@ -74,7 +74,7 @@ MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
 class NESEnv(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 
-    # relevant metadata about the environment
+    # relevant meta-data about the environment
     metadata = {
         'render.modes': ['rgb_array', 'human'],
         'video.frames_per_second': 60
@@ -91,12 +91,13 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Bitmap(NUM_BUTTONS)
 
-    def __init__(self, rom_path):
+    def __init__(self, rom_path, frameskip=4):
         """
         Create a new NES environment.
 
         Args:
             path (str): the path to the ROM for the environment
+            frameskip (int): the number of frames to skip between steps
 
         Returns:
             None
@@ -115,6 +116,16 @@ class NESEnv(gym.Env):
         if magic != MAGIC:
             raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
         self._rom_path = rom_path
+
+        # check the frame skip variable
+        if not isinstance(frameskip, int):
+            raise TypeError('frameskip must be of type: int')
+        if not frameskip > 0:
+            raise ValueError('frameskip must be > 0')
+        self._frameskip = frameskip
+        # adjust the FPS of the environment by the given frameskip value
+        self.metadata['video.frames_per_second'] /= frameskip
+
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
         # setup a boolean for whether to flip from BGR to RGB based on machine
@@ -133,7 +144,7 @@ class NESEnv(gym.Env):
         _LIB.NESEnv_screen(as_ctypes(self._screen_data))
         # copy the screen data to the screen
         self.screen = self._screen_data
-        # flip the bytes if the machine is little endian (which it likely is)
+        # flip the bytes if the machine is little-endian (which it likely is)
         if self._is_little_endian:
             # invert the little-endian BGR channels to RGB
             self.screen = self.screen[:, :, ::-1]
@@ -172,7 +183,7 @@ class NESEnv(gym.Env):
         Advance a frame in the emulator with an action.
 
         Args:
-            action: the action to press on the joypad
+            action: the action to press on the joy-pad
 
         Returns:
             None
@@ -222,33 +233,42 @@ class NESEnv(gym.Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
-        # pass the action to the emulator as an unsigned byte
-        _LIB.NESEnv_step(self._env, action)
+        # setup the reward, done, and info for this step
+        reward = 0
+        done = False
+        info = {}
+        # iterate over the frames to skip
+        for _ in range(self._frameskip):
+            # pass the action to the emulator as an unsigned byte
+            _LIB.NESEnv_step(self._env, action)
+            # get the reward for this step
+            reward += self._get_reward()
+            # get the done flag for this step
+            done = done or self._get_done()
+            # get the info for this step
+            info = self._get_info()
         # call the after step callback
         self._did_step()
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator and other relevant data
-        return self.screen, self._reward, self._done, self._info
+        return self.screen, reward, done, info
+
+    def _get_reward(self):
+        """Return the reward after a step occurs."""
+        return 0
+
+    def _get_done(self):
+        """Return True if the episode is over, False otherwise."""
+        return False
+
+    def _get_info(self):
+        """Return the info after a step occurs."""
+        return {}
 
     def _did_step(self):
         """Handle any RAM hacking after a step occurs."""
         pass
-
-    @property
-    def _reward(self):
-        """Return the reward after a step occurs."""
-        return 0
-
-    @property
-    def _done(self):
-        """Return True if the episode is over, False otherwise."""
-        return False
-
-    @property
-    def _info(self):
-        """Return the info after a step occurs."""
-        return {}
 
     def close(self):
         """Close the environment."""

@@ -180,16 +180,6 @@ class NESEnv(gym.Env):
         """
         _LIB.NESEnv_step(self._env, action)
 
-    @property
-    def _reward(self):
-        """Return the reward after a step occurs."""
-        return 0
-
-    @property
-    def _done(self):
-        """Return True if the episode is over, False otherwise."""
-        return False
-
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""
         pass
@@ -239,11 +229,26 @@ class NESEnv(gym.Env):
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator and other relevant data
-        return self.screen, self._reward, self._done, {}
+        return self.screen, self._reward, self._done, self._info
 
     def _did_step(self):
         """Handle any RAM hacking after a step occurs."""
         pass
+
+    @property
+    def _reward(self):
+        """Return the reward after a step occurs."""
+        return 0
+
+    @property
+    def _done(self):
+        """Return True if the episode is over, False otherwise."""
+        return False
+
+    @property
+    def _info(self):
+        """Return the info after a step occurs."""
+        return {}
 
     def close(self):
         """Close the environment."""

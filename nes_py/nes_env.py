@@ -91,7 +91,7 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Bitmap(NUM_BUTTONS)
 
-    def __init__(self, rom_path, frameskip=1):
+    def __init__(self, rom_path, frameskip=4):
         """
         Create a new NES environment.
 
@@ -123,6 +123,8 @@ class NESEnv(gym.Env):
         if not frameskip > 0:
             raise ValueError('frameskip must be > 0')
         self._frameskip = frameskip
+        # adjust the FPS of the environment by the given frameskip value
+        self.metadata['video.frames_per_second'] /= frameskip
 
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)

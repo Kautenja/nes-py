@@ -1,6 +1,7 @@
 #include "nes_env.hpp"
 #include "cartridge.hpp"
 #include "cpu.hpp"
+#include "ppu.hpp"
 #include "joypad.hpp"
 #include "gui.hpp"
 
@@ -13,15 +14,16 @@
 */
 NESEnv::NESEnv(wchar_t* path) {
     // convert the wchar_t type to a string
-    std::wstring ws(path);
-    std::string str(ws.begin(), ws.end());
-    this->path = str;
+    std::wstring ws_rom_path(path);
+    std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
+    // load the cartridge based on the environment's ROM path
+    Cartridge::load(rom_path.c_str());
 }
 
 /// Reset the emulator to its initial state.
 void NESEnv::reset() {
-    // load the cartridge based on the environment's ROM path
-    Cartridge::load(this->path.c_str());
+    CPU::power();
+    PPU::reset();
 }
 
 /**

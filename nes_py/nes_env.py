@@ -112,7 +112,7 @@ class NESEnv(gym.Env):
         # check the frame skip variable
         if not isinstance(frameskip, int):
             raise TypeError('frameskip must be of type: int')
-        if frameskip <= 0:
+        if not frameskip > 0:
             raise ValueError('frameskip must be > 0')
         self._frameskip = frameskip
         # make sure the magic characters are in the iNES file

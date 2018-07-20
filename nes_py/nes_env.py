@@ -268,6 +268,11 @@ class NESEnv(gym.Env):
         # set the done flag to true if the steps are past the max
         if self._steps >= self._max_episode_steps:
             done = True
+        # bound the reward in [min, max]
+        if reward < self.reward_range[0]:
+            reward = self.reward_range[0]
+        elif reward > self.reward_range[1]:
+            reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
         return self.screen, reward, done, info
 

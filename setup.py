@@ -38,7 +38,7 @@ setup(
     long_description_content_type='text/markdown',
     keywords='NES Emulator OpenAI-Gym',
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',

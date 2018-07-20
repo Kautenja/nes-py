@@ -1,6 +1,7 @@
 """A CTypes interface to the C++ NES environment."""
 import os
 import sys
+import math
 import ctypes
 import itertools
 from glob import glob
@@ -91,13 +92,14 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Bitmap(NUM_BUTTONS)
 
-    def __init__(self, rom_path, frameskip=1):
+    def __init__(self, rom_path, frameskip=1, max_episode_steps=math.inf):
         """
         Create a new NES environment.
 
         Args:
             path (str): the path to the ROM for the environment
             frameskip (int): the number of frames to skip between steps
+            max_episode_steps (int): number of steps before an episode ends
 
         Returns:
             None
@@ -125,6 +127,14 @@ class NESEnv(gym.Env):
         self._frameskip = frameskip
         # adjust the FPS of the environment by the given frameskip value
         self.metadata['video.frames_per_second'] /= frameskip
+
+        # check the max episode steps
+        if not isinstance(max_episode_steps, (int, float)):
+            raise TypeError('max_episode_steps must be of type: int, float')
+        if not max_episode_steps > 0:
+            raise ValueError('max_episode_steps must be > 0')
+        self._max_episode_steps = max_episode_steps
+        self._steps = 0
 
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
@@ -203,6 +213,8 @@ class NESEnv(gym.Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
+        # reset the steps counter
+        self._steps = 0
         # call the before reset callback
         self._will_reset()
         # reset the emulator
@@ -251,6 +263,11 @@ class NESEnv(gym.Env):
         self._did_step()
         # copy the screen from the emulator
         self._copy_screen()
+        # increment the steps counter
+        self._steps += 1
+        # set the done flag to true if the steps are past the max
+        if self._steps >= self._max_episode_steps:
+            done = True
         # return the screen from the emulator and other relevant data
         return self.screen, reward, done, info
 

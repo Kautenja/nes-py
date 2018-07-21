@@ -52,7 +52,7 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
         Take a step using the given action.
 
         Args:
-            action (int): the discrete action to perform.
+            action (int): the discrete action to perform
 
         Returns:
             a tuple of:

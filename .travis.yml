@@ -9,13 +9,5 @@ script:
 - scons
 - python -m unittest discover .
 - python setup.py sdist bdist_wheel --universal
-deploy:
-  provider: pypi
-  user: kautenja
-  password:
-    secure: JuAkvsnwM1wJ1x+ikNqUitx0Ut6DI1l3MTrSAGShwmqj7jMAQL9T8GCe84ZadUv8CVC1Fzfa8lFMm1zQfTOLbofOyM3+/xMylsqQ1OmJwdRhZwv6lGT1JxDrdZBIMTBTmkx1Zl1HxvrF6Ln328KDO9knJk3zmciIUJdaRTGZT3CGB9gZH8CReobR1pnLvTp1jRjr2L15Rh5KyS5jgQyq2M3p+bB7SxHL/xOYuK/DfEhRY/be48vx0zmNKnbOi/TsYpTFexLKFPa2Vi4eK3rckWBQkQZeQkjyJcz65JmafqTV7VTP2sHe/0/wcU8BTPfXdnlYqJsWBA+UQsWfQk6v+QmeC8gPPZJjLl1YFJQ72D1fDzW5Jg5EESGLzVvACSSngrnliZdOBetovQAM9eB8EPJoePU/L/QD5Ool7hK4OegbAAmKQ0CzRAB2LWlc1j11cT+n/6+Z1xJS0QeM0hvktNmqRawFEPsMiULRyiIS1cVyu3qW5rmsjPRs3wzZi//SZGB89dsDmtrveCl57QDicdlHYa0dCVfuL+ui1KPSlOBGtLSDu+Rguld6DOI0YeK0CrwBxMAK9Z49cozeyaXfyrP8ZPX3QVY8mZuhqW26PFyNc+d2OcsN/Ywokb2RtldCCxfGJUeGIORMh9lGB6aEQ8HQh10IV6UxzPnTREoLLbU=
-  distributions: "sdist bdist_wheel"
-  on:
-    tags: true
 notifications:
   email: false

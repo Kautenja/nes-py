@@ -1,7 +1,6 @@
 """A CTypes interface to the C++ NES environment."""
 import os
 import sys
-import math
 import ctypes
 import itertools
 from glob import glob
@@ -95,7 +94,7 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Bitmap(NUM_BUTTONS)
 
-    def __init__(self, rom_path, frameskip=1, max_episode_steps=math.inf):
+    def __init__(self, rom_path, frameskip=1, max_episode_steps=float('inf')):
         """
         Create a new NES environment.
 

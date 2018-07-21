@@ -10,5 +10,6 @@ before_install:
 script:
   - scons
   - python -m unittest discover .
+  - make deployment
 notifications:
   email: false

@@ -1,8 +1,14 @@
 sudo: required
-language: cpp
-compiler: clang
+language: python
+python:
+  - '2.7'
+  - '3.5'
+  - '3.6'
 os: linux
+before_install:
+  - pip install scons
 script:
   - scons
+  - python -m unittest discover .
 notifications:
   email: false

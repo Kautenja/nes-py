@@ -1,7 +1,6 @@
 """A CTypes interface to the C++ NES environment."""
 import os
 import sys
-import math
 import ctypes
 import itertools
 from glob import glob
@@ -69,7 +68,7 @@ SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 # the magic bytes expected at the first four bytes of the iNES ROM header.
 # It spells "NES<END>"
-MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
+MAGIC = bytearray([0x4E, 0x45, 0x53, 0x1A])
 
 
 class NESEnv(gym.Env):
@@ -95,7 +94,7 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Bitmap(NUM_BUTTONS)
 
-    def __init__(self, rom_path, frameskip=1, max_episode_steps=math.inf):
+    def __init__(self, rom_path, frameskip=1, max_episode_steps=float('inf')):
         """
         Create a new NES environment.
 
@@ -116,8 +115,7 @@ class NESEnv(gym.Env):
             raise ValueError('rom_path should point to a ".nes" file')
         # make sure the magic characters are in the iNES file
         with open(rom_path, 'rb') as nes_file:
-            raw_data = nes_file.read()
-            magic = raw_data[:4]
+            magic = nes_file.read(4)
         if magic != MAGIC:
             raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
         self._rom_path = rom_path

@@ -5,3 +5,4 @@ pygame>=1.9.3
 pyglet>=1.3.2
 tqdm>=4.19.5
 twine>=1.11.0
+scons>=3.0.1

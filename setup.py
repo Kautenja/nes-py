@@ -32,7 +32,7 @@ lib_nes_env = Extension(lib_name,
 
 setup(
     name='nes_py',
-    version='0.7.0',
+    version='0.8.0',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README(),
     long_description_content_type='text/markdown',
@@ -54,7 +54,7 @@ setup(
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
     license='BSD-2-Clause',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[lib_nes_env],
     zip_safe=False,
     install_requires=[

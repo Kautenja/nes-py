@@ -1,11 +1,9 @@
 #include <cstdio>
-#include "cpu.hpp"
 #include "mappers/mapper0.hpp"
 #include "mappers/mapper1.hpp"
 #include "mappers/mapper2.hpp"
 #include "mappers/mapper3.hpp"
 #include "mappers/mapper4.hpp"
-#include "ppu.hpp"
 #include "cartridge.hpp"
 
 namespace Cartridge {
@@ -58,9 +56,6 @@ namespace Cartridge {
             case 3:  mapper = new Mapper3(rom); break;
             case 4:  mapper = new Mapper4(rom); break;
         }
-
-        CPU::power();
-        PPU::reset();
     }
 
     /// Return true if there is a ROM (mapper) loaded, false otherwise.

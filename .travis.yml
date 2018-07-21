@@ -6,6 +6,7 @@ python:
   - '3.6'
 os: linux
 before_install:
+  - sudo apt-get install -y python-setuptools
   - pip install scons
 script:
   - scons

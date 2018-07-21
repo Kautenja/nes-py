@@ -10,6 +10,6 @@ before_install:
 script:
   - scons
   - python -m unittest discover .
-  - make deployment
+  - python setup.py sdist bdist_wheel --universal
 notifications:
   email: false

@@ -54,7 +54,7 @@ setup(
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
     license='BSD-2-Clause',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[lib_nes_env],
     zip_safe=False,
     install_requires=[

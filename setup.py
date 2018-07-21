@@ -21,7 +21,7 @@ cpp = glob('nes_py/laines/*.cpp') + glob('nes_py/laines/mappers/*.cpp')
 # headers with sdist
 hpp = ['nes_py/laines/include']
 # Additional build arguments to pass to the compiler
-compile_args = ['-O3', '-march=native', '-std=c++14']
+compile_args = ['-O3', '-march=native', '-std=c++1y']
 # The official extension using the name, source, headers, and build args
 lib_nes_env = Extension(lib_name,
     sources=cpp,
@@ -32,7 +32,7 @@ lib_nes_env = Extension(lib_name,
 
 setup(
     name='nes_py',
-    version='0.8.2',
+    version='0.8.3',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README(),
     long_description_content_type='text/markdown',

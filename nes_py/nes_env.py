@@ -68,7 +68,7 @@ SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 
 # the magic bytes expected at the first four bytes of the iNES ROM header.
 # It spells "NES<END>"
-MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
+MAGIC = bytearray([0x4E, 0x45, 0x53, 0x1A])
 
 
 class NESEnv(gym.Env):
@@ -115,8 +115,7 @@ class NESEnv(gym.Env):
             raise ValueError('rom_path should point to a ".nes" file')
         # make sure the magic characters are in the iNES file
         with open(rom_path, 'rb') as nes_file:
-            raw_data = nes_file.read()
-            magic = raw_data[:4]
+            magic = nes_file.read(4)
         if magic != MAGIC:
             raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
         self._rom_path = rom_path

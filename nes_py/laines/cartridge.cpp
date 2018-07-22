@@ -7,7 +7,6 @@
 #include "cartridge.hpp"
 
 namespace Cartridge {
-
     /// the mapper for the ROM associated with this cartridge
     Mapper* mapper = nullptr;
 
@@ -62,5 +61,4 @@ namespace Cartridge {
     bool loaded() {
         return mapper != nullptr;
     }
-
 }

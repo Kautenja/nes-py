@@ -4,10 +4,8 @@
 /* Based off of https://wiki.nesdev.com/w/index.php/INES_Mapper_003 */
 
 /* Apply the registers state */
-void Mapper3::apply()
-{
-    if (PRG_size_16k)
-    {
+void Mapper3::apply() {
+    if (PRG_size_16k) {
     /*
      * mirror the bottom on the top
      * 0x8000 - 0xBFFF ==
@@ -16,8 +14,7 @@ void Mapper3::apply()
         map_prg<16>(0,0);
         map_prg<16>(1,0);
     }
-    else
-    {
+    else {
         /* no mirroring */
         map_prg<16>(0,0);
         map_prg<16>(1,1);
@@ -30,21 +27,18 @@ void Mapper3::apply()
     set_mirroring(vertical_mirroring?PPU::VERTICAL:PPU::HORIZONTAL);
 }
 
-u8 Mapper3::write(u16 addr, u8 v)
-{
+u8 Mapper3::write(u16 addr, u8 v) {
     /* check for bus contingency? */
 
     /* chr bank switching */
-    if (addr & 0x8000)
-    {
-      regs[0] = v;
-      apply();
+    if (addr & 0x8000) {
+        regs[0] = v;
+        apply();
     }
     return v;
 }
 
-u8 Mapper3::chr_write(u16 addr, u8 v)
-{
+u8 Mapper3::chr_write(u16 addr, u8 v) {
     return chr[addr] = v;
 }
 

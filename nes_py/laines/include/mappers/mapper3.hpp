@@ -1,17 +1,14 @@
 #pragma once
 #include "mapper.hpp"
 
-
-class Mapper3 : public Mapper
-{
+class Mapper3 : public Mapper {
     u8 regs[1];
     bool vertical_mirroring;
     bool PRG_size_16k;
     void apply();
 
-    public:
-    Mapper3(u8* rom) : Mapper(rom)
-    {
+public:
+    Mapper3(u8* rom) : Mapper(rom) {
         PRG_size_16k = rom[4] == 1;
         vertical_mirroring = rom[6] & 0x01;
         regs[0] = 0;

@@ -65,6 +65,9 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
         # take the step and record the output
         return self.env.step(self._action_map[action])
 
+    def reset(self):
+        """Reset the environment and return the initial observation."""
+        return self.env.reset()
 
 # explicitly define the outward facing API of this module
 __all__ = [BinarySpaceToDiscreteSpaceEnv.__name__]

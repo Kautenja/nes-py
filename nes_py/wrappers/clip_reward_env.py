@@ -20,7 +20,19 @@ class ClipRewardEnv(gym.RewardWrapper):
         super().__init__(env)
 
     def reward(self, reward: float) -> float:
-        """Bin reward to {-1, 0, +1} using its sign."""
+        """
+        Bin reward to {-1, 0, +1} using its sign.
+
+        Args:
+            reward (float): the reward to adjust
+
+        Returns:
+            an adjusted reward as the sign of the input reward. i.e.:
+            -   -1 if reward < 0
+            -   1 if reward > 0
+            -   0 if reward == 0
+
+        """
         return np.sign(reward)
 
 

@@ -7,7 +7,7 @@ from glob import glob
 import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
-from .spaces import Bitmap
+from gym.spaces import Discrete
 
 
 # the path to the directory this
@@ -87,7 +87,7 @@ class NESEnv(gym.Env):
     )
 
     # action space is a bitmap of button press values for the 8 NES buttons
-    action_space = Bitmap(8)
+    action_space = Discrete(256)
 
     def __init__(self, rom_path, frameskip=1, max_episode_steps=float('inf')):
         """

@@ -6,7 +6,7 @@ import numpy as np
 class ClipRewardEnv(gym.RewardWrapper):
     """An environment that clips rewards in {-1, 0, 1}."""
 
-    def __init__(self, env: gym.Env) -> None:
+    def __init__(self, env):
         """
         Initialize a new reward clipping environment.
 

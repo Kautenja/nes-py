@@ -16,7 +16,7 @@ def wrap(env,
     clip_rewards=False,
     normalize_rewards=False,
     agent_history_length=4
-) -> gym.Env:
+):
     """
     Wrap an environment with standard wrappers.
 

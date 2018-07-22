@@ -216,13 +216,13 @@ class NESEnv(gym.Env):
         # reset the emulator
         _LIB.NESEnv_reset(self._env)
         # call the after reset callback
-        self._did_reset_()
+        self._did_reset()
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator
         return self.screen
 
-    def _did_reset_(self):
+    def _did_reset(self):
         """Handle any RAM hacking after a reset occurs."""
         pass
 

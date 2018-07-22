@@ -55,15 +55,16 @@ class ShouldMakeMultipleEnvironemntsParallel(object):
             proc.join()
 
 
+class ProcessTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
+    parallel_initializer = Process
+
+
 # TODO: fix C++ code to allow multiple instances in the same thread
 # class ThreadTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
 #     parallel_initializer = Thread
 
 
-class ProcessTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
-    parallel_initializer = Process
-
-
+# TODO: fix C++ code to allow multiple instances in the same thread
 # class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
 
 #     # the number of environments to spawn

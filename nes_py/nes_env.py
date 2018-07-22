@@ -7,7 +7,7 @@ from glob import glob
 import gym
 import numpy as np
 from numpy.ctypeslib import as_ctypes
-from .spaces import Bitmap
+from gym.spaces import Discrete
 
 
 # the path to the directory this
@@ -25,9 +25,6 @@ _LIB = ctypes.cdll.LoadLibrary(glob(_LIB_PATH)[0])
 # setup the argument and return types for NESEnv_init
 _LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
 _LIB.NESEnv_init.restype = ctypes.c_void_p
-# setup the argument and return types for NESEnv_num_buttons
-_LIB.NESEnv_num_buttons.argtypes = None
-_LIB.NESEnv_num_buttons.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_width
 _LIB.NESEnv_width.argtypes = None
 _LIB.NESEnv_width.restype = ctypes.c_uint
@@ -54,8 +51,6 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-# the number of buttons on the NES joy-pad
-NUM_BUTTONS = _LIB.NESEnv_num_buttons()
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
 # width in pixels of the NES screen
@@ -92,7 +87,7 @@ class NESEnv(gym.Env):
     )
 
     # action space is a bitmap of button press values for the 8 NES buttons
-    action_space = Bitmap(NUM_BUTTONS)
+    action_space = Discrete(256)
 
     def __init__(self, rom_path, frameskip=1, max_episode_steps=float('inf')):
         """
@@ -221,13 +216,13 @@ class NESEnv(gym.Env):
         # reset the emulator
         _LIB.NESEnv_reset(self._env)
         # call the after reset callback
-        self._did_reset_()
+        self._did_reset()
         # copy the screen from the emulator
         self._copy_screen()
         # return the screen from the emulator
         return self.screen
 
-    def _did_reset_(self):
+    def _did_reset(self):
         """Handle any RAM hacking after a reset occurs."""
         pass
 

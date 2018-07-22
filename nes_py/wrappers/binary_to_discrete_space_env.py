@@ -69,5 +69,23 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
         """Reset the environment and return the initial observation."""
         return self.env.reset()
 
+    def get_keys_to_action(self):
+        """Return the dictionary of keyboard keys to actions."""
+        # get the old mapping of keys to actions
+        old_keys_to_action = self.env.unwrapped.get_keys_to_action()
+        # invert the keys to action mapping to lookup key combos by action
+        action_to_keys = {v: k for k, v in old_keys_to_action.items()}
+        # create a new mapping of keys to actions
+        keys_to_action = {}
+        # iterate over the actions and their byte values in this mapper
+        for action, byte in self._action_map.items():
+            # get the keys to press for the action
+            keys = action_to_keys[byte]
+            # set the keys value in the dictionary to the current discrete act
+            keys_to_action[keys] = action
+
+        return keys_to_action
+
+
 # explicitly define the outward facing API of this module
 __all__ = [BinarySpaceToDiscreteSpaceEnv.__name__]

@@ -61,6 +61,7 @@ def play(env, transpose=True, fps=30, callback=None, nop_=0):
     # get the mapping of keyboard keys to actions in the environment
     if hasattr(env, 'get_keys_to_action'):
         keys_to_action = env.get_keys_to_action()
+    # get the mapping of keyboard keys to actions in the unwrapped environment
     elif hasattr(env.unwrapped, 'get_keys_to_action'):
         keys_to_action = env.unwrapped.get_keys_to_action()
     else:
@@ -76,45 +77,64 @@ def play(env, transpose=True, fps=30, callback=None, nop_=0):
     env_done = True
     # setup the screen using pygame
     screen = pygame.display.set_mode(video_size)
+    # set the caption for the pygame window
     pygame.display.set_caption('nes-py')
-    # disable the SDL video driver so FCEUX wont open a window
-    os.environ['SDL_VIDEODRIVER'] = 'dummy'
+    # start a clock for limiting the frame rate to the given FPS
     clock = pygame.time.Clock()
     # start the main game loop
     while running:
+        # reset if the environment is done
         if env_done:
             env_done = False
             obs = env.reset()
+        # otherwise take a normal step
         else:
+            # unwrap the action based on pressed relevant keys
             action = keys_to_action.get(tuple(sorted(pressed_keys)), nop_)
             prev_obs = obs
             obs, rew, env_done, info = env.step(action)
+            # pass the output data to the callback method
             if callback is not None:
                 callback(prev_obs, obs, action, rew, env_done, info)
+        # make sure the observation exists
         if obs is not None:
+            # if the observation is just height and width (B&W)
             if len(obs.shape) == 2:
+                # add a dummy channel for pygame display
                 obs = obs[:, :, None]
+            # if the observation is single channel (B&W)
             if obs.shape[2] == 1:
+                # repeat the single channel 3 times for RGB encoding of B&W
                 obs = obs.repeat(3, axis=2)
+            # display the observation on the pygame screen
             display_arr(screen, obs, video_size, transpose)
 
-        # process pygame events
+        # process keyboard events
         for event in pygame.event.get():
-            # test events, set key states
+            # handle a key being pressed
             if event.type == pygame.KEYDOWN:
+                # make sure the key is in the relevant key list
                 if event.key in relevant_keys:
+                    # add the key to pressed keys
                     pressed_keys.append(event.key)
                 # ASCII code 27 is the "escape" key
                 elif event.key == 27:
                     running = False
+            # handle a key being released
             elif event.type == pygame.KEYUP:
+                # make sure the key is in the relevant key list
                 if event.key in relevant_keys:
+                    # remove the key from the pressed keys
                     pressed_keys.remove(event.key)
+            # if the event is quit, set running to False
             elif event.type == pygame.QUIT:
                 running = False
 
+        # flip the pygame screen
         pygame.display.flip()
+        # throttle to maintain the framerate
         clock.tick(fps)
+    # quite the pygame setup
     pygame.quit()
 
 

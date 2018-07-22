@@ -1,9 +1,7 @@
 #pragma once
 #include "mapper.hpp"
 
-
-class Mapper4 : public Mapper
-{
+class Mapper4 : public Mapper {
     u8 reg8000;
     u8 regs[8];
     bool horizMirroring;
@@ -14,9 +12,8 @@ class Mapper4 : public Mapper
 
     void apply();
 
-  public:
-    Mapper4(u8* rom) : Mapper(rom)
-    {
+public:
+    Mapper4(u8* rom) : Mapper(rom) {
         for (int i = 0; i < 8; i++)
             regs[i] = 0;
 

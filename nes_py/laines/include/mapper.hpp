@@ -2,13 +2,11 @@
 #include <cstring>
 #include "common.hpp"
 
-
-class Mapper
-{
+class Mapper {
     u8* rom;
     bool chrRam = false;
 
-  protected:
+protected:
     u32 prgMap[4];
     u32 chrMap[8];
 
@@ -18,7 +16,7 @@ class Mapper
     template <int pageKBs> void map_prg(int slot, int bank);
     template <int pageKBs> void map_chr(int slot, int bank);
 
-  public:
+public:
     Mapper(u8* rom);
     ~Mapper();
 

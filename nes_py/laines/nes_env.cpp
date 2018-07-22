@@ -10,7 +10,6 @@
 
     @param path the path to the ROM for the emulator to load
     @returns a new instance of NESEnv for a given ROM
-
 */
 NESEnv::NESEnv(wchar_t* path) {
     // convert the wchar_t type to a string
@@ -40,7 +39,6 @@ void NESEnv::reset() {
     2: SELECT
     1: B
     0: A
-
 */
 void NESEnv::step(unsigned char action) {
     // write the action to the player's joy-pad
@@ -48,7 +46,6 @@ void NESEnv::step(unsigned char action) {
     // run a frame on the CPU
     CPU::run_frame();
 }
-
 
 // definitions of functions for the Python interface to access
 extern "C" {
@@ -65,14 +62,10 @@ extern "C" {
     u8 NESEnv_read_mem(u16 address) { return CPU::read_mem(address); }
 
     /// The setter for RAM access
-    void NESEnv_write_mem(u16 address, u8 value) {
-        CPU::write_mem(address, value);
-    }
+    void NESEnv_write_mem(u16 address, u8 value) { CPU::write_mem(address, value); }
 
     /// Copy the screen of the emulator to an output buffer (NumPy array)
-    void NESEnv_screen(unsigned char *output_buffer) {
-        GUI::copy_screen(output_buffer);
-    }
+    void NESEnv_screen(unsigned char *output_buffer) { GUI::copy_screen(output_buffer); }
 
     /// The function to reset the environment.
     void NESEnv_reset(NESEnv* env) { env->reset(); }

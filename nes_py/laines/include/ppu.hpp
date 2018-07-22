@@ -2,7 +2,6 @@
 #include "common.hpp"
 
 namespace PPU {
-
     /// Scanline configuration options
     enum Scanline  { VISIBLE, POST, NMI, PRE };
     /// Mirroring configuration options
@@ -109,5 +108,4 @@ namespace PPU {
     void set_mirroring(Mirroring mode);
     void step();
     void reset();
-
 }

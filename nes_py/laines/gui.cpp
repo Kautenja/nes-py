@@ -7,7 +7,6 @@
 
 /// The graphics interface to SDL
 namespace GUI {
-
     /// the width of the screen in pixels
     const unsigned WIDTH = 256;
     /// Return the width of the screen.
@@ -30,10 +29,8 @@ namespace GUI {
         Copy the screen into an output buffer of unsigned bytes.
 
         @param output_buffer the pointer to the output buffer
-
     */
     void copy_screen(unsigned char *output_buffer) {
         memcpy(output_buffer, screen, WIDTH * HEIGHT * sizeof(u32));
     }
-
 }

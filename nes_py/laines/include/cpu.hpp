@@ -2,7 +2,6 @@
 #include "common.hpp"
 
 namespace CPU {
-
     // Interrupt type
     enum IntType { NMI, RESET, IRQ, BRK };
     // Addressing mode
@@ -48,5 +47,4 @@ namespace CPU {
     void set_irq(bool v = true);
     void power();
     void run_frame();
-
 }

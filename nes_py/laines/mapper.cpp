@@ -1,9 +1,7 @@
 #include "ppu.hpp"
 #include "mapper.hpp"
 
-
-Mapper::Mapper(u8* rom) : rom(rom)
-{
+Mapper::Mapper(u8* rom) : rom(rom) {
     // Read infos from header:
     prgSize      = rom[4] * 0x4000;
     chrSize      = rom[5] * 0x2000;
@@ -17,16 +15,14 @@ Mapper::Mapper(u8* rom) : rom(rom)
     if (chrSize)
         this->chr = rom + 16 + prgSize;
     // CHR RAM:
-    else
-    {
+    else {
         chrRam = true;
         chrSize = 0x2000;
         this->chr = new u8[chrSize];
     }
 }
 
-Mapper::~Mapper()
-{
+Mapper::~Mapper() {
     delete rom;
     delete prgRam;
     if (chrRam)
@@ -34,22 +30,19 @@ Mapper::~Mapper()
 }
 
 /* Access to memory */
-u8 Mapper::read(u16 addr)
-{
+u8 Mapper::read(u16 addr) {
     if (addr >= 0x8000)
         return prg[prgMap[(addr - 0x8000) / 0x2000] + ((addr - 0x8000) % 0x2000)];
     else
         return prgRam[addr - 0x6000];
 }
 
-u8 Mapper::chr_read(u16 addr)
-{
+u8 Mapper::chr_read(u16 addr) {
     return chr[chrMap[addr / 0x400] + (addr % 0x400)];
 }
 
 /* PRG mapping functions */
-template <int pageKBs> void Mapper::map_prg(int slot, int bank)
-{
+template <int pageKBs> void Mapper::map_prg(int slot, int bank) {
     if (bank < 0)
         bank = (prgSize / (0x400*pageKBs)) + bank;
 
@@ -61,8 +54,7 @@ template void Mapper::map_prg<16>(int, int);
 template void Mapper::map_prg<8> (int, int);
 
 /* CHR mapping functions */
-template <int pageKBs> void Mapper::map_chr(int slot, int bank)
-{
+template <int pageKBs> void Mapper::map_chr(int slot, int bank) {
     for (int i = 0; i < pageKBs; i++)
         chrMap[pageKBs*slot + i] = (pageKBs*0x400*bank + 0x400*i) % chrSize;
 }

@@ -7,7 +7,6 @@
 /// The Picture Processing Unit
 namespace PPU {
 #include "palette.inc"
-
     /// Mirroring mode
     Mirroring mirroring;
     /// VRAM for name-tables
@@ -377,5 +376,4 @@ namespace PPU {
         memset(ciRam,  0xFF, sizeof(ciRam));
         memset(oamMem, 0x00, sizeof(oamMem));
     }
-
 }

@@ -55,9 +55,6 @@ extern "C" {
     /// The initializer to return a new NESEnv with a given path.
     NESEnv* NESEnv_init(wchar_t* path){ return new NESEnv(path); }
 
-    /// The number of buttons on the NES joypad.
-    unsigned NESEnv_num_buttons() { return Joypad::get_num_buttons(); }
-
     /// The width of the NES screen.
     unsigned NESEnv_width() { return GUI::get_width(); }
 

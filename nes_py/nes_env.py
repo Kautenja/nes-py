@@ -25,9 +25,6 @@ _LIB = ctypes.cdll.LoadLibrary(glob(_LIB_PATH)[0])
 # setup the argument and return types for NESEnv_init
 _LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
 _LIB.NESEnv_init.restype = ctypes.c_void_p
-# setup the argument and return types for NESEnv_num_buttons
-_LIB.NESEnv_num_buttons.argtypes = None
-_LIB.NESEnv_num_buttons.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_width
 _LIB.NESEnv_width.argtypes = None
 _LIB.NESEnv_width.restype = ctypes.c_uint
@@ -54,8 +51,6 @@ _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_close.restype = None
 
 
-# the number of buttons on the NES joy-pad
-NUM_BUTTONS = _LIB.NESEnv_num_buttons()
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
 # width in pixels of the NES screen
@@ -92,7 +87,7 @@ class NESEnv(gym.Env):
     )
 
     # action space is a bitmap of button press values for the 8 NES buttons
-    action_space = Bitmap(NUM_BUTTONS)
+    action_space = Bitmap(8)
 
     def __init__(self, rom_path, frameskip=1, max_episode_steps=float('inf')):
         """

@@ -69,6 +69,7 @@ There you will find instructions for:
 -   setting up the development environment
 -   designing environments based on the `NESEnv` class
 -   reference material for the `NESEnv` API
+-   documentation for the `nes_py.wrappers` module
 
 # Compatibility
 

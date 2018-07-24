@@ -52,17 +52,17 @@ extern "C" {
     }
 
     /// The getter for RAM access
-    u8 NESEnv_read_mem(u16 address) {
+    u8 NESEnv_read_mem(NESEnv* env, u16 address) {
         return CPU::read_mem(address);
     }
 
     /// The setter for RAM access
-    void NESEnv_write_mem(u16 address, u8 value) {
+    void NESEnv_write_mem(NESEnv* env, u16 address, u8 value) {
         CPU::write_mem(address, value);
     }
 
     /// Copy the screen of the emulator to an output buffer (NumPy array)
-    void NESEnv_screen(unsigned char *output_buffer) {
+    void NESEnv_screen(NESEnv* env, unsigned char *output_buffer) {
         PPU::get_gui()->copy_screen(output_buffer);
     }
 

@@ -32,13 +32,13 @@ _LIB.NESEnv_width.restype = ctypes.c_uint
 _LIB.NESEnv_height.argtypes = None
 _LIB.NESEnv_height.restype = ctypes.c_uint
 # setup the argument and return types for NESEnv_read_mem
-_LIB.NESEnv_read_mem.argtypes = [ctypes.c_ushort]
+_LIB.NESEnv_read_mem.argtypes = [ctypes.c_void_p, ctypes.c_ushort]
 _LIB.NESEnv_read_mem.restype = ctypes.c_ubyte
 # setup the argument and return types for NESEnv_write_mem
-_LIB.NESEnv_write_mem.argtypes = [ctypes.c_ushort, ctypes.c_ubyte]
+_LIB.NESEnv_write_mem.argtypes = [ctypes.c_void_p, ctypes.c_ushort, ctypes.c_ubyte]
 _LIB.NESEnv_write_mem.restype = None
 # setup the argument and return types for NESEnv_screen
-_LIB.NESEnv_screen.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_screen.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
 _LIB.NESEnv_screen.restype = None
 # setup the argument and return types for NESEnv_reset
 _LIB.NESEnv_reset.argtypes = [ctypes.c_void_p]
@@ -147,7 +147,7 @@ class NESEnv(gym.Env):
     def _copy_screen(self):
         """Copy screen data from the C++ shared object library."""
         # fill the screen data array with values from the emulator
-        _LIB.NESEnv_screen(as_ctypes(self._screen_data))
+        _LIB.NESEnv_screen(self._env, as_ctypes(self._screen_data))
         # copy the screen data to the screen
         self.screen = self._screen_data
         # flip the bytes if the machine is little-endian (which it likely is)
@@ -168,7 +168,7 @@ class NESEnv(gym.Env):
             (int) the 8-bit value at the given memory address
 
         """
-        return _LIB.NESEnv_read_mem(address)
+        return _LIB.NESEnv_read_mem(self._env, address)
 
     def _write_mem(self, address, value):
         """
@@ -182,7 +182,7 @@ class NESEnv(gym.Env):
             None
 
         """
-        _LIB.NESEnv_write_mem(address, value)
+        _LIB.NESEnv_write_mem(self._env, address, value)
 
     def _frame_advance(self, action):
         """

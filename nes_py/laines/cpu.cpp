@@ -2,7 +2,6 @@
 #include <cstring>
 #include <iostream>
 #include "cartridge.hpp"
-#include "joypad.hpp"
 #include "ppu.hpp"
 #include "cpu.hpp"
 
@@ -30,6 +29,13 @@ namespace CPU {
 
     */
     void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
+
+    /// the joy-pad this CPU has access to
+    Joypad* joypad;
+
+    void set_joypad(Joypad* new_joypad) { joypad = new_joypad; }
+
+    Joypad* get_joypad() { return joypad; }
 
     /// accumulator, index x, index y, and the stack pointer
     u8 A, X, Y, S;
@@ -81,7 +87,7 @@ namespace CPU {
                 if (wr)
                     return 1;
                 else
-                    return Joypad::read_state(1);
+                    return joypad->read_state(1);
             // OAM / DMA
             case 0x4014:
                 if (wr) dma_oam(v);
@@ -89,12 +95,12 @@ namespace CPU {
             case 0x4016:
                 // Joypad strobe
                 if (wr) {
-                    Joypad::write_strobe(v & 1);
+                    joypad->write_strobe(v & 1);
                     break;
                 }
                 // Joypad 0
                 else
-                    return Joypad::read_state(0);
+                    return joypad->read_state(0);
             // Cartridge
             case 0x4018 ... 0xFFFF:
                 return Cartridge::access<wr>(addr, v);

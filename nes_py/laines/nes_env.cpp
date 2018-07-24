@@ -2,8 +2,8 @@
 #include "cartridge.hpp"
 #include "cpu.hpp"
 #include "ppu.hpp"
-#include "joypad.hpp"
 #include "gui.hpp"
+#include "joypad.hpp"
 
 /**
     Initialize a new NESEnv.
@@ -12,6 +12,8 @@
     @returns a new instance of NESEnv for a given ROM
 */
 NESEnv::NESEnv(wchar_t* path) {
+    // setup the joypad for this instance
+    CPU::set_joypad(new Joypad());
     // convert the wchar_t type to a string
     std::wstring ws_rom_path(path);
     std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
@@ -42,7 +44,7 @@ void NESEnv::reset() {
 */
 void NESEnv::step(unsigned char action) {
     // write the action to the player's joy-pad
-    Joypad::write_buttons(0, action);
+    CPU::get_joypad()->write_buttons(0, action);
     // run a frame on the CPU
     CPU::run_frame();
 }

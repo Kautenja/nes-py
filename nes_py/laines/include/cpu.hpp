@@ -1,7 +1,9 @@
 #pragma once
 #include "common.hpp"
+#include "joypad.hpp"
 
 namespace CPU {
+
     // Interrupt type
     enum IntType { NMI, RESET, IRQ, BRK };
     // Addressing mode
@@ -40,6 +42,20 @@ namespace CPU {
         }
 
     };
+
+    /**
+        Set the local joy-pad to a new value
+
+        @param new_joypad the joy-pad pointer to replace the existing pointer
+    */
+    void set_joypad(Joypad* new_joypad);
+
+    /**
+        Return a pointer to this CPU's joy-pad object.
+
+        @returns a pointer to the CPU's joy-pad
+    */
+    Joypad* get_joypad();
 
     u8 read_mem(u16 address);
     void write_mem(u16 address, u8 value);

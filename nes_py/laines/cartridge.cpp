@@ -7,19 +7,20 @@
 #include "mappers/mapper4.hpp"
 
 Cartridge::Cartridge(const char* file_name) {
+    // open the ROM file as a binary sequence
     FILE* f = fopen(file_name, "rb");
-
+    // determine the size of the ROM file
     fseek(f, 0, SEEK_END);
     int size = ftell(f);
     fseek(f, 0, SEEK_SET);
-
+    // read the ROM into a local array
     u8* rom = new u8[size];
     fread(rom, size, 1, f);
     fclose(f);
-
-    int mapperNum = (rom[7] & 0xF0) | (rom[6] >> 4);
+    // determine the mapper number from the iNES header
+    int mapper_id = (rom[7] & 0xF0) | (rom[6] >> 4);
     // setup the new mapper
-    switch (mapperNum) {
+    switch (mapper_id) {
         case 0:  this->mapper = new Mapper0(rom); break;
         case 1:  this->mapper = new Mapper1(rom); break;
         case 2:  this->mapper = new Mapper2(rom); break;

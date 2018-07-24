@@ -1,9 +1,9 @@
 #include <cstring>
 #include "gui.hpp"
 
-unsigned GUI::get_width() { return this->WIDTH; }
+unsigned GUI::get_width() { return GUI::WIDTH; }
 
-unsigned GUI::get_height() { return this->HEIGHT; }
+unsigned GUI::get_height() { return GUI::HEIGHT; }
 
 void GUI::new_frame(u32* pixels) {
     // copy the pixels into the screen array (pointer)

@@ -15,10 +15,10 @@ private:
 
 public:
     /// Return the width of the screen.
-    unsigned get_width();
+    static unsigned get_width();
 
     /// Return the height of the screen.
-    unsigned get_height();
+    static unsigned get_height();
 
     /**
         Copy the pixels to the local screen memory.

@@ -12,7 +12,7 @@
     @returns a new instance of NESEnv for a given ROM
 */
 NESEnv::NESEnv(wchar_t* path) {
-    // setup the joypad for this instance
+    // setup the joy-pad for this environment's CPU
     CPU::set_joypad(new Joypad());
     // convert the wchar_t type to a string
     std::wstring ws_rom_path(path);

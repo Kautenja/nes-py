@@ -3,7 +3,7 @@ from os import environ
 
 
 VariantDir('nes_py/laines/build/src', 'nes_py/laines', duplicate=0)
-flags = ['-O3', '-march=native', '-std=c++14']
+flags = ['-O3', '-march=native', '-std=c++1y']
 
 
 env = Environment(

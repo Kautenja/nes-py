@@ -1,6 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include "gui.hpp"
+#include "cartridge.hpp"
 
 namespace PPU {
     /// Scanline configuration options
@@ -110,6 +111,12 @@ namespace PPU {
 
     /// Return the pointer to this PPU's GUI instance
     GUI* get_gui();
+
+    /// Set the Cartridge instance pointer to a new value.
+    void set_cartridge(Cartridge* new_cartridge);
+
+    /// Return the pointer to this PPU's Cartridge instance
+    Cartridge* get_cartridge();
 
     template <bool write> u8 access(u16 index, u8 v = 0);
     void set_mirroring(Mirroring mode);

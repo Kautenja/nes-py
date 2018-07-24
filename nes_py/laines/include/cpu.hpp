@@ -1,6 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include "joypad.hpp"
+#include "cartridge.hpp"
 
 namespace CPU {
 
@@ -56,6 +57,12 @@ namespace CPU {
         @returns a pointer to the CPU's joy-pad
     */
     Joypad* get_joypad();
+
+    /// Set the Cartridge instance pointer to a new value.
+    void set_cartridge(Cartridge* new_cartridge);
+
+    /// Return the pointer to this PPU's Cartridge instance
+    Cartridge* get_cartridge();
 
     u8 read_mem(u16 address);
     void write_mem(u16 address, u8 value);

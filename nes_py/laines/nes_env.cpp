@@ -12,15 +12,22 @@
     @returns a new instance of NESEnv for a given ROM
 */
 NESEnv::NESEnv(wchar_t* path) {
+    // convert the wchar_t type to a string
+    std::wstring ws_rom_path(path);
+    std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
+    // initialize a cartridge and load the ROM for it
+    Cartridge* cartridge = new Cartridge();
+    // load the cartridge based on the environment's ROM path
+    cartridge->load(rom_path.c_str());
+
+    // set the cartridge pointer for the CPU and PPU
+    CPU::set_cartridge(cartridge);
+    PPU::set_cartridge(cartridge);
+
     // setup the joy-pad for this environment's CPU
     CPU::set_joypad(new Joypad());
     // setup the GUI for this environment's PPU
     PPU::set_gui(new GUI());
-    // convert the wchar_t type to a string
-    std::wstring ws_rom_path(path);
-    std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
-    // load the cartridge based on the environment's ROM path
-    Cartridge::load(rom_path.c_str());
 }
 
 /// Reset the emulator to its initial state.

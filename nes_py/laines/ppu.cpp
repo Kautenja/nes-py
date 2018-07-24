@@ -1,5 +1,4 @@
 #include <cstring>
-#include "cartridge.hpp"
 #include "cpu.hpp"
 #include "ppu.hpp"
 
@@ -53,6 +52,12 @@ namespace PPU {
 
     GUI* get_gui() { return gui; }
 
+    Cartridge* cartridge;
+
+    void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
+
+    Cartridge* get_cartridge() { return cartridge; }
+
     /// Get CIRAM address according to mirroring.
     u16 nt_mirror(u16 addr) {
         switch (mirroring) {
@@ -68,7 +73,7 @@ namespace PPU {
     u8 rd(u16 addr) {
         switch (addr) {
             // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  return Cartridge::chr_access<0>(addr);
+            case 0x0000 ... 0x1FFF:  return cartridge->chr_access<0>(addr);
             // Nametables.
             case 0x2000 ... 0x3EFF:  return ciRam[nt_mirror(addr)];
             // Palettes:
@@ -82,7 +87,7 @@ namespace PPU {
     void wr(u16 addr, u8 v) {
         switch (addr) {
             // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  Cartridge::chr_access<1>(addr, v); break;
+            case 0x0000 ... 0x1FFF:  cartridge->chr_access<1>(addr, v); break;
             // Nametables.
             case 0x2000 ... 0x3EFF:  ciRam[nt_mirror(addr)] = v; break;
             // Palettes:
@@ -350,7 +355,7 @@ namespace PPU {
                 case           340:  nt = rd(addr); if (s == PRE && rendering() && frameOdd) dot++;
             }
             // Signal scanline to mapper:
-            if (dot == 260 && rendering()) Cartridge::signal_scanline();
+            if (dot == 260 && rendering()) cartridge->signal_scanline();
         }
     }
 

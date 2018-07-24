@@ -1,7 +1,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
-#include "cartridge.hpp"
 #include "ppu.hpp"
 #include "cpu.hpp"
 
@@ -36,6 +35,12 @@ namespace CPU {
     void set_joypad(Joypad* new_joypad) { joypad = new_joypad; }
 
     Joypad* get_joypad() { return joypad; }
+
+    Cartridge* cartridge;
+
+    void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
+
+    Cartridge* get_cartridge() { return cartridge; }
 
     /// accumulator, index x, index y, and the stack pointer
     u8 A, X, Y, S;
@@ -103,7 +108,7 @@ namespace CPU {
                     return joypad->read_state(0);
             // Cartridge
             case 0x4018 ... 0xFFFF:
-                return Cartridge::access<wr>(addr, v);
+                return cartridge->access<wr>(addr, v);
         }
         return 0;
     }

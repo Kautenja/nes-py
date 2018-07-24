@@ -16,9 +16,7 @@ NESEnv::NESEnv(wchar_t* path) {
     std::wstring ws_rom_path(path);
     std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
     // initialize a cartridge and load the ROM for it
-    Cartridge* cartridge = new Cartridge();
-    // load the cartridge based on the environment's ROM path
-    cartridge->load(rom_path.c_str());
+    Cartridge* cartridge = new Cartridge(rom_path.c_str());
 
     // set the cartridge pointer for the CPU and PPU
     CPU::set_cartridge(cartridge);

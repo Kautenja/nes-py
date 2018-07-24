@@ -6,8 +6,8 @@
 #include "mappers/mapper3.hpp"
 #include "mappers/mapper4.hpp"
 
-Cartridge::Cartridge() {
-    this->mapper = nullptr;
+Cartridge::Cartridge(const char* file_name) {
+    this->load(file_name);
 }
 
 Cartridge::~Cartridge() {
@@ -26,8 +26,6 @@ void Cartridge::load(const char* fileName) {
     fclose(f);
 
     int mapperNum = (rom[7] & 0xF0) | (rom[6] >> 4);
-    // delete the existing mapper if their is one
-    if (loaded()) delete this->mapper;
     // setup the new mapper
     switch (mapperNum) {
         case 0:  this->mapper = new Mapper0(rom); break;
@@ -36,10 +34,6 @@ void Cartridge::load(const char* fileName) {
         case 3:  this->mapper = new Mapper3(rom); break;
         case 4:  this->mapper = new Mapper4(rom); break;
     }
-}
-
-bool Cartridge::loaded() {
-    return this->mapper != nullptr;
 }
 
 void Cartridge::signal_scanline() {

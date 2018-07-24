@@ -8,22 +8,23 @@ private:
     /// the mapper for the ROM associated with this cartridge
     Mapper* mapper;
 
-public:
-    /// Initialize a new cartridge
-    Cartridge();
-
-    /// Delete an instance of cartridge
-    ~Cartridge();
-
     /**
         Load the ROM from a file.
 
-        @param fileName the name of the file to load the ROM from
+        @param file_name the name of the file to load the ROM from
     */
-    void load(const char* fileName);
+    void load(const char* file_name);
 
-    /// Return true if there is a ROM (mapper) loaded, false otherwise.
-    bool loaded();
+public:
+    /**
+        Initialize a new cartridge.
+
+        @param file_name the name of the file to load the ROM from
+    */
+    Cartridge(const char* file_name);
+
+    /// Delete an instance of cartridge
+    ~Cartridge();
 
     /// Signal a scanline to the mapper for this cartridge.
     void signal_scanline();

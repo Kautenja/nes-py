@@ -14,6 +14,8 @@
 NESEnv::NESEnv(wchar_t* path) {
     // setup the joy-pad for this environment's CPU
     CPU::set_joypad(new Joypad());
+    // setup the GUI for this environment's PPU
+    PPU::set_gui(new GUI());
     // convert the wchar_t type to a string
     std::wstring ws_rom_path(path);
     std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
@@ -55,10 +57,10 @@ extern "C" {
     NESEnv* NESEnv_init(wchar_t* path){ return new NESEnv(path); }
 
     /// The width of the NES screen.
-    unsigned NESEnv_width() { return GUI::get_width(); }
+    unsigned NESEnv_width() { return PPU::get_gui()->get_width(); }
 
     /// The height of the NES screen.
-    unsigned NESEnv_height() { return GUI::get_height(); }
+    unsigned NESEnv_height() { return PPU::get_gui()->get_height(); }
 
     /// The getter for RAM access
     u8 NESEnv_read_mem(u16 address) { return CPU::read_mem(address); }
@@ -67,7 +69,7 @@ extern "C" {
     void NESEnv_write_mem(u16 address, u8 value) { CPU::write_mem(address, value); }
 
     /// Copy the screen of the emulator to an output buffer (NumPy array)
-    void NESEnv_screen(unsigned char *output_buffer) { GUI::copy_screen(output_buffer); }
+    void NESEnv_screen(unsigned char *output_buffer) { PPU::get_gui()->copy_screen(output_buffer); }
 
     /// The function to reset the environment.
     void NESEnv_reset(NESEnv* env) { env->reset(); }

@@ -1,5 +1,6 @@
 #pragma once
 #include "common.hpp"
+#include "gui.hpp"
 
 namespace PPU {
     /// Scanline configuration options
@@ -103,6 +104,12 @@ namespace PPU {
         unsigned addr : 14;
         unsigned r : 15;
     };
+
+    /// Set the GUI instance pointer to a new value.
+    void set_gui(GUI* new_gui);
+
+    /// Return the pointer to this PPU's GUI instance
+    GUI* get_gui();
 
     template <bool write> u8 access(u16 index, u8 v = 0);
     void set_mirroring(Mirroring mode);

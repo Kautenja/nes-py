@@ -1,7 +1,6 @@
 #include <cstring>
 #include "cartridge.hpp"
 #include "cpu.hpp"
-#include "gui.hpp"
 #include "ppu.hpp"
 
 /// The Picture Processing Unit
@@ -46,6 +45,13 @@ namespace PPU {
 
     inline bool rendering() { return mask.bg || mask.spr; }
     inline int spr_height() { return ctrl.sprSz ? 16 : 8; }
+
+    /// the GUI this PPU has access to
+    GUI* gui;
+
+    void set_gui(GUI* new_gui) { gui = new_gui; }
+
+    GUI* get_gui() { return gui; }
 
     /// Get CIRAM address according to mirroring.
     u16 nt_mirror(u16 addr) {
@@ -302,7 +308,7 @@ namespace PPU {
         static u16 addr;
 
         if (s == NMI and dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
-        else if (s == POST and dot == 0) GUI::new_frame(pixels);
+        else if (s == POST and dot == 0) gui->new_frame(pixels);
         else if (s == VISIBLE or s == PRE) {
             // Sprites:
             switch (dot) {

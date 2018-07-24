@@ -8,13 +8,6 @@ private:
     /// the mapper for the ROM associated with this cartridge
     Mapper* mapper;
 
-    /**
-        Load the ROM from a file.
-
-        @param file_name the name of the file to load the ROM from
-    */
-    void load(const char* file_name);
-
 public:
     /**
         Initialize a new cartridge.

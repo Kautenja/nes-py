@@ -7,15 +7,7 @@
 #include "mappers/mapper4.hpp"
 
 Cartridge::Cartridge(const char* file_name) {
-    this->load(file_name);
-}
-
-Cartridge::~Cartridge() {
-    delete this->mapper;
-}
-
-void Cartridge::load(const char* fileName) {
-    FILE* f = fopen(fileName, "rb");
+    FILE* f = fopen(file_name, "rb");
 
     fseek(f, 0, SEEK_END);
     int size = ftell(f);
@@ -34,6 +26,10 @@ void Cartridge::load(const char* fileName) {
         case 3:  this->mapper = new Mapper3(rom); break;
         case 4:  this->mapper = new Mapper4(rom); break;
     }
+}
+
+Cartridge::~Cartridge() {
+    delete this->mapper;
 }
 
 void Cartridge::signal_scanline() {

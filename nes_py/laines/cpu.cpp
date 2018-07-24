@@ -29,17 +29,12 @@ namespace CPU {
     */
     void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
 
-    /// the joy-pad this CPU has access to
     Joypad* joypad;
-
     void set_joypad(Joypad* new_joypad) { joypad = new_joypad; }
-
     Joypad* get_joypad() { return joypad; }
 
     Cartridge* cartridge;
-
     void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
-
     Cartridge* get_cartridge() { return cartridge; }
 
     /// accumulator, index x, index y, and the stack pointer

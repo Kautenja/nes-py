@@ -7,35 +7,7 @@
 namespace CPU {
     /// The RAM module for the CPU
     u8 ram[0x800];
-
-    CPUState* get_state() {
-        CPUState* state = new CPUState();
-        // TODO: fill state
-        return state;
-    }
-
-    void set_state(CPUState* state) {
-        // TODO: set with state variables
-    }
-
-    /**
-        Return the value of the given memory address.
-        This is meant as a public getter to the memory of the machine for RAM hacks.
-
-        @param address the 16-bit address to read from memory
-        @returns the byte located at the given address
-
-    */
     u8 read_mem(u16 address) { return ram[address % 0x800]; }
-
-    /**
-        Return the value of the given memory address.
-        This is meant as a public getter to the memory of the machine for RAM hacks.
-
-        @param address the 16-bit address to read from memory
-        @param value the 8-bit value to write to the given memory address
-
-    */
     void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
 
     /// the joypad to get input data from
@@ -309,7 +281,6 @@ namespace CPU {
     void set_nmi(bool v) { nmi = v; }
     void set_irq(bool v) { irq = v; }
 
-    /* Turn on the CPU */
     void power() {
         remainingCycles = 0;
 
@@ -321,7 +292,6 @@ namespace CPU {
         INT<RESET>();
     }
 
-    /* Run the CPU for roughly a frame */
     void run_frame() {
         remainingCycles += TOTAL_CYCLES;
 
@@ -331,5 +301,42 @@ namespace CPU {
 
             exec();
         }
+    }
+
+    CPUState* get_state() {
+        CPUState* state = new CPUState();
+        // copy the RAM array into the CPU state
+        std::copy(std::begin(ram), std::end(ram), std::begin(state->ram));
+        // copy the registers
+        state->A = A;
+        state->X = X;
+        state->Y = Y;
+        state->S = S;
+        // copy the program counter
+        state->PC = PC;
+        // copy the flags
+        state->P = P;
+        // copy the interrupt flags
+        state->nmi = nmi;
+        state->irq = irq;
+
+        return state;
+    }
+
+    void set_state(CPUState* state) {
+        // copy the RAM array into the CPU state
+        std::copy(std::begin(state->ram), std::end(state->ram), std::begin(ram));
+        // copy the registers
+        A = state->A;
+        X = state->X;
+        Y = state->Y;
+        S = state->S;
+        // copy the program counter
+        PC = state->PC;
+        // copy the flags
+        P = state->P;
+        // copy the interrupt flags
+        nmi = state->nmi;
+        irq = state->irq;
     }
 }

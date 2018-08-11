@@ -3,9 +3,53 @@
 #include "joypad.hpp"
 #include "cartridge.hpp"
 
+/* Processor flags */
+enum Flag {C, Z, I, D, V, N};
+/// a class to contain flag register data
+class Flags {
+    // a private data structure to hold the flags
+    bool f[6];
+
+public:
+
+    /** Handle accessing this object using brackets */
+    bool& operator[] (const int i) { return f[i]; }
+
+    /** Return the flags as a byte */
+    u8 get() {
+        return f[C] |
+            f[Z] << 1 |
+            f[I] << 2 |
+            f[D] << 3 |
+            1 << 5 |
+            f[V] << 6 |
+            f[N] << 7;
+    }
+
+    /** Set the flags from a full byte */
+    void set(u8 p) {
+        f[C] = NTH_BIT(p, 0);
+        f[Z] = NTH_BIT(p, 1);
+        f[I] = NTH_BIT(p, 2);
+        f[D] = NTH_BIT(p, 3);
+        f[V] = NTH_BIT(p, 6);
+        f[N] = NTH_BIT(p, 7);
+    }
+
+};
+
 /// A structure to contain all local variables of a CPU for state backup
 struct CPUState {
+    /// the CPU RAM
     u8 ram[0x800];
+    /// the CPU registers
+    u8 A, X, Y, S;
+    /// the program counter
+    u16 PC;
+    /// the CPU flags register
+    Flags P;
+    /// non-mask-able interrupt and interrupt request flag
+    bool nmi, irq;
 };
 
 /// The CPU (MOS6502) for the NES
@@ -15,40 +59,6 @@ namespace CPU {
     enum IntType { NMI, RESET, IRQ, BRK };
     // Addressing mode
     typedef u16 (*Mode)(void);
-
-    /* Processor flags */
-    enum Flag {C, Z, I, D, V, N};
-    class Flags {
-        // a private data structure to hold the flags
-        bool f[6];
-
-    public:
-
-        /** Handle accessing this object using brackets */
-        bool& operator[] (const int i) { return f[i]; }
-
-        /** Return the flags as a byte */
-        u8 get() {
-            return f[C] |
-                f[Z] << 1 |
-                f[I] << 2 |
-                f[D] << 3 |
-                1 << 5 |
-                f[V] << 6 |
-                f[N] << 7;
-        }
-
-        /** Set the flags from a full byte */
-        void set(u8 p) {
-            f[C] = NTH_BIT(p, 0);
-            f[Z] = NTH_BIT(p, 1);
-            f[I] = NTH_BIT(p, 2);
-            f[D] = NTH_BIT(p, 3);
-            f[V] = NTH_BIT(p, 6);
-            f[N] = NTH_BIT(p, 7);
-        }
-
-    };
 
     /// Return a new CPU state of the CPU variables
     CPUState* get_state();
@@ -76,10 +86,43 @@ namespace CPU {
     /// Return the pointer to this PPU's Cartridge instance
     Cartridge* get_cartridge();
 
+    /**
+        Return the value of the given memory address.
+        This is meant as a public getter to the memory of the machine for RAM hacks.
+
+        @param address the 16-bit address to read from memory
+        @returns the byte located at the given address
+
+    */
     u8 read_mem(u16 address);
+
+    /**
+        Return the value of the given memory address.
+        This is meant as a public getter to the memory of the machine for RAM hacks.
+
+        @param address the 16-bit address to read from memory
+        @param value the 8-bit value to write to the given memory address
+
+    */
     void write_mem(u16 address, u8 value);
+
+    /**
+        Set the non-maskable interrupt flag.
+
+        @param v the value to set the flag to
+    */
     void set_nmi(bool v = true);
+
+    /**
+        Set the interrupt request flag.
+
+        @param v the value to set the flag to
+    */
     void set_irq(bool v = true);
+
+    /// Turn on the CPU
     void power();
+
+    /// Run the CPU for roughly a frame
     void run_frame();
 }

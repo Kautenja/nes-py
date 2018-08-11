@@ -6,6 +6,15 @@
 /// A structure to contain all local variables of a PPU for state backup
 struct PPUState {
 
+
+
+    /// Initialize a new PPU State
+    PPUState() { }
+
+    /// Initialize a new PPU State as a copy of another
+    PPUState(PPUState* state) {
+
+    }
 };
 
 /// The Picture Processing Unit

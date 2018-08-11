@@ -5,7 +5,7 @@ GameState::GameState(GameState* state) {
     // joypad = new Joypad(state->joypad);
     // gui = new GUI(state->gui);
     cpu_state = new CPUState(state->cpu_state);
-    // ppu_state = new PPUState(state->ppu_state);
+    ppu_state = new PPUState(state->ppu_state);
 }
 
 void GameState::load() {

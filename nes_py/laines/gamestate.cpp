@@ -1,7 +1,7 @@
 #include "gamestate.hpp"
 
 GameState::GameState(GameState* state) {
-    // cartridge = new Cartridge(state->cartridge);
+    cartridge = new Cartridge(state->cartridge);
     joypad = new Joypad(state->joypad);
     gui = new GUI(state->gui);
     cpu_state = new CPUState(state->cpu_state);

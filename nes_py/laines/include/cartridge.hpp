@@ -16,6 +16,11 @@ public:
     */
     Cartridge(const char* file_name);
 
+    /// Initialize a cartridge as a copy of another
+    Cartridge(Cartridge* cart) {
+        mapper = cart->mapper->copy();
+    };
+
     /// Delete an instance of cartridge
     ~Cartridge();
 

@@ -7,7 +7,7 @@ PYTHON=python3
 
 # build the LaiNES code, test the Python interface, and build 
 # the deployment package
-all: laines test deployment
+all: test deployment
 
 #
 # MARK: Development
@@ -18,7 +18,7 @@ laines:
 	scons
 
 # run the Python test suite
-test:
+test: laines
 	${PYTHON} -m unittest discover .
 
 #
@@ -34,5 +34,5 @@ deployment: clean
 	${PYTHON} setup.py sdist bdist_wheel --universal
 
 # ship the deployment package to PyPi
-ship: deployment
+ship: test deployment
 	twine upload dist/*

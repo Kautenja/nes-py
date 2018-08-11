@@ -55,7 +55,12 @@ struct CPUState {
     bool nmi, irq;
 
     /// Initialize a new CPU State
-    CPUState() { }
+    CPUState() {
+        P.set(0x04);
+        A = X = Y = S = 0x00;
+        memset(ram, 0xFF, sizeof(ram));
+        nmi = irq = false;
+    }
 
     /// Initialize a new CPU State as a copy of another
     CPUState(CPUState* state) {

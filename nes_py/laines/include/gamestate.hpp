@@ -19,7 +19,10 @@ public:
     CPUState* cpu_state;
 
     /// Initialize a new game-state
-    GameState() { };
+    GameState() {
+        ppu_state = new PPUState();
+        cpu_state = new CPUState();
+    };
     /// create a new game-state as a copy of another
     GameState(GameState* state);
     /// Load the game-state's data into the machine

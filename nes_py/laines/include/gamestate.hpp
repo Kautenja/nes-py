@@ -14,9 +14,9 @@ public:
     /// the GUI for the gamestate
     GUI* gui;
     /// the state for the CPU
-    PPUState ppu;
+    PPUState* ppu_state;
     /// the state for the GPU
-    CPUState cpu;
+    CPUState* cpu_state;
 
     /// Initialize a new gamestate
     GameState();

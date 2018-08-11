@@ -3,6 +3,12 @@
 #include "joypad.hpp"
 #include "cartridge.hpp"
 
+/// A structure to contain all local variables of a CPU for state backup
+struct CPUState {
+    u8 ram[0x800];
+};
+
+/// The CPU (MOS6502) for the NES
 namespace CPU {
 
     // Interrupt type
@@ -43,6 +49,12 @@ namespace CPU {
         }
 
     };
+
+    /// Return a new CPU state of the CPU variables
+    CPUState* get_state();
+
+    /// Restore the CPU variables from a saved state
+    void set_state(CPUState* state);
 
     /**
         Set the local joy-pad to a new value

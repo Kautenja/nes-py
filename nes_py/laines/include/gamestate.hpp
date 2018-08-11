@@ -14,7 +14,7 @@ public:
     /// the GUI for the gamestate
     GUI* gui;
     /// the state for the CPU
-    // GPUState gpu;
+    // PPUState ppu;
     /// the state for the GPU
     // CPUState cpu;
 

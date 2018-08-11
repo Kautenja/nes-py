@@ -2,7 +2,6 @@
 #include "cpu.hpp"
 #include "ppu.hpp"
 
-/// The Picture Processing Unit
 namespace PPU {
 #include "palette.inc"
     /// Mirroring mode
@@ -47,16 +46,25 @@ namespace PPU {
 
     /// the GUI this PPU has access to
     GUI* gui;
-
     void set_gui(GUI* new_gui) { gui = new_gui; }
-
     GUI* get_gui() { return gui; }
 
+    /// the cartridge this PPU uses for game data
     Cartridge* cartridge;
-
     void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
-
     Cartridge* get_cartridge() { return cartridge; }
+
+    /// Return a new PPU state of the PPU variables
+    PPUState* get_state() {
+        PPUState* state = new PPUState();
+        // TODO: fill state
+        return state;
+    }
+
+    /// Restore the PPU variables from a saved state
+    void set_state(PPUState* state) {
+        // TODO: set with state variables
+    }
 
     /// Get CIRAM address according to mirroring.
     u16 nt_mirror(u16 addr) {

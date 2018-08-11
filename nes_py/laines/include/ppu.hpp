@@ -3,6 +3,12 @@
 #include "gui.hpp"
 #include "cartridge.hpp"
 
+/// A structure to contain all local variables of a PPU for state backup
+struct PPUState {
+
+};
+
+/// The Picture Processing Unit
 namespace PPU {
     /// Scanline configuration options
     enum Scanline  { VISIBLE, POST, NMI, PRE };
@@ -105,6 +111,12 @@ namespace PPU {
         unsigned addr : 14;
         unsigned r : 15;
     };
+
+    /// Return a new PPU state of the PPU variables
+    PPUState* get_state();
+
+    /// Restore the PPU variables from a saved state
+    void set_state(PPUState* state);
 
     /// Set the GUI instance pointer to a new value.
     void set_gui(GUI* new_gui);

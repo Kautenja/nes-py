@@ -4,10 +4,19 @@
 #include "ppu.hpp"
 #include "cpu.hpp"
 
-/// The CPU (MOS6502) for the NES
 namespace CPU {
     /// The RAM module for the CPU
     u8 ram[0x800];
+
+    CPUState* get_state() {
+        CPUState* state = new CPUState();
+        // TODO: fill state
+        return state;
+    }
+
+    void set_state(CPUState* state) {
+        // TODO: set with state variables
+    }
 
     /**
         Return the value of the given memory address.
@@ -29,10 +38,12 @@ namespace CPU {
     */
     void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
 
+    /// the joypad to get input data from
     Joypad* joypad;
     void set_joypad(Joypad* new_joypad) { joypad = new_joypad; }
     Joypad* get_joypad() { return joypad; }
 
+    /// the cartridge to get game data from
     Cartridge* cartridge;
     void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
     Cartridge* get_cartridge() { return cartridge; }

@@ -17,7 +17,9 @@ protected:
     template <int pageKBs> void map_chr(int slot, int bank);
 
 public:
+    Mapper() { };
     Mapper(u8* rom);
+    Mapper* copy();
     ~Mapper();
 
     u8 read(u16 addr);

@@ -1,3 +1,4 @@
+#include <iostream>
 #include "ppu.hpp"
 #include "mapper.hpp"
 
@@ -20,6 +21,27 @@ Mapper::Mapper(u8* rom) : rom(rom) {
         chrSize = 0x2000;
         this->chr = new u8[chrSize];
     }
+}
+
+Mapper* Mapper::copy() {
+    Mapper* _copy = new Mapper();
+
+    _copy->rom = rom;
+    _copy->chrRam = chrRam;
+
+    _copy->prgSize = prgSize;
+    _copy->prg = prg;
+
+    _copy->chrSize = chrSize;
+    _copy->chr = chr;
+
+    _copy->prgRamSize = prgRamSize;
+    memcpy(_copy->prgRam, prgRam, prgRamSize * sizeof(u8));
+
+    std::copy(std::begin(prgMap), std::end(prgMap), std::begin(_copy->prgMap));
+    std::copy(std::begin(chrMap), std::end(chrMap), std::begin(_copy->chrMap));
+
+    return _copy;
 }
 
 Mapper::~Mapper() {

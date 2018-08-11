@@ -1,6 +1,5 @@
 #include "nes_env.hpp"
 
-
 NESEnv::NESEnv(wchar_t* path) {
     // setup the game state
     current_state = new GameState();

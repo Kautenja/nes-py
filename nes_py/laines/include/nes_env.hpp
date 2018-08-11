@@ -1,7 +1,14 @@
 #include <string>
+#include "gamestate.hpp"
 
 /// An abstraction of an NES environment for OpenAI Gym
 class NESEnv {
+private:
+    /// the current gamestate being emulated
+    GameState* current_state;
+    /// the backup gamestate to restore to
+    GameState* backup_state;
+
 public:
 
     /**
@@ -31,4 +38,10 @@ public:
         0: A
     */
     void step(unsigned char action);
+
+    /// Backup the game state to the backup.
+    void backup();
+
+    /// Restore the gamestate from the backup.
+    void restore();
 };

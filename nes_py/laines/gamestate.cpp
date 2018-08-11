@@ -8,7 +8,7 @@ GameState::GameState(GameState* state) {
     // cartridge = new Cartridge(state->cartridge);
     // joypad = new Joypad(state->joypad);
     // gui = new GUI(state->gui);
-    // cpu_state = new CPUState(state->cpu_state);
+    cpu_state = new CPUState(state->cpu_state);
     // ppu_state = new PPUState(state->ppu_state);
 }
 

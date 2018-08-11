@@ -1,6 +1,3 @@
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
 #include "ppu.hpp"
 #include "cpu.hpp"
 

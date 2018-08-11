@@ -1,4 +1,7 @@
 #pragma once
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include "common.hpp"
 #include "joypad.hpp"
 #include "cartridge.hpp"
@@ -50,6 +53,27 @@ struct CPUState {
     Flags P;
     /// non-mask-able interrupt and interrupt request flag
     bool nmi, irq;
+
+    /// Initialize a new CPU State
+    CPUState() { }
+
+    /// Initialize a new CPU State as a copy of another
+    CPUState(CPUState* state) {
+        // copy the RAM array into this CPU state
+        std::copy(std::begin(state->ram), std::end(state->ram), std::begin(ram));
+        // copy the registers
+        A = state->A;
+        X = state->X;
+        Y = state->Y;
+        S = state->S;
+        // copy the program counter
+        PC = state->PC;
+        // copy the flags
+        P = state->P;
+        // copy the interrupt flags
+        nmi = state->nmi;
+        irq = state->irq;
+    }
 };
 
 /// The CPU (MOS6502) for the NES

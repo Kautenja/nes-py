@@ -86,4 +86,15 @@ extern "C" {
     void NESEnv_close(NESEnv* env) {
         delete env;
     }
+
+    /// The function to backup the game-state
+    void NESEnv_backup(NESEnv* env) {
+        env->backup();
+    }
+
+    /// The function to restore the game-state
+    void NESEnv_restore(NESEnv* env) {
+        env->restore();
+    }
+
 }

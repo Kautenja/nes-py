@@ -1,5 +1,6 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
+from PIL import Image
 
 
 class ShouldImportNESEnv(TestCase):
@@ -46,15 +47,18 @@ class ShouldCreateInstanceOfNESEnv(TestCase):
         from ..nes_env import NESEnv
         import gym
         path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
-        self.assertIsInstance(NESEnv(path), gym.Env)
+        env = NESEnv(path)
+        self.assertIsInstance(env, gym.Env)
+        env.close()
 
 
 def create_smb1_instance():
-        import os
-        from ..nes_env import NESEnv
-        import gym
-        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
-        return NESEnv(path)
+    """Return a new SMB1 instance."""
+    import os
+    from ..nes_env import NESEnv
+    import gym
+    path = os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+    return NESEnv(path)
 
 
 class ShouldResetAndCloseEnv(TestCase):
@@ -92,4 +96,30 @@ class ShouldStepEnv(TestCase):
             # check the render output
             render = env.render('rgb_array')
             self.assertIsInstance(render, np.ndarray)
+        env.reset()
+        env.close()
+
+
+class ShouldStepEnvBackupRestore(TestCase):
+    def test(self):
+        import numpy as np
+        done = False
+        env = create_smb1_instance()
+
+        def step_nop(steps):
+            for i in range(steps):
+                if done:
+                    state = env.reset()
+                state, _, _, _ = env.step(0)
+
+            return state
+
+        backup = step_nop(250).copy()
+        # Image.fromarray(backup).save('state.png')
+        env._backup()
+        state = step_nop(250).copy()
+        # Image.fromarray(state).save('state1.png')
+        self.assertFalse(np.array_equal(backup, state))
+        env._restore()
+        self.assertTrue(np.array_equal(backup, env.screen))
         env.close()

@@ -54,18 +54,6 @@ namespace PPU {
     void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
     Cartridge* get_cartridge() { return cartridge; }
 
-    /// Return a new PPU state of the PPU variables
-    PPUState* get_state() {
-        PPUState* state = new PPUState();
-        // TODO: fill state
-        return state;
-    }
-
-    /// Restore the PPU variables from a saved state
-    void set_state(PPUState* state) {
-        // TODO: set with state variables
-    }
-
     /// Get CIRAM address according to mirroring.
     u16 nt_mirror(u16 addr) {
         switch (mirroring) {
@@ -367,7 +355,6 @@ namespace PPU {
         }
     }
 
-    /* Execute a PPU cycle. */
     void step() {
         switch (scanline) {
             case 0 ... 239:  scanline_cycle<VISIBLE>(); break;
@@ -385,7 +372,6 @@ namespace PPU {
         }
     }
 
-    /// Reset the PPU to a blank state.
     void reset() {
         frameOdd = false;
         scanline = dot = 0;
@@ -394,5 +380,15 @@ namespace PPU {
         memset(pixels, 0x00, sizeof(pixels));
         memset(ciRam,  0xFF, sizeof(ciRam));
         memset(oamMem, 0x00, sizeof(oamMem));
+    }
+
+    PPUState* get_state() {
+        PPUState* state = new PPUState();
+        // TODO: fill state
+        return state;
+    }
+
+    void set_state(PPUState* state) {
+        // TODO: set with state variables
     }
 }

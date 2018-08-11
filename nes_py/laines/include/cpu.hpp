@@ -84,12 +84,6 @@ namespace CPU {
     // Addressing mode
     typedef u16 (*Mode)(void);
 
-    /// Return a new CPU state of the CPU variables
-    CPUState* get_state();
-
-    /// Restore the CPU variables from a saved state
-    void set_state(CPUState* state);
-
     /**
         Set the local joy-pad to a new value
 
@@ -149,4 +143,10 @@ namespace CPU {
 
     /// Run the CPU for roughly a frame
     void run_frame();
+
+    /// Return a new CPU state of the CPU variables
+    CPUState* get_state();
+
+    /// Restore the CPU variables from a saved state
+    void set_state(CPUState* state);
 }

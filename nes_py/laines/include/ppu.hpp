@@ -6,8 +6,6 @@
 /// A structure to contain all local variables of a PPU for state backup
 struct PPUState {
 
-
-
     /// Initialize a new PPU State
     PPUState() { }
 
@@ -121,12 +119,6 @@ namespace PPU {
         unsigned r : 15;
     };
 
-    /// Return a new PPU state of the PPU variables
-    PPUState* get_state();
-
-    /// Restore the PPU variables from a saved state
-    void set_state(PPUState* state);
-
     /// Set the GUI instance pointer to a new value.
     void set_gui(GUI* new_gui);
 
@@ -141,6 +133,16 @@ namespace PPU {
 
     template <bool write> u8 access(u16 index, u8 v = 0);
     void set_mirroring(Mirroring mode);
+
+    /// Execute a PPU cycle.
     void step();
+
+    /// Reset the PPU to a blank state.
     void reset();
+
+    /// Return a new PPU state of the PPU variables
+    PPUState* get_state();
+
+    /// Restore the PPU variables from a saved state
+    void set_state(PPUState* state);
 }

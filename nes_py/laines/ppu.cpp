@@ -384,11 +384,64 @@ namespace PPU {
 
     PPUState* get_state() {
         PPUState* state = new PPUState();
-        // TODO: fill state
+        state->mirroring = mirroring;
+        std::copy(std::begin(ciRam), std::end(ciRam), std::begin(state->ciRam));
+        std::copy(std::begin(cgRam), std::end(cgRam), std::begin(state->cgRam));
+        std::copy(std::begin(oamMem), std::end(oamMem), std::begin(state->oamMem));
+        std::copy(std::begin(oam), std::end(oam), std::begin(state->oam));
+        std::copy(std::begin(secOam), std::end(secOam), std::begin(state->secOam));
+        std::copy(std::begin(pixels), std::end(pixels), std::begin(state->pixels));
+        state->vAddr = vAddr;
+        state->tAddr = tAddr;
+        state->fX = fX;
+        state->oamAddr = oamAddr;
+        state->ctrl = ctrl;
+        state->mask = mask;
+        state->status = status;
+        state->nt = nt;
+        state->at = at;
+        state->bgL = bgL;
+        state->bgH = bgH;
+        state->atShiftL = atShiftL;
+        state->atShiftH = atShiftH;
+        state->bgShiftL = bgShiftL;
+        state->bgShiftH = bgShiftH;
+        state->atLatchL = atLatchL;
+        state->atLatchH = atLatchH;
+        state->scanline = scanline;
+        state->dot = dot;
+        state->frameOdd = frameOdd;
+
         return state;
     }
 
     void set_state(PPUState* state) {
-        // TODO: set with state variables
+        mirroring = state->mirroring;
+        std::copy(std::begin(state->ciRam), std::end(state->ciRam), std::begin(ciRam));
+        std::copy(std::begin(state->cgRam), std::end(state->cgRam), std::begin(cgRam));
+        std::copy(std::begin(state->oamMem), std::end(state->oamMem), std::begin(oamMem));
+        std::copy(std::begin(state->oam), std::end(state->oam), std::begin(oam));
+        std::copy(std::begin(state->secOam), std::end(state->secOam), std::begin(secOam));
+        std::copy(std::begin(state->pixels), std::end(state->pixels), std::begin(pixels));
+        vAddr = state->vAddr;
+        tAddr = state->tAddr;
+        fX = state->fX;
+        oamAddr = state->oamAddr;
+        ctrl = state->ctrl;
+        mask = state->mask;
+        status = state->status;
+        nt = state->nt;
+        at = state->at;
+        bgL = state->bgL;
+        bgH = state->bgH;
+        atShiftL = state->atShiftL;
+        atShiftH = state->atShiftH;
+        bgShiftL = state->bgShiftL;
+        bgShiftH = state->bgShiftH;
+        atLatchL = state->atLatchL;
+        atLatchH = state->atLatchH;
+        scanline = state->scanline;
+        dot = state->dot;
+        frameOdd = state->frameOdd;
     }
 }

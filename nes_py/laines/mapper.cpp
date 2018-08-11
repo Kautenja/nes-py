@@ -6,7 +6,7 @@ Mapper::Mapper(u8* rom) : rom(rom) {
     prgSize      = rom[4] * 0x4000;
     chrSize      = rom[5] * 0x2000;
     prgRamSize   = rom[8] ? rom[8] * 0x2000 : 0x2000;
-    set_mirroring((rom[6] & 1) ? PPU::VERTICAL : PPU::HORIZONTAL);
+    PPU::set_mirroring((rom[6] & 1) ? VERTICAL : HORIZONTAL);
 
     this->prg    = rom + 16;
     this->prgRam = new u8[prgRamSize];

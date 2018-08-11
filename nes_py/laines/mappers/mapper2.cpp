@@ -17,7 +17,7 @@ void Mapper2::apply() {
     map_chr<8>(0, 0);
 
     /* mirroring is based on the header (soldered) */
-    set_mirroring(vertical_mirroring?PPU::VERTICAL:PPU::HORIZONTAL);
+    PPU::set_mirroring(vertical_mirroring ? VERTICAL : HORIZONTAL);
 }
 
 u8 Mapper2::write(u16 addr, u8 v) {

@@ -31,7 +31,7 @@ void Mapper4::apply() {
         map_chr<2>(3, regs[1] >> 1);
     }
 
-    set_mirroring(horizMirroring ? PPU::HORIZONTAL : PPU::VERTICAL);
+    PPU::set_mirroring(horizMirroring ? HORIZONTAL : VERTICAL);
 }
 
 u8 Mapper4::write(u16 addr, u8 v) {

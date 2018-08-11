@@ -1,9 +1,5 @@
 #include "gamestate.hpp"
 
-GameState::GameState() {
-
-}
-
 GameState::GameState(GameState* state) {
     // cartridge = new Cartridge(state->cartridge);
     // joypad = new Joypad(state->joypad);

@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "common.hpp"
 
 /// an abstraction of a GUI for copying screens to a high-level client.
@@ -14,6 +15,12 @@ private:
     u32 screen[HEIGHT][WIDTH];
 
 public:
+    /// Initialize a new GUI.
+    GUI() { };
+
+    /// Initialize a new GUI as a copy of another GUI.
+    GUI(GUI* gui) { memcpy(screen, gui->screen, WIDTH * HEIGHT * sizeof(u32)); };
+
     /// Return the width of the screen.
     static unsigned get_width();
 

@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "common.hpp"
 
 /// A joy-pad abstraction for handling virtual button presses
@@ -13,6 +14,24 @@ private:
     bool strobe;
 
 public:
+
+    /// Initialize a new joypad instance
+    Joypad() { };
+
+    /// Initialize a new joypad as a copy of another
+    Joypad(Joypad* joypad) {
+        std::copy(
+            std::begin(joypad->joypad_buttons),
+            std::end(joypad->joypad_buttons),
+            std::begin(joypad_buttons)
+        );
+        std::copy(
+            std::begin(joypad->joypad_bits),
+            std::end(joypad->joypad_bits),
+            std::begin(joypad_bits)
+        );
+        strobe = joypad->strobe;
+    };
 
     /**
         Write a button state to the given joy-pad.

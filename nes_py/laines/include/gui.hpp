@@ -17,10 +17,10 @@ private:
 
 public:
     /// Initialize a new GUI.
-    GUI() { };
+    GUI();
 
     /// Initialize a new GUI as a copy of another GUI.
-    GUI(GUI* gui) { memcpy(screen, gui->screen, WIDTH * HEIGHT * sizeof(u32)); };
+    GUI(GUI* gui);
 
     /// Return the width of the screen.
     static unsigned get_width();

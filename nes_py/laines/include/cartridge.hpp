@@ -17,9 +17,7 @@ public:
     Cartridge(const char* file_name);
 
     /// Initialize a cartridge as a copy of another
-    Cartridge(Cartridge* cart) {
-        mapper = cart->mapper->copy();
-    };
+    Cartridge(Cartridge* cart);
 
     /// Delete an instance of cartridge
     ~Cartridge();

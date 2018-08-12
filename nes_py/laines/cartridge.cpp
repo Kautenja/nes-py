@@ -29,6 +29,10 @@ Cartridge::Cartridge(const char* file_name) {
     }
 }
 
+Cartridge::Cartridge(Cartridge* cart) {
+    mapper = cart->mapper->copy();
+};
+
 Cartridge::~Cartridge() {
     delete this->mapper;
 }

@@ -18,7 +18,7 @@ u8 Joypad::read_state(int n) {
 void Joypad::write_strobe(bool v) {
     // Read the joy-pad data on strobe's transition 1 -> 0.
     if (this->strobe and !v)
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < NUM_JOYPADS; i++)
             this->joypad_bits[i] = this->joypad_buttons[i];
 
     this->strobe = v;

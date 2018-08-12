@@ -6,10 +6,12 @@
 class Joypad {
 
 private:
+    /// the number of controllers supported by the joy-pad system
+    static const int NUM_JOYPADS = 2;
     /// Virtual joy-pad with values from Python API
-    u8 joypad_buttons[2];
+    u8 joypad_buttons[NUM_JOYPADS];
     /// joy-pad shift registers.
-    u8 joypad_bits[2];
+    u8 joypad_bits[NUM_JOYPADS];
     /// joy-pad strobe latch.
     bool strobe;
 
@@ -17,7 +19,7 @@ public:
 
     /// Initialize a new joy-pad instance
     Joypad() {
-        for (int i = 0; i < sizeof(joypad_buttons); i++) {
+        for (int i = 0; i < NUM_JOYPADS; i++) {
             joypad_buttons[i] = 0;
             joypad_bits[i] = 0;
         }

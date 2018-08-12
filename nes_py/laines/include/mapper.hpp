@@ -22,7 +22,7 @@ public:
     Mapper(u8* rom);
     Mapper(Mapper* mapper);
     virtual Mapper* copy();
-    ~Mapper();
+    virtual ~Mapper();
 
     u8 read(u16 addr);
     virtual u8 write(u16 addr, u8 v) { return v; }

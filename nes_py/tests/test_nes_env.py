@@ -25,12 +25,19 @@ class ShouldRaiseValueErrorOnMissingNonexistentROMFile(TestCase):
         self.assertRaises(ValueError, NESEnv, path)
 
 
+class ShouldRaiseValueErrorOnNonexistentFile(TestCase):
+    def test(self):
+        import os
+        from ..nes_env import NESEnv
+        self.assertRaises(ValueError, NESEnv, 'not_a_file.nes')
+
+
 class ShouldRaiseValueErrorOnNoniNES_ROMPath(TestCase):
     def test(self):
         import os
         from ..nes_env import NESEnv
         path =  os.path.join(os.path.dirname(__file__), 'games/blank')
-        self.assertRaises(ValueError, NESEnv, 'not_a_file.nes')
+        self.assertRaises(ValueError, NESEnv, path)
 
 
 class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):

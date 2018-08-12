@@ -1,5 +1,27 @@
 #include "joypad.hpp"
 
+Joypad::Joypad() {
+    for (int i = 0; i < NUM_JOYPADS; i++) {
+        joypad_buttons[i] = 0;
+        joypad_bits[i] = 0;
+    }
+    strobe = false;
+};
+
+Joypad::Joypad(Joypad* joypad) {
+    std::copy(
+        std::begin(joypad->joypad_buttons),
+        std::end(joypad->joypad_buttons),
+        std::begin(joypad_buttons)
+    );
+    std::copy(
+        std::begin(joypad->joypad_bits),
+        std::end(joypad->joypad_bits),
+        std::begin(joypad_bits)
+    );
+    strobe = joypad->strobe;
+};
+
 void Joypad::write_buttons(int n, u8 buttons) {
     this->joypad_buttons[n] = buttons;
 }

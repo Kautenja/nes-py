@@ -20,7 +20,7 @@ public:
 
     /// Initialize a new game-state
     GameState();
-    /// Delete a gamestate
+    /// Delete a game-state
     ~GameState();
     /// create a new game-state as a copy of another
     GameState(GameState* state);

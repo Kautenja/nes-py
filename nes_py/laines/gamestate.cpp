@@ -1,5 +1,18 @@
 #include "gamestate.hpp"
 
+GameState::GameState() {
+        ppu_state = new PPUState();
+        cpu_state = new CPUState();
+};
+
+GameState::~GameState() {
+    // delete cartridge;
+    // delete joypad;
+    // delete gui;
+    // delete ppu_state;
+    // delete cpu_state;
+}
+
 GameState::GameState(GameState* state) {
     cartridge = new Cartridge(state->cartridge);
     joypad = new Joypad(state->joypad);

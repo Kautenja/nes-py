@@ -1,4 +1,3 @@
-#include <iostream>
 #include "ppu.hpp"
 #include "mapper.hpp"
 

@@ -21,6 +21,16 @@ GameState::GameState(GameState* state) {
     ppu_state = new PPUState(state->ppu_state);
 }
 
+void GameState::set_ppu_state(PPUState* new_ppu_state) {
+    delete ppu_state;
+    ppu_state = new_ppu_state;
+}
+
+void GameState::set_cpu_state(CPUState* new_cpu_state) {
+    delete cpu_state;
+    cpu_state = new_cpu_state;
+}
+
 void GameState::load() {
     // setup the CPU up
     CPU::set_state(cpu_state);

@@ -6,12 +6,6 @@
 
 /// a save state of the NES machine
 class GameState {
-private:
-    /// the state for the CPU
-    PPUState* ppu_state;
-    /// the state for the GPU
-    CPUState* cpu_state;
-
 public:
     /// the current game cartridge
     Cartridge* cartridge;
@@ -19,6 +13,10 @@ public:
     Joypad* joypad;
     /// the GUI for the game-state
     GUI* gui;
+    /// the state for the CPU
+    PPUState* ppu_state;
+    /// the state for the GPU
+    CPUState* cpu_state;
 
     /// Initialize a new game-state
     GameState();
@@ -26,10 +24,8 @@ public:
     ~GameState();
     /// create a new game-state as a copy of another
     GameState(GameState* state);
-    /// Set the PPU state to a new value
-    void set_ppu_state(PPUState* new_ppu_state);
-    /// Set the CPU state to a new value
-    void set_cpu_state(CPUState* new_cpu_state);
+    /// create a new game-state as a copy of another with different states
+    GameState(GameState* state, CPUState* new_cpu_state, PPUState* new_ppu_state);
     /// Load the game-state's data into the machine
     void load();
 };

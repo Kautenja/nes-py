@@ -148,6 +148,8 @@ class NESEnv(gym.Env):
         self._screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
         # setup the screen for the environment (24-bit RGB format for Python)
         self.screen = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
+        # determines whether the env has a backup stored
+        self._has_backup = False
 
     def _copy_screen(self):
         """Copy screen data from the C++ shared object library."""
@@ -205,6 +207,11 @@ class NESEnv(gym.Env):
     def _backup(self):
         """Backup the NES state in the emulator."""
         _LIB.NESEnv_backup(self._env)
+        self._has_backup = True
+
+    def _del_backup(self):
+        """Delete the backup for the environment."""
+        self._has_backup = False
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
@@ -228,7 +235,10 @@ class NESEnv(gym.Env):
         # call the before reset callback
         self._will_reset()
         # reset the emulator
-        _LIB.NESEnv_reset(self._env)
+        if not self._has_backup:
+            _LIB.NESEnv_reset(self._env)
+        else:
+            self._restore()
         # call the after reset callback
         self._did_reset()
         # copy the screen from the emulator

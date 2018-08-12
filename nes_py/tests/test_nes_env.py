@@ -1,6 +1,6 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
-from PIL import Image
+# from PIL import Image
 
 
 class ShouldImportNESEnv(TestCase):
@@ -25,12 +25,18 @@ class ShouldRaiseValueErrorOnMissingNonexistentROMFile(TestCase):
         self.assertRaises(ValueError, NESEnv, path)
 
 
+class ShouldRaiseValueErrorOnNonexistentFile(TestCase):
+    def test(self):
+        from ..nes_env import NESEnv
+        self.assertRaises(ValueError, NESEnv, 'not_a_file.nes')
+
+
 class ShouldRaiseValueErrorOnNoniNES_ROMPath(TestCase):
     def test(self):
         import os
         from ..nes_env import NESEnv
         path =  os.path.join(os.path.dirname(__file__), 'games/blank')
-        self.assertRaises(ValueError, NESEnv, 'not_a_file.nes')
+        self.assertRaises(ValueError, NESEnv, path)
 
 
 class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):
@@ -56,7 +62,6 @@ def create_smb1_instance():
     """Return a new SMB1 instance."""
     import os
     from ..nes_env import NESEnv
-    import gym
     path = os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
     return NESEnv(path)
 
@@ -75,7 +80,7 @@ class ShouldStepEnv(TestCase):
         import numpy as np
         env = create_smb1_instance()
         done = True
-        for i in range(500):
+        for _ in range(500):
             if done:
                 # reset the environment and check the output value
                 state = env.reset()
@@ -106,7 +111,7 @@ class ShouldStepEnvBackupRestore(TestCase):
         done = True
         env = create_smb1_instance()
 
-        for i in range(250):
+        for _ in range(250):
             if done:
                 state = env.reset()
                 done = False
@@ -116,7 +121,7 @@ class ShouldStepEnvBackupRestore(TestCase):
         # Image.fromarray(backup).save('state.png')
         env._backup()
 
-        for i in range(250):
+        for _ in range(250):
             if done:
                 state = env.reset()
                 done = False

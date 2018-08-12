@@ -1,8 +1,8 @@
 #include "gamestate.hpp"
 
 GameState::GameState() {
-        ppu_state = new PPUState();
-        cpu_state = new CPUState();
+    ppu_state = new PPUState();
+    cpu_state = new CPUState();
 };
 
 GameState::~GameState() {

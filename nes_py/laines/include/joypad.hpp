@@ -16,7 +16,13 @@ private:
 public:
 
     /// Initialize a new joy-pad instance
-    Joypad() { };
+    Joypad() {
+        for (int i = 0; i < sizeof(joypad_buttons); i++) {
+            joypad_buttons[i] = 0;
+            joypad_bits[i] = 0;
+        }
+        strobe = false;
+    };
 
     /// Initialize a new joy-pad as a copy of another
     Joypad(Joypad* joypad) {

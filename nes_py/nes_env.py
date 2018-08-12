@@ -209,8 +209,7 @@ class NESEnv(gym.Env):
     def _restore(self):
         """Restore the backup state into the NES emulator."""
         _LIB.NESEnv_restore(self._env)
-        # TODO: copy the screen from the instance
-        # self._copy_screen()
+        self._copy_screen()
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""

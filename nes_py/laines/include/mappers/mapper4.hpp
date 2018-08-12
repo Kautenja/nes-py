@@ -13,6 +13,14 @@ class Mapper4 : public Mapper {
     void apply();
 
 public:
+    Mapper4(Mapper4* mapper): Mapper(mapper) {
+        reg8000 = mapper->reg8000;
+        std::copy(std::begin(mapper->regs), std::end(mapper->regs), std::begin(regs));
+        horizMirroring = mapper->horizMirroring;
+        irqPeriod = mapper->irqPeriod;
+        irqCounter = mapper->irqCounter;
+        irqEnabled = mapper->irqEnabled;
+    };
     Mapper4(u8* rom) : Mapper(rom) {
         for (int i = 0; i < 8; i++)
             regs[i] = 0;
@@ -24,6 +32,8 @@ public:
         map_prg<8>(3, -1);
         apply();
     }
+
+    Mapper4* copy() { return new Mapper4(this); };
 
     u8 write(u16 addr, u8 v);
     u8 chr_write(u16 addr, u8 v);

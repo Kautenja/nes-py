@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <cstring>
 #include "common.hpp"
 
@@ -17,7 +18,10 @@ protected:
     template <int pageKBs> void map_chr(int slot, int bank);
 
 public:
+    Mapper() { };
     Mapper(u8* rom);
+    Mapper(Mapper* mapper);
+    virtual Mapper* copy();
     ~Mapper();
 
     u8 read(u16 addr);

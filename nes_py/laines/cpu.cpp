@@ -1,35 +1,21 @@
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include "cartridge.hpp"
-#include "joypad.hpp"
 #include "ppu.hpp"
 #include "cpu.hpp"
 
-/// The CPU (MOS6502) for the NES
 namespace CPU {
     /// The RAM module for the CPU
     u8 ram[0x800];
-
-    /**
-        Return the value of the given memory address.
-        This is meant as a public getter to the memory of the machine for RAM hacks.
-
-        @param address the 16-bit address to read from memory
-        @returns the byte located at the given address
-
-    */
     u8 read_mem(u16 address) { return ram[address % 0x800]; }
-
-    /**
-        Return the value of the given memory address.
-        This is meant as a public getter to the memory of the machine for RAM hacks.
-
-        @param address the 16-bit address to read from memory
-        @param value the 8-bit value to write to the given memory address
-
-    */
     void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
+
+    /// the joypad to get input data from
+    Joypad* joypad;
+    void set_joypad(Joypad* new_joypad) { joypad = new_joypad; }
+    Joypad* get_joypad() { return joypad; }
+
+    /// the cartridge to get game data from
+    Cartridge* cartridge;
+    void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
+    Cartridge* get_cartridge() { return cartridge; }
 
     /// accumulator, index x, index y, and the stack pointer
     u8 A, X, Y, S;
@@ -81,7 +67,7 @@ namespace CPU {
                 if (wr)
                     return 1;
                 else
-                    return Joypad::read_state(1);
+                    return joypad->read_state(1);
             // OAM / DMA
             case 0x4014:
                 if (wr) dma_oam(v);
@@ -89,15 +75,15 @@ namespace CPU {
             case 0x4016:
                 // Joypad strobe
                 if (wr) {
-                    Joypad::write_strobe(v & 1);
+                    joypad->write_strobe(v & 1);
                     break;
                 }
                 // Joypad 0
                 else
-                    return Joypad::read_state(0);
+                    return joypad->read_state(0);
             // Cartridge
             case 0x4018 ... 0xFFFF:
-                return Cartridge::access<wr>(addr, v);
+                return cartridge->access<wr>(addr, v);
         }
         return 0;
     }
@@ -292,7 +278,6 @@ namespace CPU {
     void set_nmi(bool v) { nmi = v; }
     void set_irq(bool v) { irq = v; }
 
-    /* Turn on the CPU */
     void power() {
         remainingCycles = 0;
 
@@ -304,7 +289,6 @@ namespace CPU {
         INT<RESET>();
     }
 
-    /* Run the CPU for roughly a frame */
     void run_frame() {
         remainingCycles += TOTAL_CYCLES;
 
@@ -314,5 +298,42 @@ namespace CPU {
 
             exec();
         }
+    }
+
+    CPUState* get_state() {
+        CPUState* state = new CPUState();
+        // copy the RAM array into the CPU state
+        std::copy(std::begin(ram), std::end(ram), std::begin(state->ram));
+        // copy the registers
+        state->A = A;
+        state->X = X;
+        state->Y = Y;
+        state->S = S;
+        // copy the program counter
+        state->PC = PC;
+        // copy the flags
+        state->P = P;
+        // copy the interrupt flags
+        state->nmi = nmi;
+        state->irq = irq;
+
+        return state;
+    }
+
+    void set_state(CPUState* state) {
+        // copy the RAM array into the CPU state
+        std::copy(std::begin(state->ram), std::end(state->ram), std::begin(ram));
+        // copy the registers
+        A = state->A;
+        X = state->X;
+        Y = state->Y;
+        S = state->S;
+        // copy the program counter
+        PC = state->PC;
+        // copy the flags
+        P = state->P;
+        // copy the interrupt flags
+        nmi = state->nmi;
+        irq = state->irq;
     }
 }

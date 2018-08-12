@@ -31,8 +31,8 @@ void Mapper1::apply() {
 
     // Set mirroring:
     switch (regs[0] & 0b11) {
-        case 2:  set_mirroring(PPU::VERTICAL);   break;
-        case 3:  set_mirroring(PPU::HORIZONTAL); break;
+        case 2:  PPU::set_mirroring(VERTICAL);   break;
+        case 3:  PPU::set_mirroring(HORIZONTAL); break;
     }
 }
 

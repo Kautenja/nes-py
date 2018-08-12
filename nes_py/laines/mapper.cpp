@@ -6,7 +6,7 @@ Mapper::Mapper(u8* rom) : rom(rom) {
     prgSize      = rom[4] * 0x4000;
     chrSize      = rom[5] * 0x2000;
     prgRamSize   = rom[8] ? rom[8] * 0x2000 : 0x2000;
-    set_mirroring((rom[6] & 1) ? PPU::VERTICAL : PPU::HORIZONTAL);
+    PPU::set_mirroring((rom[6] & 1) ? VERTICAL : HORIZONTAL);
 
     this->prg    = rom + 16;
     this->prgRam = new u8[prgRamSize];
@@ -20,6 +20,28 @@ Mapper::Mapper(u8* rom) : rom(rom) {
         chrSize = 0x2000;
         this->chr = new u8[chrSize];
     }
+}
+
+Mapper::Mapper(Mapper* mapper) {
+    rom = mapper->rom;
+    chrRam = mapper->chrRam;
+
+    prgSize = mapper->prgSize;
+    prg = mapper->prg;
+
+    chrSize = mapper->chrSize;
+    chr = mapper->chr;
+
+    prgRamSize = mapper->prgRamSize;
+    prgRam = new u8[prgRamSize];
+    memcpy(prgRam, mapper->prgRam, prgRamSize * sizeof(u8));
+
+    std::copy(std::begin(mapper->prgMap), std::end(mapper->prgMap), std::begin(prgMap));
+    std::copy(std::begin(mapper->chrMap), std::end(mapper->chrMap), std::begin(chrMap));
+}
+
+Mapper* Mapper::copy() {
+    return new Mapper(this);
 }
 
 Mapper::~Mapper() {

@@ -1,10 +1,7 @@
 #include <cstring>
-#include "cartridge.hpp"
 #include "cpu.hpp"
-#include "gui.hpp"
 #include "ppu.hpp"
 
-/// The Picture Processing Unit
 namespace PPU {
 #include "palette.inc"
     /// Mirroring mode
@@ -47,6 +44,16 @@ namespace PPU {
     inline bool rendering() { return mask.bg || mask.spr; }
     inline int spr_height() { return ctrl.sprSz ? 16 : 8; }
 
+    /// the GUI this PPU has access to
+    GUI* gui;
+    void set_gui(GUI* new_gui) { gui = new_gui; }
+    GUI* get_gui() { return gui; }
+
+    /// the cartridge this PPU uses for game data
+    Cartridge* cartridge;
+    void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
+    Cartridge* get_cartridge() { return cartridge; }
+
     /// Get CIRAM address according to mirroring.
     u16 nt_mirror(u16 addr) {
         switch (mirroring) {
@@ -62,7 +69,7 @@ namespace PPU {
     u8 rd(u16 addr) {
         switch (addr) {
             // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  return Cartridge::chr_access<0>(addr);
+            case 0x0000 ... 0x1FFF:  return cartridge->chr_access<0>(addr);
             // Nametables.
             case 0x2000 ... 0x3EFF:  return ciRam[nt_mirror(addr)];
             // Palettes:
@@ -76,7 +83,7 @@ namespace PPU {
     void wr(u16 addr, u8 v) {
         switch (addr) {
             // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  Cartridge::chr_access<1>(addr, v); break;
+            case 0x0000 ... 0x1FFF:  cartridge->chr_access<1>(addr, v); break;
             // Nametables.
             case 0x2000 ... 0x3EFF:  ciRam[nt_mirror(addr)] = v; break;
             // Palettes:
@@ -302,7 +309,7 @@ namespace PPU {
         static u16 addr;
 
         if (s == NMI and dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
-        else if (s == POST and dot == 0) GUI::new_frame(pixels);
+        else if (s == POST and dot == 0) gui->new_frame(pixels);
         else if (s == VISIBLE or s == PRE) {
             // Sprites:
             switch (dot) {
@@ -344,11 +351,10 @@ namespace PPU {
                 case           340:  nt = rd(addr); if (s == PRE && rendering() && frameOdd) dot++;
             }
             // Signal scanline to mapper:
-            if (dot == 260 && rendering()) Cartridge::signal_scanline();
+            if (dot == 260 && rendering()) cartridge->signal_scanline();
         }
     }
 
-    /* Execute a PPU cycle. */
     void step() {
         switch (scanline) {
             case 0 ... 239:  scanline_cycle<VISIBLE>(); break;
@@ -366,7 +372,6 @@ namespace PPU {
         }
     }
 
-    /// Reset the PPU to a blank state.
     void reset() {
         frameOdd = false;
         scanline = dot = 0;
@@ -375,5 +380,68 @@ namespace PPU {
         memset(pixels, 0x00, sizeof(pixels));
         memset(ciRam,  0xFF, sizeof(ciRam));
         memset(oamMem, 0x00, sizeof(oamMem));
+    }
+
+    PPUState* get_state() {
+        PPUState* state = new PPUState();
+        state->mirroring = mirroring;
+        std::copy(std::begin(ciRam), std::end(ciRam), std::begin(state->ciRam));
+        std::copy(std::begin(cgRam), std::end(cgRam), std::begin(state->cgRam));
+        std::copy(std::begin(oamMem), std::end(oamMem), std::begin(state->oamMem));
+        std::copy(std::begin(oam), std::end(oam), std::begin(state->oam));
+        std::copy(std::begin(secOam), std::end(secOam), std::begin(state->secOam));
+        std::copy(std::begin(pixels), std::end(pixels), std::begin(state->pixels));
+        state->vAddr = vAddr;
+        state->tAddr = tAddr;
+        state->fX = fX;
+        state->oamAddr = oamAddr;
+        state->ctrl = ctrl;
+        state->mask = mask;
+        state->status = status;
+        state->nt = nt;
+        state->at = at;
+        state->bgL = bgL;
+        state->bgH = bgH;
+        state->atShiftL = atShiftL;
+        state->atShiftH = atShiftH;
+        state->bgShiftL = bgShiftL;
+        state->bgShiftH = bgShiftH;
+        state->atLatchL = atLatchL;
+        state->atLatchH = atLatchH;
+        state->scanline = scanline;
+        state->dot = dot;
+        state->frameOdd = frameOdd;
+
+        return state;
+    }
+
+    void set_state(PPUState* state) {
+        mirroring = state->mirroring;
+        std::copy(std::begin(state->ciRam), std::end(state->ciRam), std::begin(ciRam));
+        std::copy(std::begin(state->cgRam), std::end(state->cgRam), std::begin(cgRam));
+        std::copy(std::begin(state->oamMem), std::end(state->oamMem), std::begin(oamMem));
+        std::copy(std::begin(state->oam), std::end(state->oam), std::begin(oam));
+        std::copy(std::begin(state->secOam), std::end(state->secOam), std::begin(secOam));
+        std::copy(std::begin(state->pixels), std::end(state->pixels), std::begin(pixels));
+        vAddr = state->vAddr;
+        tAddr = state->tAddr;
+        fX = state->fX;
+        oamAddr = state->oamAddr;
+        ctrl = state->ctrl;
+        mask = state->mask;
+        status = state->status;
+        nt = state->nt;
+        at = state->at;
+        bgL = state->bgL;
+        bgH = state->bgH;
+        atShiftL = state->atShiftL;
+        atShiftH = state->atShiftH;
+        bgShiftL = state->bgShiftL;
+        bgShiftH = state->bgShiftH;
+        atLatchL = state->atLatchL;
+        atLatchH = state->atLatchH;
+        scanline = state->scanline;
+        dot = state->dot;
+        frameOdd = state->frameOdd;
     }
 }

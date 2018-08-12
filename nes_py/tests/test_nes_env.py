@@ -74,7 +74,7 @@ class ShouldStepEnv(TestCase):
     def test(self):
         import numpy as np
         env = create_smb1_instance()
-        done = False
+        done = True
         for i in range(500):
             if done:
                 # reset the environment and check the output value
@@ -103,21 +103,25 @@ class ShouldStepEnv(TestCase):
 class ShouldStepEnvBackupRestore(TestCase):
     def test(self):
         import numpy as np
-        done = False
+        done = True
         env = create_smb1_instance()
 
-        def step_nop(steps):
-            for i in range(steps):
-                if done:
-                    state = env.reset()
-                state, _, _, _ = env.step(0)
+        for i in range(250):
+            if done:
+                state = env.reset()
+                done = False
+            state, _, done, _ = env.step(0)
 
-            return state
-
-        backup = step_nop(250).copy()
+        backup = state.copy()
         # Image.fromarray(backup).save('state.png')
         env._backup()
-        state = step_nop(250).copy()
+
+        for i in range(250):
+            if done:
+                state = env.reset()
+                done = False
+            state, _, done, _ = env.step(0)
+
         # Image.fromarray(state).save('state1.png')
         self.assertFalse(np.array_equal(backup, state))
         env._restore()

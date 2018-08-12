@@ -23,25 +23,26 @@ Mapper::Mapper(u8* rom) : rom(rom) {
     }
 }
 
+Mapper::Mapper(Mapper* mapper) {
+    rom = mapper->rom;
+    chrRam = mapper->chrRam;
+
+    prgSize = mapper->prgSize;
+    prg = mapper->prg;
+
+    chrSize = mapper->chrSize;
+    chr = mapper->chr;
+
+    prgRamSize = mapper->prgRamSize;
+    prgRam = new u8[prgRamSize];
+    memcpy(prgRam, mapper->prgRam, prgRamSize * sizeof(u8));
+
+    std::copy(std::begin(mapper->prgMap), std::end(mapper->prgMap), std::begin(prgMap));
+    std::copy(std::begin(mapper->chrMap), std::end(mapper->chrMap), std::begin(chrMap));
+}
+
 Mapper* Mapper::copy() {
-    Mapper* _copy = new Mapper();
-
-    _copy->rom = rom;
-    _copy->chrRam = chrRam;
-
-    _copy->prgSize = prgSize;
-    _copy->prg = prg;
-
-    _copy->chrSize = chrSize;
-    _copy->chr = chr;
-
-    _copy->prgRamSize = prgRamSize;
-    memcpy(_copy->prgRam, prgRam, prgRamSize * sizeof(u8));
-
-    std::copy(std::begin(prgMap), std::end(prgMap), std::begin(_copy->prgMap));
-    std::copy(std::begin(chrMap), std::end(chrMap), std::begin(_copy->chrMap));
-
-    return _copy;
+    return new Mapper(this);
 }
 
 Mapper::~Mapper() {

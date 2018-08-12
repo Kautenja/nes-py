@@ -19,7 +19,8 @@ protected:
 public:
     Mapper() { };
     Mapper(u8* rom);
-    Mapper* copy();
+    Mapper(Mapper* mapper);
+    virtual Mapper* copy();
     ~Mapper();
 
     u8 read(u16 addr);

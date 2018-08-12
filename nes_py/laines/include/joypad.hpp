@@ -15,10 +15,10 @@ private:
 
 public:
 
-    /// Initialize a new joypad instance
+    /// Initialize a new joy-pad instance
     Joypad() { };
 
-    /// Initialize a new joypad as a copy of another
+    /// Initialize a new joy-pad as a copy of another
     Joypad(Joypad* joypad) {
         std::copy(
             std::begin(joypad->joypad_buttons),

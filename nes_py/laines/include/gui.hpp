@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <cstring>
 #include "common.hpp"
 
 /// an abstraction of a GUI for copying screens to a high-level client.

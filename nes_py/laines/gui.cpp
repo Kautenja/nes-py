@@ -1,4 +1,3 @@
-#include <cstring>
 #include "gui.hpp"
 
 unsigned GUI::get_width() { return GUI::WIDTH; }

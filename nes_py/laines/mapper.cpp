@@ -3,39 +3,57 @@
 
 Mapper::Mapper(u8* rom) : rom(rom) {
     // Read infos from header:
-    prgSize      = rom[4] * 0x4000;
-    chrSize      = rom[5] * 0x2000;
-    prgRamSize   = rom[8] ? rom[8] * 0x2000 : 0x2000;
+    prgSize = rom[4] * 0x4000;
+    chrSize = rom[5] * 0x2000;
+    prgRamSize = rom[8] ? rom[8] * 0x2000 : 0x2000;
     PPU::set_mirroring((rom[6] & 1) ? VERTICAL : HORIZONTAL);
 
-    this->prg    = rom + 16;
-    this->prgRam = new u8[prgRamSize];
+    prg = rom + 16;
+    prgRam = new u8[prgRamSize];
 
     // CHR ROM:
-    if (chrSize)
-        this->chr = rom + 16 + prgSize;
+    if (chrSize) {
+        chr = rom + 16 + prgSize;
+        // calculate the ROM size
+        romSize = (chr + chrSize) - rom;
+    }
     // CHR RAM:
     else {
         chrRam = true;
         chrSize = 0x2000;
-        this->chr = new u8[chrSize];
+        chr = new u8[chrSize];
+        // calculate the ROM size
+        romSize = (rom + 16 + prgSize) - rom;
     }
 }
 
 Mapper::Mapper(Mapper* mapper) {
-    rom = mapper->rom;
+    // copy the ROM size and create a new array to store its data in
+    romSize = mapper->romSize;
+    rom = new u8[romSize];
+    // copy the ROM data
+    memcpy(rom, mapper->rom, romSize * sizeof(u8));
+    // copy the flag for whether the mapper has CHR RAM
     chrRam = mapper->chrRam;
-
+    // setup the PRG ROM
     prgSize = mapper->prgSize;
-    prg = mapper->prg;
-
+    prg = rom + 16;
+    // setup the CHR ROM/RAM
     chrSize = mapper->chrSize;
-    chr = mapper->chr;
-
+    // CHR RAM:
+    if (chrRam) {
+        chr = new u8[chrSize];
+        memcpy(chr, mapper->chr, chrSize * sizeof(u8));
+    }
+    // CHR ROM:
+    else {
+        chr = rom + 16 + prgSize;
+    }
+    // setup the PRG RAM
     prgRamSize = mapper->prgRamSize;
     prgRam = new u8[prgRamSize];
     memcpy(prgRam, mapper->prgRam, prgRamSize * sizeof(u8));
-
+    // copy the maps
     std::copy(std::begin(mapper->prgMap), std::end(mapper->prgMap), std::begin(prgMap));
     std::copy(std::begin(mapper->chrMap), std::end(mapper->chrMap), std::begin(chrMap));
 }

@@ -19,12 +19,13 @@ public:
     CPUState* cpu_state;
 
     /// Initialize a new game-state
-    GameState() {
-        ppu_state = new PPUState();
-        cpu_state = new CPUState();
-    };
+    GameState();
+    /// Delete a game-state
+    ~GameState();
     /// create a new game-state as a copy of another
     GameState(GameState* state);
+    /// create a new game-state as a copy of another with different states
+    GameState(GameState* state, CPUState* new_cpu_state, PPUState* new_ppu_state);
     /// Load the game-state's data into the machine
     void load();
 };

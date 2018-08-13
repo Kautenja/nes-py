@@ -18,28 +18,10 @@ private:
 public:
 
     /// Initialize a new joy-pad instance
-    Joypad() {
-        for (int i = 0; i < NUM_JOYPADS; i++) {
-            joypad_buttons[i] = 0;
-            joypad_bits[i] = 0;
-        }
-        strobe = false;
-    };
+    Joypad();
 
     /// Initialize a new joy-pad as a copy of another
-    Joypad(Joypad* joypad) {
-        std::copy(
-            std::begin(joypad->joypad_buttons),
-            std::end(joypad->joypad_buttons),
-            std::begin(joypad_buttons)
-        );
-        std::copy(
-            std::begin(joypad->joypad_bits),
-            std::end(joypad->joypad_bits),
-            std::begin(joypad_bits)
-        );
-        strobe = joypad->strobe;
-    };
+    Joypad(Joypad* joypad);
 
     /**
         Write a button state to the given joy-pad.

@@ -30,13 +30,13 @@ void NESEnv::step(unsigned char action) {
 
 void NESEnv::backup() {
     // copy the current state with the backup state
-    backup_state = new GameState(current_state);
-    backup_state->cpu_state = CPU::get_state();
-    backup_state->ppu_state = PPU::get_state();
+    delete backup_state;
+    backup_state = new GameState(current_state, CPU::get_state(), PPU::get_state());
 }
 
 void NESEnv::restore() {
     // copy the backup state into the current state and load the machine
+    delete current_state;
     current_state = new GameState(backup_state);
     current_state->load();
 }

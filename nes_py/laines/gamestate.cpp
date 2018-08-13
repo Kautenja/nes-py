@@ -6,7 +6,7 @@ GameState::GameState() {
 };
 
 GameState::~GameState() {
-    // delete cartridge;
+    delete cartridge;
     delete joypad;
     delete gui;
     delete ppu_state;

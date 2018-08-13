@@ -3,8 +3,13 @@
 #include <cstring>
 #include "common.hpp"
 
+/// An abstract base class for a Mapper module on a Cartridge
 class Mapper {
+    /// the ROM this mapper is loading from
     u8* rom;
+    /// the size of the ROM in bytes
+    int romSize;
+    /// whether this mapper has CHR RAM
     bool chrRam = false;
 
 protected:

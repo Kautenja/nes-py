@@ -14,7 +14,7 @@ from gym.spaces import Discrete
 _MODULE_PATH = os.path.dirname(__file__)
 # the relative path to the C++ shared object library. it can be built on
 # many different systems so all we know is the defined prefix
-_SO_PATH = 'laines/build/lib_nes_env*'
+_SO_PATH = 'laines/lib_nes_env*'
 # the absolute path to the C++ shared object library
 _LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
 # load the library from the shared object file. use a glob to locate the

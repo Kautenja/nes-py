@@ -18,4 +18,4 @@ env = Environment(
 
 # Compile the shared library for the Python interface
 source_files = Glob('nes_py/laines/build/*/*.cpp') + Glob('nes_py/laines/build/*/*/*.cpp')
-env.SharedLibrary('nes_py/laines/build/_nes_env.so', source_files)
+env.SharedLibrary('nes_py/_nes_env.so', source_files)

@@ -67,29 +67,38 @@ namespace PPU {
 
     /// Read an address from PPU memory.
     u8 rd(u16 addr) {
-        switch (addr) {
-            // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  return cartridge->chr_access<0>(addr);
-            // Nametables.
-            case 0x2000 ... 0x3EFF:  return ciRam[nt_mirror(addr)];
-            // Palettes:
-            case 0x3F00 ... 0x3FFF:
-                if ((addr & 0x13) == 0x10) addr &= ~0x10;
-                return cgRam[addr & 0x1F] & (mask.gray ? 0x30 : 0xFF);
-            default: return 0;
+        // CHR-ROM/RAM
+        if (0x0000 <= addr && addr <= 0x1FFF) {
+            return cartridge->chr_access<0>(addr);
         }
+        // Nametables
+        else if (0x2000 <= addr && addr <= 0x3EFF) {
+            return ciRam[nt_mirror(addr)];
+        }
+        // Palettes
+        else if (0x3F00 <= addr && addr <= 0x3FFF) {
+            if ((addr & 0x13) == 0x10)
+                addr &= ~0x10;
+            return cgRam[addr & 0x1F] & (mask.gray ? 0x30 : 0xFF);
+        }
+
+        return 0;
     }
     /// Write a byte to PPU memory.
     void wr(u16 addr, u8 v) {
-        switch (addr) {
-            // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  cartridge->chr_access<1>(addr, v); break;
-            // Nametables.
-            case 0x2000 ... 0x3EFF:  ciRam[nt_mirror(addr)] = v; break;
-            // Palettes:
-            case 0x3F00 ... 0x3FFF:
-                if ((addr & 0x13) == 0x10) addr &= ~0x10;
-                cgRam[addr & 0x1F] = v; break;
+        // CHR-ROM/RAM
+        if (0x0000 <= addr && addr <= 0x1FFF) {
+            cartridge->chr_access<1>(addr, v);
+        }
+        // Nametables
+        else if (0x2000 <= addr && addr <= 0x3EFF) {
+            ciRam[nt_mirror(addr)] = v;
+        }
+        // Palettes
+        else if (0x3F00 <= addr && addr <= 0x3FFF) {
+            if ((addr & 0x13) == 0x10)
+                addr &= ~0x10;
+            cgRam[addr & 0x1F] = v;
         }
     }
 
@@ -215,7 +224,7 @@ namespace PPU {
             int line = (scanline == 261 ? -1 : scanline) - oamMem[i*4 + 0];
             // If the sprite is in the scanline, copy its properties
             // into secondary OAM:
-            if (line >= 0 and line < spr_height()) {
+            if (line >= 0 && line < spr_height()) {
                 secOam[n].id   = i;
                 secOam[n].y    = oamMem[i*4 + 0];
                 secOam[n].tile = oamMem[i*4 + 1];
@@ -261,8 +270,8 @@ namespace PPU {
         bool objPriority = 0;
         int x = dot - 2;
 
-        if (scanline < 240 and x >= 0 and x < 256) {
-            if (mask.bg and not (!mask.bgLeft && x < 8)) {
+        if (scanline < 240 && x >= 0 && x < 256) {
+            if (mask.bg && !(!mask.bgLeft && x < 8)) {
                 // Background:
                 palette = (NTH_BIT(bgShiftH, 15 - fX) << 1) |
                            NTH_BIT(bgShiftL, 15 - fX);
@@ -271,7 +280,7 @@ namespace PPU {
                                  NTH_BIT(atShiftL,  7 - fX))      << 2;
             }
             // Sprites:
-            if (mask.spr and not (!mask.sprLeft && x < 8))
+            if (mask.spr && !(!mask.sprLeft && x < 8))
                 for (int i = 7; i >= 0; i--) {
                     // Void entry.
                     if (oam[i].id == 64) continue;
@@ -308,60 +317,84 @@ namespace PPU {
     template<Scanline s> void scanline_cycle() {
         static u16 addr;
 
-        if (s == NMI and dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
-        else if (s == POST and dot == 0) gui->new_frame(pixels);
-        else if (s == VISIBLE or s == PRE) {
+        if (s == NMI && dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
+        else if (s == POST && dot == 0) gui->new_frame(pixels);
+        else if (s == VISIBLE || s == PRE) {
             // Sprites:
             switch (dot) {
                 case   1: clear_oam(); if (s == PRE) { status.sprOvf = status.sprHit = false; } break;
                 case 257: eval_sprites(); break;
                 case 321: load_sprites(); break;
             }
-            // Background:
-            switch (dot) {
-                case 2 ... 255: case 322 ... 337:
-                    pixel();
-                    switch (dot % 8) {
-                        // Nametable:
-                        case 1:  addr  = nt_addr(); reload_shift(); break;
-                        case 2:  nt    = rd(addr);  break;
-                        // Attribute:
-                        case 3:  addr  = at_addr(); break;
-                        case 4:  at    = rd(addr);  if (vAddr.cY & 2) at >>= 4;
-                                                    if (vAddr.cX & 2) at >>= 2; break;
-                        // Background (low bits):
-                        case 5:  addr  = bg_addr(); break;
-                        case 6:  bgL   = rd(addr);  break;
-                        // Background (high bits):
-                        case 7:  addr += 8;         break;
-                        case 0:  bgH   = rd(addr); h_scroll(); break;
-                    } break;
-                // Vertical bump.
-                case         256:  pixel(); bgH = rd(addr); v_scroll(); break;
-                // Update horizontal position.
-                case         257:  pixel(); reload_shift(); h_update(); break;
-                // Update vertical position.
-                case 280 ... 304:  if (s == PRE)            v_update(); break;
-
-                // No shift reloading:
-                case             1:  addr = nt_addr(); if (s == PRE) status.vBlank = false; break;
-                case 321: case 339:  addr = nt_addr(); break;
-                // Nametable fetch instead of attribute:
-                case           338:  nt = rd(addr); break;
-                case           340:  nt = rd(addr); if (s == PRE && rendering() && frameOdd) dot++;
+            // Background
+            if ((2 <= dot && dot <= 255) || (322 <= dot && dot <= 337)) {
+                pixel();
+                switch (dot % 8) {
+                    // Nametable:
+                    case 1:  addr  = nt_addr(); reload_shift(); break;
+                    case 2:  nt    = rd(addr);  break;
+                    // Attribute:
+                    case 3:  addr  = at_addr(); break;
+                    case 4:  at    = rd(addr);  if (vAddr.cY & 2) at >>= 4;
+                                                if (vAddr.cX & 2) at >>= 2; break;
+                    // Background (low bits):
+                    case 5:  addr  = bg_addr(); break;
+                    case 6:  bgL   = rd(addr);  break;
+                    // Background (high bits):
+                    case 7:  addr += 8;         break;
+                    case 0:  bgH   = rd(addr); h_scroll(); break;
+                }
             }
+            // Vertical bump
+            else if (dot == 256) {
+                pixel();
+                bgH = rd(addr);
+                v_scroll();
+            }
+            // Update horizontal position
+            else if (dot == 257) {
+                pixel();
+                reload_shift();
+                h_update();
+            }
+            // Update vertical position
+            else if (280 <= dot && dot <= 304) {
+                if (s == PRE)
+                    v_update();
+            }
+            // No shift reloading
+            else if (dot == 1) {
+                addr = nt_addr();
+                if (s == PRE)
+                    status.vBlank = false;
+            }
+            else if (dot == 321 || dot == 339) {
+                addr = nt_addr();
+            }
+            // Nametable fetch instead of attribute
+            else if (dot == 338) {
+                nt = rd(addr);
+            }
+            else if (dot == 340) {
+                nt = rd(addr);
+                if (s == PRE && rendering() && frameOdd)
+                    dot++;
+            }
+
             // Signal scanline to mapper:
             if (dot == 260 && rendering()) cartridge->signal_scanline();
         }
     }
 
     void step() {
-        switch (scanline) {
-            case 0 ... 239:  scanline_cycle<VISIBLE>(); break;
-            case       240:  scanline_cycle<POST>();    break;
-            case       241:  scanline_cycle<NMI>();     break;
-            case       261:  scanline_cycle<PRE>();     break;
-        }
+        if (0 <= scanline && scanline <= 239)
+            scanline_cycle<VISIBLE>();
+        else if (scanline == 240)
+            scanline_cycle<POST>();
+        else if (scanline == 241)
+            scanline_cycle<NMI>();
+        else if (scanline == 261)
+            scanline_cycle<PRE>();
         // Update dot and scanline counters:
         if (++dot > 340) {
             dot %= 341;

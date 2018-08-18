@@ -12,12 +12,14 @@ NESEnv::NESEnv(wchar_t* path) {
     current_state->joypad = new Joypad();
     // set the cartridge pointer for the CPU and PPU
     current_state->load();
-
+    // set the backup state to NULL
     backup_state = nullptr;
 }
 
 void NESEnv::reset() {
+    // initialize the CPU
     CPU::power();
+    // initialize the PPU
     PPU::reset();
 }
 
@@ -29,73 +31,17 @@ void NESEnv::step(unsigned char action) {
 }
 
 void NESEnv::backup() {
-    // copy the current state with the backup state
+    // delete any current backup
     delete backup_state;
+    // copy the current state as the backup state
     backup_state = new GameState(current_state, CPU::get_state(), PPU::get_state());
 }
 
 void NESEnv::restore() {
-    // copy the backup state into the current state and load the machine
+    // delete the current state in progress
     delete current_state;
+    // copy the backup state into the current state
     current_state = new GameState(backup_state);
+    // load the current state into the machine
     current_state->load();
-}
-
-// definitions of functions for the Python interface to access
-extern "C" {
-    /// The initializer to return a new NESEnv with a given path.
-    NESEnv* NESEnv_init(wchar_t* path){
-        return new NESEnv(path);
-    }
-
-    /// The width of the NES screen.
-    unsigned NESEnv_width() {
-        return GUI::get_width();
-    }
-
-    /// The height of the NES screen.
-    unsigned NESEnv_height() {
-        return GUI::get_height();
-    }
-
-    /// The getter for RAM access
-    u8 NESEnv_read_mem(NESEnv* env, u16 address) {
-        return CPU::read_mem(address);
-    }
-
-    /// The setter for RAM access
-    void NESEnv_write_mem(NESEnv* env, u16 address, u8 value) {
-        CPU::write_mem(address, value);
-    }
-
-    /// Copy the screen of the emulator to an output buffer (NumPy array)
-    void NESEnv_screen(NESEnv* env, unsigned char *output_buffer) {
-        PPU::get_gui()->copy_screen(output_buffer);
-    }
-
-    /// The function to reset the environment.
-    void NESEnv_reset(NESEnv* env) {
-        env->reset();
-    }
-
-    /// The function to perform a step on the emulator.
-    void NESEnv_step(NESEnv* env, unsigned char action) {
-        env->step(action);
-    }
-
-    /// The function to destroy an NESEnv and clear it from memory.
-    void NESEnv_close(NESEnv* env) {
-        delete env;
-    }
-
-    /// The function to backup the game-state
-    void NESEnv_backup(NESEnv* env) {
-        env->backup();
-    }
-
-    /// The function to restore the game-state
-    void NESEnv_restore(NESEnv* env) {
-        env->restore();
-    }
-
 }

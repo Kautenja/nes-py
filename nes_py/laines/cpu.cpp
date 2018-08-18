@@ -60,10 +60,7 @@ namespace CPU {
             return PPU::access<wr>(addr % 8, v);
         }
         // APU (not implemented, NOP instead)
-        else if (0x4000 <= addr && addr <= 0x4013) {
-
-        }
-        else if (addr == 0x4015) {
+        else if ((0x4000 <= addr && addr <= 0x4013) || addr == 0x4015) {
             return 1;
         }
         // Joypad 1

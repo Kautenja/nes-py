@@ -1,12 +1,16 @@
 #include <string>
 #include "gamestate.hpp"
 
+// #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+// #include <Python.h>
+
+// PyMODINIT_FUNC PyInit_lib_nes_env(void) {
+
+// }
+// #endif
+
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#include <Python.h>
-
-PyMODINIT_FUNC PyInit_lib_nes_env(void) {
-
-}
+void PyInit_lib_nes_env() { }
 #endif
 
 /// An abstraction of an NES environment for OpenAI Gym

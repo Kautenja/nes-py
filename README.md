@@ -22,8 +22,8 @@
 [python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
 [python-home]: https://python.org
 
-nes-py is an NES emulator and OpenAI Gym interface based on the
-[LaiNES](https://github.com/AndreaOrru/LaiNES) emulator.
+nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
+Windows based on the [LaiNES](https://github.com/AndreaOrru/LaiNES) emulator.
 
 # Installation
 
@@ -32,6 +32,20 @@ The preferred installation of `nes-py` is from `pip`:
 ```shell
 pip install nes-py
 ```
+
+## Debian
+
+Make sure you have the `clang++` compiler installed:
+
+```shell
+sudo apt-get install clang
+```
+
+## Windows
+
+You'll need to install the Visual-Studio 14.0 tools for Windows installation.
+The [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
+package provides these tools for free.
 
 # Usage
 

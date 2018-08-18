@@ -326,39 +326,61 @@ namespace PPU {
                 case 257: eval_sprites(); break;
                 case 321: load_sprites(); break;
             }
-            // Background:
-            switch (dot) {
-                case 2 ... 255: case 322 ... 337:
-                    pixel();
-                    switch (dot % 8) {
-                        // Nametable:
-                        case 1:  addr  = nt_addr(); reload_shift(); break;
-                        case 2:  nt    = rd(addr);  break;
-                        // Attribute:
-                        case 3:  addr  = at_addr(); break;
-                        case 4:  at    = rd(addr);  if (vAddr.cY & 2) at >>= 4;
-                                                    if (vAddr.cX & 2) at >>= 2; break;
-                        // Background (low bits):
-                        case 5:  addr  = bg_addr(); break;
-                        case 6:  bgL   = rd(addr);  break;
-                        // Background (high bits):
-                        case 7:  addr += 8;         break;
-                        case 0:  bgH   = rd(addr); h_scroll(); break;
-                    } break;
-                // Vertical bump.
-                case         256:  pixel(); bgH = rd(addr); v_scroll(); break;
-                // Update horizontal position.
-                case         257:  pixel(); reload_shift(); h_update(); break;
-                // Update vertical position.
-                case 280 ... 304:  if (s == PRE)            v_update(); break;
-
-                // No shift reloading:
-                case             1:  addr = nt_addr(); if (s == PRE) status.vBlank = false; break;
-                case 321: case 339:  addr = nt_addr(); break;
-                // Nametable fetch instead of attribute:
-                case           338:  nt = rd(addr); break;
-                case           340:  nt = rd(addr); if (s == PRE && rendering() && frameOdd) dot++;
+            // Background
+            if ((2 <= dot && dot <= 255) || (322 <= dot && dot <= 337)) {
+                pixel();
+                switch (dot % 8) {
+                    // Nametable:
+                    case 1:  addr  = nt_addr(); reload_shift(); break;
+                    case 2:  nt    = rd(addr);  break;
+                    // Attribute:
+                    case 3:  addr  = at_addr(); break;
+                    case 4:  at    = rd(addr);  if (vAddr.cY & 2) at >>= 4;
+                                                if (vAddr.cX & 2) at >>= 2; break;
+                    // Background (low bits):
+                    case 5:  addr  = bg_addr(); break;
+                    case 6:  bgL   = rd(addr);  break;
+                    // Background (high bits):
+                    case 7:  addr += 8;         break;
+                    case 0:  bgH   = rd(addr); h_scroll(); break;
+                }
             }
+            // Vertical bump
+            else if (dot == 256) {
+                pixel();
+                bgH = rd(addr);
+                v_scroll();
+            }
+            // Update horizontal position
+            else if (dot == 257) {
+                pixel();
+                reload_shift();
+                h_update();
+            }
+            // Update vertical position
+            else if (280 <= dot && dot <= 304) {
+                if (s == PRE)
+                    v_update();
+            }
+            // No shift reloading
+            else if (dot == 1) {
+                addr = nt_addr();
+                if (s == PRE)
+                    status.vBlank = false;
+            }
+            else if (dot == 321 || dot == 339) {
+                addr = nt_addr();
+            }
+            // Nametable fetch instead of attribute
+            else if (dot == 338) {
+                nt = rd(addr);
+            }
+            else if (dot == 340) {
+                nt = rd(addr);
+                if (s == PRE && rendering() && frameOdd)
+                    dot++;
+            }
+
             // Signal scanline to mapper:
             if (dot == 260 && rendering()) cartridge->signal_scanline();
         }

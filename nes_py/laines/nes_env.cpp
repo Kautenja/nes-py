@@ -41,10 +41,80 @@ void NESEnv::restore() {
     current_state->load();
 }
 
+
+// #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+// #include <Python.h>
+
+// PyMODINIT_FUNC PyInit_lib_nes_env(void) {
+
+// }
+// #endif
+
+#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
+void PyInit_lib_nes_env() { }
 // definitions of functions for the Python interface to access
 extern "C" {
     /// The initializer to return a new NESEnv with a given path.
     __declspec(dllexport) NESEnv* NESEnv_init(wchar_t* path){
+        return new NESEnv(path);
+    }
+
+    /// The width of the NES screen.
+    __declspec(dllexport) unsigned NESEnv_width() {
+        return GUI::get_width();
+    }
+
+    /// The height of the NES screen.
+    __declspec(dllexport) unsigned NESEnv_height() {
+        return GUI::get_height();
+    }
+
+    /// The getter for RAM access
+    __declspec(dllexport) u8 NESEnv_read_mem(NESEnv* env, u16 address) {
+        return CPU::read_mem(address);
+    }
+
+    /// The setter for RAM access
+    __declspec(dllexport) void NESEnv_write_mem(NESEnv* env, u16 address, u8 value) {
+        CPU::write_mem(address, value);
+    }
+
+    /// Copy the screen of the emulator to an output buffer (NumPy array)
+    __declspec(dllexport) void NESEnv_screen(NESEnv* env, unsigned char *output_buffer) {
+        PPU::get_gui()->copy_screen(output_buffer);
+    }
+
+    /// The function to reset the environment.
+    __declspec(dllexport) void NESEnv_reset(NESEnv* env) {
+        env->reset();
+    }
+
+    /// The function to perform a step on the emulator.
+    __declspec(dllexport) void NESEnv_step(NESEnv* env, unsigned char action) {
+        env->step(action);
+    }
+
+    /// The function to destroy an NESEnv and clear it from memory.
+    __declspec(dllexport) void NESEnv_close(NESEnv* env) {
+        delete env;
+    }
+
+    /// The function to backup the game-state
+    __declspec(dllexport) void NESEnv_backup(NESEnv* env) {
+        env->backup();
+    }
+
+    /// The function to restore the game-state
+    __declspec(dllexport) void NESEnv_restore(NESEnv* env) {
+        env->restore();
+    }
+
+}
+#else
+// definitions of functions for the Python interface to access
+extern "C" {
+    /// The initializer to return a new NESEnv with a given path.
+    NESEnv* NESEnv_init(wchar_t* path){
         return new NESEnv(path);
     }
 
@@ -99,15 +169,4 @@ extern "C" {
     }
 
 }
-
-// #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-// #include <Python.h>
-
-// PyMODINIT_FUNC PyInit_lib_nes_env(void) {
-
-// }
-// #endif
-
-#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-void PyInit_lib_nes_env() { }
 #endif

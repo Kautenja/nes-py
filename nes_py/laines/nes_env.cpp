@@ -42,14 +42,6 @@ void NESEnv::restore() {
 }
 
 
-// #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-// #include <Python.h>
-
-// PyMODINIT_FUNC PyInit_lib_nes_env(void) {
-
-// }
-// #endif
-
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 void PyInit_lib_nes_env() { }
 // definitions of functions for the Python interface to access

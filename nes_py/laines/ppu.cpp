@@ -365,12 +365,14 @@ namespace PPU {
     }
 
     void step() {
-        switch (scanline) {
-            case 0 ... 239:  scanline_cycle<VISIBLE>(); break;
-            case       240:  scanline_cycle<POST>();    break;
-            case       241:  scanline_cycle<NMI>();     break;
-            case       261:  scanline_cycle<PRE>();     break;
-        }
+        if (0 <= scanline && scanline <= 239)
+            scanline_cycle<VISIBLE>();
+        else if (scanline == 240)
+            scanline_cycle<POST>();
+        else if (scanline == 241)
+            scanline_cycle<NMI>();
+        else if (scanline == 261)
+            scanline_cycle<PRE>();
         // Update dot and scanline counters:
         if (++dot > 340) {
             dot %= 341;

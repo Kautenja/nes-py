@@ -48,43 +48,50 @@ namespace CPU {
     void dma_oam(u8 bank);
     template<bool wr> inline u8 access(u16 addr, u8 v = 0) {
         u8* r;
-        switch (addr) {
-            // RAM
-            case 0x0000 ... 0x1FFF:
-                r = &ram[addr % 0x800];
-                if (wr) *r = v;
-                return *r;
-            // PPU
-            case 0x2000 ... 0x3FFF:
-                return PPU::access<wr>(addr % 8, v);
-
-            // APU
-            case 0x4000 ... 0x4013:
-            case            0x4015:
-                return 1;
-            // Joypad 1
-            case 0x4017:
-                if (wr)
-                    return 1;
-                else
-                    return joypad->read_state(1);
-            // OAM / DMA
-            case 0x4014:
-                if (wr) dma_oam(v);
-                break;
-            case 0x4016:
-                // Joypad strobe
-                if (wr) {
-                    joypad->write_strobe(v & 1);
-                    break;
-                }
-                // Joypad 0
-                else
-                    return joypad->read_state(0);
-            // Cartridge
-            case 0x4018 ... 0xFFFF:
-                return cartridge->access<wr>(addr, v);
+        // RAM
+        if (0x0000 <= addr && addr <= 0x1FFF) {
+            r = &ram[addr % 0x800];
+            if (wr)
+                *r = v;
+            return *r;
         }
+        // PPU
+        else if (0x2000 <= addr && addr <= 0x3FFF) {
+            return PPU::access<wr>(addr % 8, v);
+        }
+        // APU (not implemented, NOP instead)
+        else if (0x4000 <= addr && addr <= 0x4013) {
+
+        }
+        else if (addr == 0x4015) {
+            return 1;
+        }
+        // Joypad 1
+        else if (addr == 0x4017) {
+            if (wr)
+                return 1;
+            else
+                return joypad->read_state(1);
+        }
+        // OAM / DMA
+        else if (addr == 0x4014) {
+            if (wr)
+                dma_oam(v);
+        }
+        // Joypad Strobe and Joypad 0
+        else if (addr == 0x4016) {
+            // Joypad strobe
+            if (wr)
+                joypad->write_strobe(v & 1);
+            // Joypad 0
+            else
+                return joypad->read_state(0);
+        }
+        // Cartridge
+        else if (0x4018 <= addr && addr <= 0xFFFF) {
+            return cartridge->access<wr>(addr, v);
+        }
+
         return 0;
     }
     inline u8  wr(u16 a, u8 v)      { T; return access<1>(a, v);   }

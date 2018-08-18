@@ -62,6 +62,6 @@ void Mapper4::signal_scanline() {
     else
         irqCounter--;
 
-    if (irqEnabled and irqCounter == 0)
+    if (irqEnabled && irqCounter == 0)
         CPU::set_irq();
 }

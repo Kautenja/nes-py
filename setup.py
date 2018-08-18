@@ -1,4 +1,5 @@
 """The setup script for installing and distributing the nes-py package."""
+import platform
 from glob import glob
 from setuptools import setup, find_packages, Extension
 
@@ -11,7 +12,10 @@ def README():
 
 # The prefix name for the .so library to build. It will follow the format
 # lib_nes_env.*.so where the * changes depending on the build system
-lib_name = 'nes_py/laines/build/lib_nes_env'
+if platform.system() == 'Windows':
+    lib_name = 'nes_py\\laines\\build\\lib_nes_env'
+else:
+    lib_name = 'nes_py/laines/build/lib_nes_env'
 # The source files for building the extension. Globs locate all the cpp files
 # used by the LaiNES subproject. MANIFEST.in has to include the blanket
 # "laines" directory to ensure that the .inc file gets included too

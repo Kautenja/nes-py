@@ -294,7 +294,7 @@ namespace CPU {
 
         while (remainingCycles > 0) {
             if (nmi) INT<NMI>();
-            else if (irq and !P[I]) INT<IRQ>();
+            else if (irq && !P[I]) INT<IRQ>();
 
             exec();
         }

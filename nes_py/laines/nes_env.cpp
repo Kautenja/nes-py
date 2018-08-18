@@ -12,12 +12,14 @@ NESEnv::NESEnv(wchar_t* path) {
     current_state->joypad = new Joypad();
     // set the cartridge pointer for the CPU and PPU
     current_state->load();
-
+    // set the backup state to NULL
     backup_state = nullptr;
 }
 
 void NESEnv::reset() {
+    // initialize the CPU
     CPU::power();
+    // initialize the PPU
     PPU::reset();
 }
 
@@ -29,14 +31,17 @@ void NESEnv::step(unsigned char action) {
 }
 
 void NESEnv::backup() {
-    // copy the current state with the backup state
+    // delete any current backup
     delete backup_state;
+    // copy the current state as the backup state
     backup_state = new GameState(current_state, CPU::get_state(), PPU::get_state());
 }
 
 void NESEnv::restore() {
-    // copy the backup state into the current state and load the machine
+    // delete the current state in progress
     delete current_state;
+    // copy the backup state into the current state
     current_state = new GameState(backup_state);
+    // load the current state into the machine
     current_state->load();
 }

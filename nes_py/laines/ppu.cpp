@@ -224,7 +224,7 @@ namespace PPU {
             int line = (scanline == 261 ? -1 : scanline) - oamMem[i*4 + 0];
             // If the sprite is in the scanline, copy its properties
             // into secondary OAM:
-            if (line >= 0 and line < spr_height()) {
+            if (line >= 0 && line < spr_height()) {
                 secOam[n].id   = i;
                 secOam[n].y    = oamMem[i*4 + 0];
                 secOam[n].tile = oamMem[i*4 + 1];
@@ -270,8 +270,8 @@ namespace PPU {
         bool objPriority = 0;
         int x = dot - 2;
 
-        if (scanline < 240 and x >= 0 and x < 256) {
-            if (mask.bg and not (!mask.bgLeft && x < 8)) {
+        if (scanline < 240 && x >= 0 && x < 256) {
+            if (mask.bg && not (!mask.bgLeft && x < 8)) {
                 // Background:
                 palette = (NTH_BIT(bgShiftH, 15 - fX) << 1) |
                            NTH_BIT(bgShiftL, 15 - fX);
@@ -280,7 +280,7 @@ namespace PPU {
                                  NTH_BIT(atShiftL,  7 - fX))      << 2;
             }
             // Sprites:
-            if (mask.spr and not (!mask.sprLeft && x < 8))
+            if (mask.spr && not (!mask.sprLeft && x < 8))
                 for (int i = 7; i >= 0; i--) {
                     // Void entry.
                     if (oam[i].id == 64) continue;
@@ -317,9 +317,9 @@ namespace PPU {
     template<Scanline s> void scanline_cycle() {
         static u16 addr;
 
-        if (s == NMI and dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
-        else if (s == POST and dot == 0) gui->new_frame(pixels);
-        else if (s == VISIBLE or s == PRE) {
+        if (s == NMI && dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
+        else if (s == POST && dot == 0) gui->new_frame(pixels);
+        else if (s == VISIBLE || s == PRE) {
             // Sprites:
             switch (dot) {
                 case   1: clear_oam(); if (s == PRE) { status.sprOvf = status.sprHit = false; } break;

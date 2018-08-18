@@ -41,14 +41,6 @@ void NESEnv::restore() {
     current_state->load();
 }
 
-#if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-#include <Python.h>
-
-PyMODINIT PyInit_lib_nes_env(void) {
-
-}
-#endif
-
 // definitions of functions for the Python interface to access
 extern "C" {
     /// The initializer to return a new NESEnv with a given path.

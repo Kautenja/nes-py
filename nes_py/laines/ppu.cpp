@@ -67,29 +67,38 @@ namespace PPU {
 
     /// Read an address from PPU memory.
     u8 rd(u16 addr) {
-        switch (addr) {
-            // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  return cartridge->chr_access<0>(addr);
-            // Nametables.
-            case 0x2000 ... 0x3EFF:  return ciRam[nt_mirror(addr)];
-            // Palettes:
-            case 0x3F00 ... 0x3FFF:
-                if ((addr & 0x13) == 0x10) addr &= ~0x10;
-                return cgRam[addr & 0x1F] & (mask.gray ? 0x30 : 0xFF);
-            default: return 0;
+        // CHR-ROM/RAM
+        if (0x0000 <= addr && addr <= 0x1FFF) {
+            return cartridge->chr_access<0>(addr);
         }
+        // Nametables
+        else if (0x2000 <= addr && addr <= 0x3EFF) {
+            return ciRam[nt_mirror(addr)];
+        }
+        // Palettes
+        else if (0x3F00 <= addr && addr <= 0x3FFF) {
+            if ((addr & 0x13) == 0x10)
+                addr &= ~0x10;
+            return cgRam[addr & 0x1F] & (mask.gray ? 0x30 : 0xFF);
+        }
+
+        return 0;
     }
     /// Write a byte to PPU memory.
     void wr(u16 addr, u8 v) {
-        switch (addr) {
-            // CHR-ROM/RAM.
-            case 0x0000 ... 0x1FFF:  cartridge->chr_access<1>(addr, v); break;
-            // Nametables.
-            case 0x2000 ... 0x3EFF:  ciRam[nt_mirror(addr)] = v; break;
-            // Palettes:
-            case 0x3F00 ... 0x3FFF:
-                if ((addr & 0x13) == 0x10) addr &= ~0x10;
-                cgRam[addr & 0x1F] = v; break;
+        // CHR-ROM/RAM
+        if (0x0000 <= addr && addr <= 0x1FFF) {
+            cartridge->chr_access<1>(addr, v);
+        }
+        // Nametables
+        else if (0x2000 <= addr && addr <= 0x3EFF) {
+            ciRam[nt_mirror(addr)] = v;
+        }
+        // Palettes
+        else if (0x3F00 <= addr && addr <= 0x3FFF) {
+            if ((addr & 0x13) == 0x10)
+                addr &= ~0x10;
+            cgRam[addr & 0x1F] = v;
         }
     }
 

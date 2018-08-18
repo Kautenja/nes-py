@@ -271,7 +271,7 @@ namespace PPU {
         int x = dot - 2;
 
         if (scanline < 240 && x >= 0 && x < 256) {
-            if (mask.bg && not (!mask.bgLeft && x < 8)) {
+            if (mask.bg && !(!mask.bgLeft && x < 8)) {
                 // Background:
                 palette = (NTH_BIT(bgShiftH, 15 - fX) << 1) |
                            NTH_BIT(bgShiftL, 15 - fX);
@@ -280,7 +280,7 @@ namespace PPU {
                                  NTH_BIT(atShiftL,  7 - fX))      << 2;
             }
             // Sprites:
-            if (mask.spr && not (!mask.sprLeft && x < 8))
+            if (mask.spr && !(!mask.sprLeft && x < 8))
                 for (int i = 7; i >= 0; i--) {
                     // Void entry.
                     if (oam[i].id == 64) continue;

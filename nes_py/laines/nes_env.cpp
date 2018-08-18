@@ -44,7 +44,7 @@ void NESEnv::restore() {
 // definitions of functions for the Python interface to access
 extern "C" {
     /// The initializer to return a new NESEnv with a given path.
-    NESEnv* _declspec(dllexport) NESEnv_init(wchar_t* path){
+    NESEnv* __declspec(dllexport) NESEnv_init(wchar_t* path){
         return new NESEnv(path);
     }
 

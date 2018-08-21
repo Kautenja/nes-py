@@ -279,8 +279,11 @@ class NESEnv(gym.Env):
             done = done or self._get_done()
             # get the info for this step
             info = self._get_info()
+            # if done terminate the collection early
+            if done:
+                break
         # call the after step callback
-        self._did_step()
+        self._did_step(done)
         # copy the screen from the emulator
         self._copy_screen()
         # increment the steps counter
@@ -308,8 +311,17 @@ class NESEnv(gym.Env):
         """Return the info after a step occurs."""
         return {}
 
-    def _did_step(self):
-        """Handle any RAM hacking after a step occurs."""
+    def _did_step(self, done):
+        """
+        Handle any RAM hacking after a step occurs.
+
+        Args:
+            done: whether the done flag is set to true
+
+        Returns:
+            None
+
+        """
         pass
 
     def close(self):

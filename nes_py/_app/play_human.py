@@ -136,9 +136,9 @@ def play(env, transpose=True, fps=30, callback=None, plot_reward=False, nop_=0):
                     running = False
                 # handle the backup and reset functions
                 elif event.key == ord('e'):
-                    env._backup()
+                    env.unwrapped._backup()
                 elif event.key == ord('r'):
-                    env._restore()
+                    env.unwrapped._restore()
             # handle a key being released
             elif event.type == pygame.KEYUP:
                 # make sure the key is in the relevant key list

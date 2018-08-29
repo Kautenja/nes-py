@@ -98,3 +98,8 @@ percentage of the games:
 
 You can check the compatibility for each ROM in the following
 [list](https://github.com/Kautenja/nes-py/blob/master/nesmapper.txt)
+
+# Disclaimer
+
+**This project is provided for educational purposes only. It is not affiliated with and has 
+not been approved by Nintendo.**

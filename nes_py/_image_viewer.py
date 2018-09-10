@@ -45,6 +45,7 @@ class ImageViewer(object):
             height=self.height,
             width=self.width,
             vsync=False,
+            resizable=True,
         )
 
     def show(self, frame):

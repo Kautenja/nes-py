@@ -78,7 +78,9 @@ def play(env, transpose=True, fps=30, callback=None, plot_reward=False, nop_=0):
     running = True
     env_done = True
     # setup the screen using pygame
-    screen = pygame.display.set_mode(video_size)
+    flags = pygame.RESIZABLE | pygame.HWSURFACE | pygame.DOUBLEBUF
+    screen = pygame.display.set_mode(video_size, flags)
+    pygame.event.set_blocked(pygame.MOUSEMOTION)
     # set the caption for the pygame window. if the env has a spec use its id
     if env.spec is not None:
         pygame.display.set_caption(env.spec.id)

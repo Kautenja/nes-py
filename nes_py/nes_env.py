@@ -102,8 +102,8 @@ class NESEnv(gym.Env):
         Create a new NES environment.
 
         Args:
-            path (str): the path to the ROM for the environment
-            frames_per_step (int): the number of frames to skip between steps
+            rom_path (str): the path to the ROM for the environment
+            frames_per_step (int): the number of frames between steps
             max_episode_steps (int): number of steps before an episode ends
 
         Returns:

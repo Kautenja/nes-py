@@ -94,13 +94,16 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Discrete(256)
 
-    def __init__(self, rom_path, frameskip=1, max_episode_steps=float('inf')):
+    def __init__(self, rom_path,
+        frames_per_step=1,
+        max_episode_steps=float('inf')
+    ):
         """
         Create a new NES environment.
 
         Args:
-            path (str): the path to the ROM for the environment
-            frameskip (int): the number of frames to skip between steps
+            rom_path (str): the path to the ROM for the environment
+            frames_per_step (int): the number of frames between steps
             max_episode_steps (int): number of steps before an episode ends
 
         Returns:
@@ -121,13 +124,13 @@ class NESEnv(gym.Env):
         self._rom_path = rom_path
 
         # check the frame skip variable
-        if not isinstance(frameskip, int):
-            raise TypeError('frameskip must be of type: int')
-        if not frameskip > 0:
-            raise ValueError('frameskip must be > 0')
-        self._frameskip = frameskip
-        # adjust the FPS of the environment by the given frameskip value
-        self.metadata['video.frames_per_second'] /= frameskip
+        if not isinstance(frames_per_step, int):
+            raise TypeError('frames_per_step must be of type: int')
+        if not frames_per_step > 0:
+            raise ValueError('frames_per_step must be > 0')
+        self._frames_per_step = frames_per_step
+        # adjust the FPS of the environment by the given frames_per_step value
+        self.metadata['video.frames_per_second'] /= frames_per_step
 
         # check the max episode steps
         if not isinstance(max_episode_steps, (int, float)):
@@ -270,7 +273,7 @@ class NESEnv(gym.Env):
         done = False
         info = {}
         # iterate over the frames to skip
-        for _ in range(self._frameskip):
+        for _ in range(self._frames_per_step):
             # pass the action to the emulator as an unsigned byte
             _LIB.NESEnv_step(self._env, action)
             # get the reward for this step

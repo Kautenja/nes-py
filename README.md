@@ -63,16 +63,21 @@ nes_py -h
 
 ## Controls
 
-| Keyboard Key | NES Joypad |
-|:-------------|:-----------|
-| W            | Up         |
-| A            | Left       |
-| S            | Down       |
-| D            | Right      |
-| O            | A          |
-| P            | B          |
-| Enter        | Start      |
-| Space        | Select     |
+| Keyboard Key | NES Joypad    |
+|:-------------|:--------------|
+| W            | Up            |
+| A            | Left          |
+| S            | Down          |
+| D            | Right         |
+| O            | A             |
+| P            | B             |
+| Enter        | Start         |
+| Space        | Select        |
+
+| Keyboard Key | Emu Function  |
+|:-------------|:--------------|
+| E            | Backup State  |
+| R            | Restore State |
 
 # Development
 

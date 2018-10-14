@@ -44,7 +44,7 @@ _LIB.NESEnv_screen.restype = None
 _LIB.NESEnv_reset.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_reset.restype = None
 # setup the argument and return types for NESEnv_step
-_LIB.NESEnv_step.argtypes = [ctypes.c_ubyte]
+_LIB.NESEnv_step.argtypes = [ctypes.c_void_p, ctypes.c_ubyte]
 _LIB.NESEnv_step.restype = None
 # setup the argument and return types for NESEnv_close
 _LIB.NESEnv_close.argtypes = [ctypes.c_void_p]

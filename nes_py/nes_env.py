@@ -56,6 +56,7 @@ _LIB.NESEnv_backup.restype = None
 _LIB.NESEnv_restore.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_restore.restype = None
 
+
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.NESEnv_height()
 # width in pixels of the NES screen

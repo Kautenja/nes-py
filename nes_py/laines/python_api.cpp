@@ -43,8 +43,8 @@ extern "C" {
     }
 
     /// Copy the screen of the emulator to an output buffer (NumPy array)
-    exp void NESEnv_screen(NESEnv* env, unsigned char *output_buffer) {
-        PPU::get_gui()->copy_screen(output_buffer);
+    exp u32* NESEnv_screen_buffer(NESEnv* env) {
+        return PPU::get_gui()->get_screen();
     }
 
     /// The function to reset the environment.

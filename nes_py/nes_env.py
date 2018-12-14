@@ -37,9 +37,9 @@ _LIB.NESEnv_read_mem.restype = ctypes.c_ubyte
 # setup the argument and return types for NESEnv_write_mem
 _LIB.NESEnv_write_mem.argtypes = [ctypes.c_void_p, ctypes.c_ushort, ctypes.c_ubyte]
 _LIB.NESEnv_write_mem.restype = None
-# setup the argument and return types for NESEnv_screen
-_LIB.NESEnv_screen.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
-_LIB.NESEnv_screen.restype = None
+# setup the argument and return types for NESEnv_screen_buffer
+_LIB.NESEnv_screen_buffer.argtypes = [ctypes.c_void_p]
+_LIB.NESEnv_screen_buffer.restype = ctypes.c_void_p
 # setup the argument and return types for NESEnv_reset
 _LIB.NESEnv_reset.argtypes = [ctypes.c_void_p]
 _LIB.NESEnv_reset.restype = None
@@ -64,6 +64,8 @@ SCREEN_WIDTH = _LIB.NESEnv_width()
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 # shape of the screen as 32-bit RGB (C++ memory arrangement)
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
+# create a type for the screen tensor matrix from C++
+SCREEN_TENSOR = ctypes.c_byte * np.prod(SCREEN_SHAPE_32_BIT)
 
 
 # the magic bytes expected at the first four bytes of the iNES ROM header.
@@ -126,7 +128,7 @@ class NESEnv(gym.Env):
         # check the frame skip variable
         if not isinstance(frames_per_step, int):
             raise TypeError('frames_per_step must be of type: int')
-        if not frames_per_step > 0:
+        if frames_per_step <= 0:
             raise ValueError('frames_per_step must be > 0')
         self._frames_per_step = frames_per_step
         # adjust the FPS of the environment by the given frames_per_step value
@@ -135,37 +137,39 @@ class NESEnv(gym.Env):
         # check the max episode steps
         if not isinstance(max_episode_steps, (int, float)):
             raise TypeError('max_episode_steps must be of type: int, float')
-        if not max_episode_steps > 0:
+        if max_episode_steps <= 0:
             raise ValueError('max_episode_steps must be > 0')
         self._max_episode_steps = max_episode_steps
         self._steps = 0
 
         # initialize the C++ object for running the environment
         self._env = _LIB.NESEnv_init(self._rom_path)
-        # setup a boolean for whether to flip from BGR to RGB based on machine
-        # byte order
-        self._is_little_endian = sys.byteorder == 'little'
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
-        # create a frame for the screen data (32-bit format from C++)
-        self._screen_data = np.empty(SCREEN_SHAPE_32_BIT, dtype=np.uint8)
-        # setup the screen for the environment (24-bit RGB format for Python)
-        self.screen = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
-        # determines whether the env has a backup stored
+        # setup a flag to determine whether the environment has a backup stored
         self._has_backup = False
+        # setup the NumPy screen from the C++ matrix
+        self.screen = None
+        self._setup_screen()
 
-    def _copy_screen(self):
-        """Copy screen data from the C++ shared object library."""
-        # fill the screen data array with values from the emulator
-        _LIB.NESEnv_screen(self._env, as_ctypes(self._screen_data))
-        # copy the screen data to the screen
-        self.screen = self._screen_data
+    def _setup_screen(self):
+        """Setup the screen buffer from the C++ code."""
+        # get the address of the screen
+        address = _LIB.NESEnv_screen_buffer(self._env)
+        # create a buffer from the contents of the address location
+        buffer_ = ctypes.cast(address, ctypes.POINTER(SCREEN_TENSOR)).contents
+        # create a NumPy array from the buffer
+        screen = np.frombuffer(buffer_, dtype='uint8')
+        # reshape the screen from a column vector to a tensor
+        screen = screen.reshape(SCREEN_SHAPE_32_BIT)
         # flip the bytes if the machine is little-endian (which it likely is)
-        if self._is_little_endian:
+        if sys.byteorder == 'little':
             # invert the little-endian BGR channels to RGB
-            self.screen = self.screen[:, :, ::-1]
+            screen = screen[:, :, ::-1]
         # remove the 0th axis (padding from storing colors in 32 bit)
-        self.screen = self.screen[:, :, 1:]
+        screen = screen[:, :, 1:]
+        # store the instance to screen
+        self.screen = screen
 
     def _read_mem(self, address):
         """
@@ -219,7 +223,9 @@ class NESEnv(gym.Env):
     def _restore(self):
         """Restore the backup state into the NES emulator."""
         _LIB.NESEnv_restore(self._env)
-        self._copy_screen()
+        # TODO: determine _why_ the screen address changes on the first call
+        #       to restore. It seems to stabilize afterwards
+        self._setup_screen()
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -244,8 +250,6 @@ class NESEnv(gym.Env):
             self._restore()
         # call the after reset callback
         self._did_reset()
-        # copy the screen from the emulator
-        self._copy_screen()
         # return the screen from the emulator
         return self.screen
 
@@ -287,8 +291,6 @@ class NESEnv(gym.Env):
                 break
         # call the after step callback
         self._did_step(done)
-        # copy the screen from the emulator
-        self._copy_screen()
         # increment the steps counter
         self._steps += 1
         # set the done flag to true if the steps are past the max

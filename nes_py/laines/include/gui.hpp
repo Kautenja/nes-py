@@ -35,10 +35,7 @@ public:
     */
     void new_frame(u32* pixels);
 
-    /**
-        Copy the screen into an output buffer of unsigned bytes.
+    /// Return a pointer to the screen.
+    u32* get_screen() { return *screen; };
 
-        @param output_buffer the pointer to the output buffer
-    */
-    void copy_screen(unsigned char *output_buffer);
 };

@@ -1,5 +1,4 @@
 """A simple class for viewing images using pyglet."""
-import numpy as np
 from pyglet.window import Window
 from pyglet.image import ImageData
 

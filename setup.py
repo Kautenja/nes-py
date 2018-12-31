@@ -22,7 +22,12 @@ cpp = glob('nes_py/cpp/*.cpp') + glob('nes_py/cpp/mappers/*.cpp')
 # headers with sdist
 hpp = ['nes_py/cpp/include']
 # Additional build arguments to pass to the compiler
-compile_args = ['-O3', '-march=native', '-std=c++1y']
+compile_args = [
+    '-std=c++1y',
+    '-O2',
+    '-march=native',
+    '-pipe',
+]
 # The official extension using the name, source, headers, and build args
 lib_nes_env = Extension(lib_name,
     sources=cpp,

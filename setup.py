@@ -15,12 +15,12 @@ def README():
 lib_name = 'nes_py.lib_nes_env'
 # The source files for building the extension. Globs locate all the cpp files
 # used by the LaiNES subproject. MANIFEST.in has to include the blanket
-# "laines" directory to ensure that the .inc file gets included too
-cpp = glob('nes_py/laines/*.cpp') + glob('nes_py/laines/mappers/*.cpp')
+# "cpp" directory to ensure that the .inc file gets included too
+cpp = glob('nes_py/cpp/*.cpp') + glob('nes_py/cpp/mappers/*.cpp')
 # The directory pointing to header files used by the LaiNES cpp files.
 # This directory has to be included using MANIFEST.in too to include the
 # headers with sdist
-hpp = ['nes_py/laines/include']
+hpp = ['nes_py/cpp/include']
 # Additional build arguments to pass to the compiler
 compile_args = ['-O3', '-march=native', '-std=c++1y']
 # The official extension using the name, source, headers, and build args

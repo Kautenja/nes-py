@@ -2,7 +2,7 @@
 from os import environ
 
 
-VariantDir('nes_py/laines/build/src', 'nes_py/laines', duplicate=0)
+VariantDir('nes_py/cpp/build/src', 'nes_py/cpp', duplicate=0)
 flags = ['-O3', '-march=native', '-std=c++1y']
 
 
@@ -12,10 +12,10 @@ env = Environment(
     CPPFLAGS = ['-Wno-unused-value'],
     CXXFLAGS = flags,
     LINKFLAGS = flags,
-    CPPPATH = ['#nes_py/laines/include'],
+    CPPPATH = ['#nes_py/cpp/include'],
 )
 
 
 # Compile the shared library for the Python interface
-source_files = Glob('nes_py/laines/build/*/*.cpp') + Glob('nes_py/laines/build/*/*/*.cpp')
+source_files = Glob('nes_py/cpp/build/*/*.cpp') + Glob('nes_py/cpp/build/*/*/*.cpp')
 env.SharedLibrary('nes_py/_nes_env.so', source_files)

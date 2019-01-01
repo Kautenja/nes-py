@@ -28,7 +28,6 @@ If applicable, add screenshots to help explain your problem.
 -   Operating System:
 -   Python version:
 -   C++ compiler and version:
--   `nes-gym` version:
 
 ### Additional context
 

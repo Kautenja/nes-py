@@ -23,6 +23,8 @@ test: laines
 # clean the build directory
 clean:
 	rm -rf build/ dist/ .eggs/ *.egg-info/ || true
+	rm -rf nes_py/cpp/build || true
+	rm nes_py/lib_nes_env.so || true
 
 # build the deployment package
 deployment: clean

@@ -1,3 +1,4 @@
+# an alias to the python command
 PYTHON=python
 
 # build the LaiNES code, test the Python interface, and build

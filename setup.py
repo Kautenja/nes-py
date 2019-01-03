@@ -1,38 +1,36 @@
 """The setup script for installing and distributing the nes-py package."""
-import platform
 from glob import glob
 from setuptools import setup, find_packages, Extension
 
 
-def README():
-    """Return the contents of the README file for this project."""
-    with open('README.md') as README_file:
-        return README_file.read()
+# read the contents from the README file
+with open('README.md') as README_file:
+    README = README_file.read()
 
 
 # The prefix name for the .so library to build. It will follow the format
 # lib_nes_env.*.so where the * changes depending on the build system
-lib_name = 'nes_py.lib_nes_env'
+LIB_NAME = 'nes_py.lib_nes_env'
 # The source files for building the extension. Globs locate all the cpp files
 # used by the LaiNES subproject. MANIFEST.in has to include the blanket
 # "cpp" directory to ensure that the .inc file gets included too
-cpp = glob('nes_py/cpp/*.cpp') + glob('nes_py/cpp/mappers/*.cpp')
+SOURCES = glob('nes_py/cpp/**/*.cpp', recursive=True)
 # The directory pointing to header files used by the LaiNES cpp files.
 # This directory has to be included using MANIFEST.in too to include the
 # headers with sdist
-hpp = ['nes_py/cpp/include']
-# Additional build arguments to pass to the compiler
-compile_args = [
+INCLUDE_DIRS = ['nes_py/cpp/include']
+# Build arguments to pass to the compiler
+EXTRA_COMPILE_ARGS = [
     '-std=c++1y',
     '-O2',
     '-march=native',
     '-pipe',
 ]
 # The official extension using the name, source, headers, and build args
-lib_nes_env = Extension(lib_name,
-    sources=cpp,
-    include_dirs=hpp,
-    extra_compile_args=compile_args,
+LIB_NES_ENV = Extension(LIB_NAME,
+    sources=SOURCES,
+    include_dirs=INCLUDE_DIRS,
+    extra_compile_args=EXTRA_COMPILE_ARGS,
 )
 
 
@@ -40,7 +38,7 @@ setup(
     name='nes_py',
     version='2.0.1',
     description='An NES Emulator and OpenAI Gym interface',
-    long_description=README(),
+    long_description=README,
     long_description_content_type='text/markdown',
     keywords='NES Emulator OpenAI-Gym',
     classifiers=[
@@ -63,7 +61,7 @@ setup(
     author_email='kautencreations@gmail.com',
     license='BSD-2-Clause',
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
-    ext_modules=[lib_nes_env],
+    ext_modules=[LIB_NES_ENV],
     zip_safe=False,
     install_requires=[
         'gym>=0.10.5',

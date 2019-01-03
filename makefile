@@ -26,6 +26,8 @@ clean:
 	rm -rf build/ dist/ .eggs/ *.egg-info/ || true
 	rm -rf nes_py/cpp/build || true
 	rm nes_py/lib_nes_env.so || true
+	find . -name "*.pyc" -delete
+	find . -name "__pycache__" -delete
 
 # build the deployment package
 deployment: clean

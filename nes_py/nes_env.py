@@ -5,6 +5,8 @@ import itertools
 import os
 import sys
 import gym
+from gym.spaces import Box
+from gym.spaces import Discrete
 import numpy as np
 
 
@@ -86,7 +88,7 @@ class NESEnv(gym.Env):
     reward_range = (-float('inf'), float('inf'))
 
     # observation space for the environment is static across all instances
-    observation_space = gym.spaces.Box(
+    observation_space = Box(
         low=0,
         high=255,
         shape=SCREEN_SHAPE_24_BIT,
@@ -94,7 +96,7 @@ class NESEnv(gym.Env):
     )
 
     # action space is a bitmap of button press values for the 8 NES buttons
-    action_space = gym.spaces.Discrete(256)
+    action_space = Discrete(256)
 
     def __init__(self, rom_path,
         frames_per_step=1,

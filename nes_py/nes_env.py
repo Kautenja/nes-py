@@ -223,9 +223,6 @@ class NESEnv(gym.Env):
     def _restore(self):
         """Restore the backup state into the NES emulator."""
         _LIB.Restore(self._env)
-        # TODO: determine _why_ the screen address changes on the first call
-        #       to restore. It seems to stabilize afterwards
-        self._setup_screen()
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""

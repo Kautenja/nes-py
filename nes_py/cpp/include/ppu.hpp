@@ -4,7 +4,6 @@
 #include <array>
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
-#include "virtual_screen.hpp"
 #include "palette_colors.hpp"
 
 const int ScanlineCycleLength = 341;
@@ -18,7 +17,7 @@ const int AttributeOffset = 0x3C0;
 class PPU
 {
 public:
-    PPU(PictureBus &bus, VirtualScreen &screen);
+    PPU(PictureBus &bus);
     void step();
     void reset();
 
@@ -40,7 +39,6 @@ public:
     Byte getOAMData();
     void setOAMData(Byte value);
 
-
     /// Return a pointer to the screen buffer.
     std::uint32_t* get_screen_buffer() { return *screen_buffer; };
 
@@ -49,7 +47,6 @@ private:
     void writeOAM(Byte addr, Byte value);
     Byte read(Address addr);
     PictureBus &m_bus;
-    VirtualScreen &m_screen;
 
     std::function<void(void)> m_vblankCallback;
 
@@ -98,8 +95,6 @@ private:
       m_sprPage;
 
     Address m_dataAddrIncrement;
-
-    std::vector<std::vector<sf::Color>> m_pictureBuffer;
 
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching

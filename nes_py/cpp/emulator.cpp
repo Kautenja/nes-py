@@ -5,7 +5,7 @@
 
 Emulator::Emulator(std::string rom_path) :
     cpu(bus),
-    ppu(picture_bus, emulator_screen),
+    ppu(picture_bus),
     screen_scale(1.f),
     cycle_timer(),
     cpu_cycle_duration(std::chrono::nanoseconds(559)),
@@ -56,11 +56,6 @@ void Emulator::loadRom() {
     cpu.reset();
     ppu.reset();
 
-    window.create(sf::VideoMode(NESVideoWidth * screen_scale, NESVideoHeight * screen_scale),
-                    "SimpleNES", sf::Style::Titlebar | sf::Style::Close);
-    window.setVerticalSyncEnabled(true);
-    emulator_screen.create(NESVideoWidth, NESVideoHeight, screen_scale, sf::Color::White);
-
     cycle_timer = std::chrono::high_resolution_clock::now();
     elapsed_time = cycle_timer - cycle_timer;
 }
@@ -80,7 +75,15 @@ void Emulator::reset() {
 }
 
 void Emulator::step(unsigned char action) {
-    // TODO:
+    //Around one frame
+    for (int i = 0; i < 29781; i++) {
+        //PPU
+        ppu.step();
+        ppu.step();
+        ppu.step();
+        //CPU
+        cpu.step();
+    }
 }
 
 void Emulator::backup() {
@@ -101,66 +104,64 @@ void Emulator::write_memory(uint16_t address, uint8_t value) {
 }
 
 // TODO: Delete this function
-void Emulator::run() {
-    loadRom();
-    sf::Event event;
-    bool focus = true, pause = false;
-    while (window.isOpen()) {
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed ||
-            (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
-                window.close();
-                return;
-            }
-            else if (event.type == sf::Event::GainedFocus) {
-                focus = true;
-                cycle_timer = std::chrono::high_resolution_clock::now();
-            }
-            else if (event.type == sf::Event::LostFocus)
-                focus = false;
-            else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
-                pause = !pause;
-                if (!pause)
-                    cycle_timer = std::chrono::high_resolution_clock::now();
-            }
-            else if (pause && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F3) {
-                //Around one frame
-                for (int i = 0; i < 29781; ++i) {
-                    //PPU
-                    ppu.step();
-                    ppu.step();
-                    ppu.step();
-                    //CPU
-                    cpu.step();
-                }
-            }
-            else if (focus && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F4)
-                Log::get().setLevel(Info);
-            else if (focus && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F5)
-                Log::get().setLevel(InfoVerbose);
-            else if (focus && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F6)
-                Log::get().setLevel(CpuTrace);
-        }
+// void Emulator::run() {
+//     loadRom();
+//     sf::Event event;
+//     bool focus = true, pause = false;
+//     while (window.isOpen()) {
+//         while (window.pollEvent(event)) {
+//             if (event.type == sf::Event::Closed ||
+//             (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)) {
+//                 window.close();
+//                 return;
+//             }
+//             else if (event.type == sf::Event::GainedFocus) {
+//                 focus = true;
+//                 cycle_timer = std::chrono::high_resolution_clock::now();
+//             }
+//             else if (event.type == sf::Event::LostFocus)
+//                 focus = false;
+//             else if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
+//                 pause = !pause;
+//                 if (!pause)
+//                     cycle_timer = std::chrono::high_resolution_clock::now();
+//             }
+//             else if (pause && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F3) {
+//                 //Around one frame
+//                 for (int i = 0; i < 29781; ++i) {
+//                     //PPU
+//                     ppu.step();
+//                     ppu.step();
+//                     ppu.step();
+//                     //CPU
+//                     cpu.step();
+//                 }
+//             }
+//             else if (focus && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F4)
+//                 Log::get().setLevel(Info);
+//             else if (focus && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F5)
+//                 Log::get().setLevel(InfoVerbose);
+//             else if (focus && event.type == sf::Event::KeyReleased && event.key.code == sf::Keyboard::F6)
+//                 Log::get().setLevel(CpuTrace);
+//         }
 
-        if (focus && !pause) {
-            elapsed_time += std::chrono::high_resolution_clock::now() - cycle_timer;
-            cycle_timer = std::chrono::high_resolution_clock::now();
+//         if (focus && !pause) {
+//             elapsed_time += std::chrono::high_resolution_clock::now() - cycle_timer;
+//             cycle_timer = std::chrono::high_resolution_clock::now();
 
-            while (elapsed_time > cpu_cycle_duration) {
-                //PPU
-                ppu.step();
-                ppu.step();
-                ppu.step();
-                //CPU
-                cpu.step();
+//             while (elapsed_time > cpu_cycle_duration) {
+//                 //PPU
+//                 ppu.step();
+//                 ppu.step();
+//                 ppu.step();
+//                 //CPU
+//                 cpu.step();
 
-                elapsed_time -= cpu_cycle_duration;
-            }
+//                 elapsed_time -= cpu_cycle_duration;
+//             }
 
-            window.draw(emulator_screen);
-            window.display();
-        }
-        else
-            sf::sleep(sf::milliseconds(1000/60));
-    }
-}
+//         }
+//         else
+//             sf::sleep(sf::milliseconds(1000/60));
+//     }
+// }

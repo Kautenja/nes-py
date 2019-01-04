@@ -1,6 +1,5 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
-#include <SFML/Graphics.hpp>
 #include <chrono>
 #include "cpu.hpp"
 #include "ppu.hpp"
@@ -43,9 +42,6 @@ private:
     /// the 2 controllers on the emulator
     Controller controller1, controller2;
 
-    /// The virtual screen holding the pixel buffer data
-    VirtualScreen emulator_screen;
-
     /// the value to scale the screen by
     float screen_scale;
 
@@ -57,9 +53,6 @@ private:
 
     /// the duration of a CPU cycle in nanoseconds
     std::chrono::nanoseconds cpu_cycle_duration;
-
-    /// the window to render on
-    sf::RenderWindow window;
 
     /// Load the ROM into the NES
     void loadRom();
@@ -122,7 +115,7 @@ public:
     void write_memory(uint16_t address, uint8_t value);
 
     /// TODO: delete
-    void run();
+    // void run();
 
 };
 

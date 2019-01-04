@@ -1,6 +1,5 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
-#include <SFML/Window.hpp>
 #include <cstdint>
 #include <vector>
 
@@ -14,8 +13,6 @@ private:
     bool m_strobe;
     /// the state of the buttons
     unsigned int m_keyStates;
-    /// TODO
-    std::vector<sf::Keyboard::Key> m_keyBindings;
 
 public:
     /// Initialize a new controller

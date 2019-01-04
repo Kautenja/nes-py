@@ -168,13 +168,13 @@ void PPU::step()
 
                 Byte paletteAddr = bgColor;
 
-                if ( (!bgOpaque && sprOpaque) ||
-                     (bgOpaque && sprOpaque && spriteForeground) )
+                if ( (!bgOpaque && sprOpaque) || (bgOpaque && sprOpaque && spriteForeground) )
                     paletteAddr = sprColor;
                 else if (!bgOpaque && !sprOpaque)
                     paletteAddr = 0;
 
-                screen_buffer[x][y] = colors[m_bus.readPalette(paletteAddr)];
+                screen_buffer[y][x] = colors[m_bus.readPalette(paletteAddr)];
+
             }
             else if (m_cycle == ScanlineVisibleDots + 1 && m_showBackground)
             {

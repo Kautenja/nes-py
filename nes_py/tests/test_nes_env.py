@@ -1,6 +1,5 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
-# from PIL import Image
 
 
 class ShouldImportNESEnv(TestCase):
@@ -51,7 +50,6 @@ class ShouldRaiseErrorOnStepBeforeReset(TestCase):
     def test(self):
         import os
         from ..nes_env import NESEnv
-        import gym
         path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
         env = NESEnv(path)
         self.assertRaises(ValueError, env.step, 0)
@@ -128,7 +126,7 @@ class ShouldStepEnv(TestCase):
 #             state, _, done, _ = env.step(0)
 
 #         backup = state.copy()
-#         # Image.fromarray(backup).save('state.png')
+
 #         env._backup()
 
 #         for _ in range(250):
@@ -137,7 +135,6 @@ class ShouldStepEnv(TestCase):
 #                 done = False
 #             state, _, done, _ = env.step(0)
 
-#         # Image.fromarray(state).save('state1.png')
 #         self.assertFalse(np.array_equal(backup, state))
 #         env._restore()
 #         self.assertTrue(np.array_equal(backup, env.screen))

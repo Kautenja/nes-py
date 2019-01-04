@@ -72,8 +72,7 @@ void Emulator::DMA(Byte page) {
 }
 
 uint32_t* Emulator::get_screen_buffer() {
-    // TODO:
-    return nullptr;
+    return ppu.get_screen_buffer();
 }
 
 void Emulator::reset() {

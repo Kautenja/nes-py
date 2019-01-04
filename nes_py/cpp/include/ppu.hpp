@@ -39,6 +39,11 @@ public:
     Byte getData();
     Byte getOAMData();
     void setOAMData(Byte value);
+
+
+    /// Return a pointer to the screen buffer.
+    std::uint32_t* get_screen_buffer() { return *screen_buffer; };
+
 private:
     Byte readOAM(Byte addr);
     void writeOAM(Byte addr, Byte value);
@@ -95,6 +100,12 @@ private:
     Address m_dataAddrIncrement;
 
     std::vector<std::vector<sf::Color>> m_pictureBuffer;
+
+    /// The internal screen data structure as a vector representation of a
+    /// matrix of height matching the visible scans lines and width matching
+    /// the number of visible scan line dots
+    std::uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots] = {0};
+
 };
 
 #endif // PPU_H

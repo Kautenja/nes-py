@@ -6,7 +6,9 @@ PPU::PPU(PictureBus& bus, VirtualScreen& screen) :
     m_screen(screen),
     m_spriteMemory(64 * 4),
     m_pictureBuffer(ScanlineVisibleDots, std::vector<sf::Color>(VisibleScanlines, sf::Color::Magenta))
-{}
+{
+
+}
 
 void PPU::reset()
 {
@@ -177,6 +179,7 @@ void PPU::step()
 
 //                     m_screen.setPixel(x, y, sf::Color(colors[m_bus.readPalette(paletteAddr)]));
                 m_pictureBuffer[x][y] = sf::Color(colors[m_bus.readPalette(paletteAddr)]);
+                screen_buffer[x][y] = colors[m_bus.readPalette(paletteAddr)];
             }
             else if (m_cycle == ScanlineVisibleDots + 1 && m_showBackground)
             {

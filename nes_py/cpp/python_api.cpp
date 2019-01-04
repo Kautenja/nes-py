@@ -1,75 +1,81 @@
 /// File: python_api.py
 /// Description: The API definition for ctypes in Python.
 ///
-#include "nes_env.hpp"
+#include <cstdint>
+#include <cstring>
+#include "emulator.hpp"
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
     // setup the module initializer. required to link visual studio C++ ctypes
     void PyInit_lib_nes_env() { }
     // setup the function modifier to export in the DLL
-    #define exp __declspec(dllexport)
-// Unix-based systems
+    #define external __declspec(dllexport)
+// Unix-like systems
 #else
     // setup the modifier as a dummy
-    #define exp
+    #define external
 #endif
 
 // definitions of functions for the Python interface to access
 extern "C" {
-    /// The initializer to return a new NESEnv with a given path.
-    exp NESEnv* NESEnv_init(wchar_t* path){
-        return new NESEnv(path);
+    /// Initialize a new emulator and return a pointer to it
+    external Emulator* Initialize(wchar_t* path) {
+        // convert the c string to a c++ std string data structure
+        std::wstring ws_rom_path(path);
+        std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
+        // create a new emulator with the given ROM path
+        return new Emulator(rom_path);
     }
 
-    /// The width of the NES screen.
-    exp unsigned NESEnv_width() {
-        return GUI::get_width();
+    /// Return the width of the NES.
+    external unsigned GetNESWidth(Emulator* emulator) {
+        return NESVideoWidth;
     }
 
-    /// The height of the NES screen.
-    exp unsigned NESEnv_height() {
-        return GUI::get_height();
+    /// Return the height of the NES.
+    external unsigned GetNESHeight(Emulator* emulator) {
+        return NESVideoHeight;
     }
 
-    /// The getter for RAM access
-    exp u8 NESEnv_read_mem(NESEnv* env, u16 address) {
-        return CPU::read_mem(address);
+    /// Read a byte from memory
+    external uint8_t ReadMemory(Emulator* emulator, uint16_t address) {
+        return emulator->read_memory(address);
     }
 
-    /// The setter for RAM access
-    exp void NESEnv_write_mem(NESEnv* env, u16 address, u8 value) {
-        CPU::write_mem(address, value);
+    /// Set a byte in memory
+    external void WriteMemory(Emulator* emulator, uint16_t address, uint8_t value) {
+        emulator->write_memory(address, value);
     }
 
-    /// Copy the screen of the emulator to an output buffer (NumPy array)
-    exp u32* NESEnv_screen_buffer(NESEnv* env) {
-        return PPU::get_gui()->get_screen();
+    /// Return the pointer to the screen buffer
+    external uint32_t* GetScreenBuffer(Emulator* emulator) {
+        return emulator->get_screen_buffer();
     }
 
-    /// The function to reset the environment.
-    exp void NESEnv_reset(NESEnv* env) {
-        env->reset();
+    /// Reset the emulator
+    external void Reset(Emulator* emulator) {
+        emulator->reset();
     }
 
-    /// The function to perform a step on the emulator.
-    exp void NESEnv_step(NESEnv* env, unsigned char action) {
-        env->step(action);
+    /// Perform a discrete step in the emulator (i.e., 1 frame)
+    external void Step(Emulator* emulator, unsigned char action) {
+        emulator->step(action);
     }
 
-    /// The function to destroy an NESEnv and clear it from memory.
-    exp void NESEnv_close(NESEnv* env) {
-        delete env;
+    /// Close the emulator, i.e., purge it from memory
+    external void Close(Emulator* emulator) {
+        delete emulator;
     }
 
-    /// The function to backup the game-state
-    exp void NESEnv_backup(NESEnv* env) {
-        env->backup();
+    /// Backup the game state in the emulator
+    external void Backup(Emulator* emulator) {
+        emulator->backup();
     }
 
-    /// The function to restore the game-state
-    exp void NESEnv_restore(NESEnv* env) {
-        env->restore();
+    /// Restore a game state in the emulator
+    external void Restore(Emulator* emulator) {
+        emulator->restore();
     }
 
 }

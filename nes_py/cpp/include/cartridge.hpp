@@ -1,33 +1,29 @@
-#pragma once
-#include "common.hpp"
-#include "mapper.hpp"
+#ifndef CARTRIDGE_H
+#define CARTRIDGE_H
+#include <vector>
+#include <string>
+#include <cstdint>
 
-/// an abstraction of a game cartridge.
-class Cartridge {
-private:
-    /// the mapper for the ROM associated with this cartridge
-    Mapper* mapper;
+using Byte = std::uint8_t;
+using Address = std::uint16_t;
 
-public:
-    /**
-        Initialize a new cartridge.
-
-        @param file_name the name of the file to load the ROM from
-    */
-    Cartridge(const char* file_name);
-
-    /// Initialize a cartridge as a copy of another
-    Cartridge(Cartridge* cart);
-
-    /// Delete an instance of cartridge
-    ~Cartridge();
-
-    /// Signal a scanline to the mapper for this cartridge.
-    void signal_scanline();
-
-    /// PRG-ROM access
-    template <bool wr> u8 access(u16 addr, u8 v = 0);
-
-    /// CHR-ROM/RAM access
-    template <bool wr> u8 chr_access(u16 addr, u8 v = 0);
+class Cartridge
+{
+    public:
+        Cartridge();
+        bool loadFromFile(std::string path);
+        const std::vector<Byte>& getROM();
+        const std::vector<Byte>& getVROM();
+        Byte getMapper();
+        Byte getNameTableMirroring();
+        bool hasExtendedRAM();
+    private:
+        std::vector<Byte> m_PRG_ROM;
+        std::vector<Byte> m_CHR_ROM;
+        Byte m_nameTableMirroring;
+        Byte m_mapperNumber;
+        bool m_extendedRAM;
+        bool m_chrRAM;
 };
+
+#endif // CARTRIDGE_H

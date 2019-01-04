@@ -21,6 +21,9 @@ ENV = Environment(
     LINKFLAGS=FLAGS,
     CPPPATH=['#nes_py/cpp/include'],
 )
+# TODO: Remove when SFML is removed from dependency tree
+ENV.Append(LIBS = ["sfml-graphics","sfml-window","sfml-system"]);
+ENV.Append(LIBPATH = "/usr/local/lib");
 
 
 # Compile the shared library for the Python interface

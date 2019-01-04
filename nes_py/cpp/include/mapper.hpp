@@ -1,39 +1,50 @@
-#pragma once
-#include <iostream>
-#include <cstring>
-#include "common.hpp"
+#ifndef MAPPER_H
+#define MAPPER_H
+#include "cartridge.hpp"
+#include <memory>
+#include <functional>
 
-/// An abstract base class for a Mapper module on a Cartridge
-class Mapper {
-    /// the ROM this mapper is loading from
-    u8* rom;
-    /// the size of the ROM in bytes
-    int romSize;
-    /// whether this mapper has CHR RAM
-    bool chrRam = false;
-
-protected:
-    u32 prgMap[4];
-    u32 chrMap[8];
-
-    u8 *prg, *chr, *prgRam;
-    u32 prgSize, chrSize, prgRamSize;
-
-    template <int pageKBs> void map_prg(int slot, int bank);
-    template <int pageKBs> void map_chr(int slot, int bank);
-
-public:
-    Mapper() { };
-    Mapper(u8* rom);
-    Mapper(Mapper* mapper);
-    virtual Mapper* copy();
-    virtual ~Mapper();
-
-    u8 read(u16 addr);
-    virtual u8 write(u16 addr, u8 v) { return v; }
-
-    u8 chr_read(u16 addr);
-    virtual u8 chr_write(u16 addr, u8 v) { return v; }
-
-    virtual void signal_scanline() {}
+enum NameTableMirroring
+{
+    Horizontal  = 0,
+    Vertical    = 1,
+    FourScreen  = 8,
+    OneScreenLower,
+    OneScreenHigher,
 };
+
+
+class Mapper
+{
+    public:
+        enum Type
+        {
+            NROM  = 0,
+            SxROM = 1,
+            UxROM = 2,
+            CNROM = 3,
+        };
+
+        Mapper(Cartridge& cart, Type t) : m_cartridge(cart), m_type(t) {};
+        virtual void writePRG (Address addr, Byte value) = 0;
+        virtual Byte readPRG (Address addr) = 0;
+        virtual const Byte* getPagePtr (Address addr) = 0; //for DMAs
+
+        virtual Byte readCHR (Address addr) = 0;
+        virtual void writeCHR (Address addr, Byte value) = 0;
+
+        virtual NameTableMirroring getNameTableMirroring();
+
+        bool inline hasExtendedRAM()
+        {
+            return m_cartridge.hasExtendedRAM();
+        }
+
+        static std::unique_ptr<Mapper> createMapper (Type mapper_t, Cartridge& cart, std::function<void(void)> mirroring_cb);
+
+    protected:
+        Cartridge& m_cartridge;
+        Type m_type;
+};
+
+#endif //MAPPER_H

@@ -92,19 +92,18 @@ There you will find instructions for:
 
 # Compatibility
 
-nes-py implements the most common mappers, which should be enough for a good
+nes-py implements several common mappers, which should be enough for a good
 percentage of the games:
 
 -   NROM (Mapper 000)
 -   MMC1 / SxROM (Mapper 001)
 -   UxROM (Mapper 002)
 -   CNROM (Mapper 003)
--   MMC3, MMC6 / TxROM (Mapper 004)
 
 You can check the compatibility for each ROM in the following
 [list](https://github.com/Kautenja/nes-py/blob/master/nesmapper.txt)
 
 # Disclaimer
 
-**This project is provided for educational purposes only. It is not affiliated with and has
-not been approved by Nintendo.**
+**This project is provided for educational purposes only. It is not
+affiliated with and has not been approved by Nintendo.**

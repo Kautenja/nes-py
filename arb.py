@@ -12,6 +12,5 @@ try:
         else:
             state, reward, done, info = env.step(env.action_space.sample())
         env.render('human')
-        print(env.screen)
 except KeyboardInterrupt:
     pass

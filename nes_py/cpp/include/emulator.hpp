@@ -114,9 +114,6 @@ public:
     ///
     void write_memory(uint16_t address, uint8_t value);
 
-    /// TODO: delete
-    // void run();
-
 };
 
 #endif // EMULATOR_H

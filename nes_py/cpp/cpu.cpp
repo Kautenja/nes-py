@@ -105,18 +105,18 @@ void CPU::step()
                  f_I << 2 |
                  f_Z << 1 |
                  f_C;
-    LOG_CPU << std::hex << std::setfill('0') << std::uppercase
-              << std::setw(4) << +r_PC
-              << "  "
-              << std::setw(2) << +m_bus.read(r_PC)
-              << "  "
-              << "A:"   << std::setw(2) << +r_A << " "
-              << "X:"   << std::setw(2) << +r_X << " "
-              << "Y:"   << std::setw(2) << +r_Y << " "
-              << "P:"   << std::setw(2) << psw << " "
-              << "SP:"  << std::setw(2) << +r_SP  << /*std::endl;*/" "
-              << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((m_cycles - 1) * 3) % 341
-              << std::endl;
+    // std::cout << std::hex << std::setfill('0') << std::uppercase
+    //           << std::setw(4) << +r_PC
+    //           << "  "
+    //           << std::setw(2) << +m_bus.read(r_PC)
+    //           << "  "
+    //           << "A:"   << std::setw(2) << +r_A << " "
+    //           << "X:"   << std::setw(2) << +r_X << " "
+    //           << "Y:"   << std::setw(2) << +r_Y << " "
+    //           << "P:"   << std::setw(2) << psw << " "
+    //           << "SP:"  << std::setw(2) << +r_SP  << /*std::endl;*/" "
+    //           << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((m_cycles - 1) * 3) % 341
+    //           << std::endl;
 
     Byte opcode = m_bus.read(r_PC++);
 
@@ -133,7 +133,7 @@ void CPU::step()
     }
     else
     {
-        LOG(Error) << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
+        std::cout << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
     }
 }
 

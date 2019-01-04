@@ -6,9 +6,6 @@
 Emulator::Emulator(std::string rom_path) :
     cpu(bus),
     ppu(picture_bus),
-    screen_scale(1.f),
-    cycle_timer(),
-    cpu_cycle_duration(std::chrono::nanoseconds(559)),
     rom_path(rom_path) {
     // raise an error if IO callback setup fails
     if(
@@ -55,9 +52,6 @@ void Emulator::loadRom() {
 
     cpu.reset();
     ppu.reset();
-
-    cycle_timer = std::chrono::high_resolution_clock::now();
-    elapsed_time = cycle_timer - cycle_timer;
 }
 
 void Emulator::DMA(Byte page) {
@@ -75,6 +69,7 @@ void Emulator::reset() {
 }
 
 void Emulator::step(unsigned char action) {
+    // TODO: send action to controller
     // approximate a frame
     for (int i = 0; i < 29781; i++) {
         //PPU

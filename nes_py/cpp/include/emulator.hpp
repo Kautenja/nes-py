@@ -42,18 +42,6 @@ private:
     /// the 2 controllers on the emulator
     Controller controller1, controller2;
 
-    /// the value to scale the screen by
-    float screen_scale;
-
-    /// the timer for the CPU cycles
-    TimePoint cycle_timer;
-
-    /// a high resolution CPU clock abstraction
-    std::chrono::high_resolution_clock::duration elapsed_time;
-
-    /// the duration of a CPU cycle in nanoseconds
-    std::chrono::nanoseconds cpu_cycle_duration;
-
     /// Load the ROM into the NES
     void loadRom();
 

@@ -1,343 +1,644 @@
-#include "ppu.hpp"
 #include "cpu.hpp"
+#include "cpu_opcodes.hpp"
+#include "log.hpp"
+#include <iomanip>
 
-namespace CPU {
-    /// The RAM module for the CPU
-    u8 ram[0x800];
-    u8 read_mem(u16 address) { return ram[address % 0x800]; }
-    void write_mem(u16 address, u8 value) { ram[address % 0x800] = value; }
+CPU::CPU(MainBus &mem) :
+    m_bus(mem)
+{}
 
-    /// the joypad to get input data from
-    Joypad* joypad;
-    void set_joypad(Joypad* new_joypad) { joypad = new_joypad; }
-    Joypad* get_joypad() { return joypad; }
+void CPU::reset()
+{
+    reset(readAddress(ResetVector));
+}
 
-    /// the cartridge to get game data from
-    Cartridge* cartridge;
-    void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
-    Cartridge* get_cartridge() { return cartridge; }
+void CPU::reset(Address start_addr)
+{
+    m_skipCycles = m_cycles = 0;
+    r_A = r_X = r_Y = 0;
+    f_I = true;
+    f_C = f_D = f_N = f_V = f_Z = false;
+    r_PC = start_addr;
+    r_SP = 0xfd; //documented startup state
+}
 
-    /// accumulator, index x, index y, and the stack pointer
-    u8 A, X, Y, S;
-    /// the program counter for the machine instructions
-    u16 PC;
-    /// the flags register
-    Flags P;
-    /// non-mask-able interrupt and interrupt request flag
-    bool nmi, irq;
+void CPU::interrupt(InterruptType type)
+{
+    if (f_I && type != NMI && type != BRK_)
+        return;
 
-    /**
-        The total number of CPU cycle per emulated frame.
-        Original value is 29781. New value over-clocks the CPU (500000 is fast)
-    */
-    const int TOTAL_CYCLES = 29781;
-    /// Remaining clocks to end frame
-    int remainingCycles;
+    if (type == BRK_) //Add one if BRK, a quirk of 6502
+        ++r_PC;
 
-    /* Cycle emulation */
-    #define T   tick()
-    inline void tick() { PPU::step(); PPU::step(); PPU::step(); remainingCycles--; }
+    pushStack(r_PC >> 8);
+    pushStack(r_PC);
 
-    /* Flags updating */
-    inline void upd_cv(u8 x, u8 y, s16 r) { P[C] = (r>0xFF); P[V] = ~(x^y) & (x^r) & 0x80; }
-    inline void upd_nz(u8 x)              { P[N] = x & 0x80; P[Z] = (x == 0);              }
-    // Does adding I to A cross a page?
-    inline bool cross(u16 a, u8 i) { return ((a+i) & 0xFF00) != ((a & 0xFF00)); }
+    Byte flags = f_N << 7 |
+                 f_V << 6 |
+                   1 << 5 | //unused bit, supposed to be always 1
+      (type == BRK_) << 4 | //B flag set if BRK
+                 f_D << 3 |
+                 f_I << 2 |
+                 f_Z << 1 |
+                 f_C;
+    pushStack(flags);
 
-    /* Memory access */
-    void dma_oam(u8 bank);
-    template<bool wr> inline u8 access(u16 addr, u8 v = 0) {
-        u8* r;
-        // RAM
-        if (0x0000 <= addr && addr <= 0x1FFF) {
-            r = &ram[addr % 0x800];
-            if (wr)
-                *r = v;
-            return *r;
-        }
-        // PPU
-        else if (0x2000 <= addr && addr <= 0x3FFF) {
-            return PPU::access<wr>(addr % 8, v);
-        }
-        // APU (not implemented, NOP instead)
-        else if ((0x4000 <= addr && addr <= 0x4013) || addr == 0x4015) {
-            return 1;
-        }
-        // Joypad 1
-        else if (addr == 0x4017) {
-            if (wr)
-                return 1;
-            else
-                return joypad->read_state(1);
-        }
-        // OAM / DMA
-        else if (addr == 0x4014) {
-            if (wr)
-                dma_oam(v);
-        }
-        // Joypad Strobe and Joypad 0
-        else if (addr == 0x4016) {
-            // Joypad strobe
-            if (wr)
-                joypad->write_strobe(v & 1);
-            // Joypad 0
-            else
-                return joypad->read_state(0);
-        }
-        // Cartridge
-        else if (0x4018 <= addr && addr <= 0xFFFF) {
-            return cartridge->access<wr>(addr, v);
-        }
+    f_I = true;
 
-        return 0;
+    switch (type)
+    {
+        case IRQ:
+        case BRK_:
+            r_PC = readAddress(IRQVector);
+            break;
+        case NMI:
+            r_PC = readAddress(NMIVector);
+            break;
     }
-    inline u8  wr(u16 a, u8 v)      { T; return access<1>(a, v);   }
-    inline u8  rd(u16 a)            { T; return access<0>(a);      }
-    inline u16 rd16_d(u16 a, u16 b) { return rd(a) | (rd(b) << 8); }  // Read from A and B and merge.
-    inline u16 rd16(u16 a)          { return rd16_d(a, a+1);       }
-    inline u8  push(u8 v)           { return wr(0x100 + (S--), v); }
-    inline u8  pop()                { return rd(0x100 + (++S));    }
-    void dma_oam(u8 bank) { for (int i = 0; i < 256; i++)  wr(0x2014, rd(bank*0x100 + i)); }
 
-    /* Addressing modes */
-    inline u16 imm()   { return PC++;                                       }
-    inline u16 imm16() { PC += 2; return PC - 2;                            }
-    inline u16 abs()   { return rd16(imm16());                              }
-    inline u16 _abx()  { T; return abs() + X;                               }  // Exception.
-    inline u16 abx()   { u16 a = abs(); if (cross(a, X)) T; return a + X;   }
-    inline u16 aby()   { u16 a = abs(); if (cross(a, Y)) T; return a + Y;   }
-    inline u16 zp()    { return rd(imm());                                  }
-    inline u16 zpx()   { T; return (zp() + X) % 0x100;                      }
-    inline u16 zpy()   { T; return (zp() + Y) % 0x100;                      }
-    inline u16 izx()   { u8 i = zpx(); return rd16_d(i, (i+1) % 0x100);     }
-    inline u16 _izy()  { u8 i = zp();  return rd16_d(i, (i+1) % 0x100) + Y; }  // Exception.
-    inline u16 izy()   { u16 a = _izy(); if (cross(a-Y, Y)) T; return a;    }
+    m_skipCycles += 7;
+}
 
-    /* STx */
-    template<u8& r, Mode m> void st()        {    wr(   m()    , r); }
-    template<>              void st<A,izy>() { T; wr(_izy()    , A); }  // Exceptions.
-    template<>              void st<A,abx>() { T; wr( abs() + X, A); }  // ...
-    template<>              void st<A,aby>() { T; wr( abs() + Y, A); }  // ...
+void CPU::pushStack(Byte value)
+{
+    m_bus.write(0x100 | r_SP, value);
+    --r_SP; //Hardware stacks grow downward!
+}
 
-    #define G  u16 a = m(); u8 p = rd(a)  /* Fetch parameter */
-    template<u8& r, Mode m> void ld()  { G; upd_nz(r = p);                  }  // LDx
-    template<u8& r, Mode m> void cmp() { G; upd_nz(r - p); P[C] = (r >= p); }  // CMP, CPx
-    /* Arithmetic and bitwise */
-    template<Mode m> void ADC() { G       ; s16 r = A + p + P[C]; upd_cv(A, p, r); upd_nz(A = r); }
-    template<Mode m> void SBC() { G ^ 0xFF; s16 r = A + p + P[C]; upd_cv(A, p, r); upd_nz(A = r); }
-    template<Mode m> void BIT() { G; P[Z] = !(A & p); P[N] = p & 0x80; P[V] = p & 0x40; }
-    template<Mode m> void AND() { G; upd_nz(A &= p); }
-    template<Mode m> void EOR() { G; upd_nz(A ^= p); }
-    template<Mode m> void ORA() { G; upd_nz(A |= p); }
-    /* Read-Modify-Write */
-    template<Mode m> void ASL() { G; P[C] = p & 0x80; T; upd_nz(wr(a, p << 1)); }
-    template<Mode m> void LSR() { G; P[C] = p & 0x01; T; upd_nz(wr(a, p >> 1)); }
-    template<Mode m> void ROL() { G; u8 c = P[C]     ; P[C] = p & 0x80; T; upd_nz(wr(a, (p << 1) | c) ); }
-    template<Mode m> void ROR() { G; u8 c = P[C] << 7; P[C] = p & 0x01; T; upd_nz(wr(a, c | (p >> 1)) ); }
-    template<Mode m> void DEC() { G; T; upd_nz(wr(a, --p)); }
-    template<Mode m> void INC() { G; T; upd_nz(wr(a, ++p)); }
-    #undef G
+Byte CPU::pullStack()
+{
+    return m_bus.read(0x100 | ++r_SP);
+}
 
-    /* DEx, INx */
-    template<u8& r> void dec() { upd_nz(--r); T; }
-    template<u8& r> void inc() { upd_nz(++r); T; }
-    /* Bit shifting on the accumulator */
-    void ASL_A() { P[C] = A & 0x80; upd_nz(A <<= 1); T; }
-    void LSR_A() { P[C] = A & 0x01; upd_nz(A >>= 1); T; }
-    void ROL_A() { u8 c = P[C]     ; P[C] = A & 0x80; upd_nz(A = ((A << 1) | c) ); T; }
-    void ROR_A() { u8 c = P[C] << 7; P[C] = A & 0x01; upd_nz(A = (c | (A >> 1)) ); T; }
+void CPU::setZN(Byte value)
+{
+    f_Z = !value;
+    f_N = value & 0x80;
+}
 
-    /* Txx (move values between registers) */
-    template<u8& s, u8& d> void tr()      { upd_nz(d = s); T; }
-    template<>             void tr<X,S>() { S = X;         T; }  // TSX, exception.
+void CPU::setPageCrossed(Address a, Address b, int inc)
+{
+    //Page is determined by the high byte
+    if ((a & 0xff00) != (b & 0xff00))
+        m_skipCycles += inc;
+}
 
-    /* Stack operations */
-    void PLP() { T; T; P.set(pop()); }
-    void PHP() { T; push(P.get() | (1 << 4)); }  // B flag set.
-    void PLA() { T; T; A = pop(); upd_nz(A);  }
-    void PHA() { T; push(A); }
+void CPU::skipDMACycles()
+{
+    m_skipCycles += 513; //256 read + 256 write + 1 dummy read
+    m_skipCycles += (m_cycles & 1); //+1 if on odd cycle
+}
 
-    /* Flow control (branches, jumps) */
-    template<Flag f, bool v> void br() { s8 j = rd(imm()); if (P[f] == v) { T; PC += j; } }
-    void JMP_IND() { u16 i = rd16(imm16()); PC = rd16_d(i, (i&0xFF00) | ((i+1) % 0x100)); }
-    void JMP()     { PC = rd16(imm16()); }
-    void JSR()     { u16 t = PC+1; T; push(t >> 8); push(t); PC = rd16(imm16()); }
+void CPU::step()
+{
+    ++m_cycles;
 
-    /* Return instructions */
-    void RTS() { T; T;  PC = (pop() | (pop() << 8)) + 1; T; }
-    void RTI() { PLP(); PC =  pop() | (pop() << 8);         }
+    if (m_skipCycles-- > 1)
+        return;
 
-    template<Flag f, bool v> void flag() { P[f] = v; T; }  // Clear and set flags.
-    template<IntType t> void INT() {
-        // BRK already performed the fetch.
-        T; if (t != BRK) T;
-        // Writes on stack are inhibited on RESET.
-        if (t != RESET) {
-            push(PC >> 8); push(PC & 0xFF);
-            push(P.get() | ((t == BRK) << 4));  // Set B if BRK.
-        }
-        else { S -= 3; T; T; T; }
-        P[I] = true;
-                              /*   NMI    Reset    IRQ     BRK  */
-        constexpr u16 vect[] = { 0xFFFA, 0xFFFC, 0xFFFE, 0xFFFE };
-        PC = rd16(vect[t]);
-        if (t == NMI) nmi = false;
+    m_skipCycles = 0;
+
+    int psw =    f_N << 7 |
+                 f_V << 6 |
+                   1 << 5 |
+                 f_D << 3 |
+                 f_I << 2 |
+                 f_Z << 1 |
+                 f_C;
+    // std::cout << std::hex << std::setfill('0') << std::uppercase
+    //           << std::setw(4) << +r_PC
+    //           << "  "
+    //           << std::setw(2) << +m_bus.read(r_PC)
+    //           << "  "
+    //           << "A:"   << std::setw(2) << +r_A << " "
+    //           << "X:"   << std::setw(2) << +r_X << " "
+    //           << "Y:"   << std::setw(2) << +r_Y << " "
+    //           << "P:"   << std::setw(2) << psw << " "
+    //           << "SP:"  << std::setw(2) << +r_SP  << /*std::endl;*/" "
+    //           << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((m_cycles - 1) * 3) % 341
+    //           << std::endl;
+
+    Byte opcode = m_bus.read(r_PC++);
+
+    auto CycleLength = OperationCycles[opcode];
+
+    //Using short-circuit evaluation, call the other function only if the first failed
+    //ExecuteImplied must be called first and ExecuteBranch must be before ExecuteType0
+    if (CycleLength && (executeImplied(opcode) || executeBranch(opcode) ||
+                    executeType1(opcode) || executeType2(opcode) || executeType0(opcode)))
+    {
+        m_skipCycles += CycleLength;
+        //m_cycles %= 340; //compatibility with Nintendulator log
+        //m_skipCycles = 0; //for TESTING
     }
-    void NOP() { T; }
+    else
+    {
+        std::cout << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
+    }
+}
 
-    /* Execute a CPU instruction */
-    void exec() {
-        // Fetch the opcode and switch over it
-        switch (rd(PC++)) {
-            // Select the right function to emulate the instruction:
-            case 0x00: return INT<BRK>()  ;  case 0x01: return ORA<izx>()  ;
-            case 0x05: return ORA<zp>()   ;  case 0x06: return ASL<zp>()   ;
-            case 0x08: return PHP()       ;  case 0x09: return ORA<imm>()  ;
-            case 0x0A: return ASL_A()     ;  case 0x0D: return ORA<abs>()  ;
-            case 0x0E: return ASL<abs>()  ;  case 0x10: return br<N,0>()   ;
-            case 0x11: return ORA<izy>()  ;  case 0x15: return ORA<zpx>()  ;
-            case 0x16: return ASL<zpx>()  ;  case 0x18: return flag<C,0>() ;
-            case 0x19: return ORA<aby>()  ;  case 0x1D: return ORA<abx>()  ;
-            case 0x1E: return ASL<_abx>() ;  case 0x20: return JSR()       ;
-            case 0x21: return AND<izx>()  ;  case 0x24: return BIT<zp>()   ;
-            case 0x25: return AND<zp>()   ;  case 0x26: return ROL<zp>()   ;
-            case 0x28: return PLP()       ;  case 0x29: return AND<imm>()  ;
-            case 0x2A: return ROL_A()     ;  case 0x2C: return BIT<abs>()  ;
-            case 0x2D: return AND<abs>()  ;  case 0x2E: return ROL<abs>()  ;
-            case 0x30: return br<N,1>()   ;  case 0x31: return AND<izy>()  ;
-            case 0x35: return AND<zpx>()  ;  case 0x36: return ROL<zpx>()  ;
-            case 0x38: return flag<C,1>() ;  case 0x39: return AND<aby>()  ;
-            case 0x3D: return AND<abx>()  ;  case 0x3E: return ROL<_abx>() ;
-            case 0x40: return RTI()       ;  case 0x41: return EOR<izx>()  ;
-            case 0x45: return EOR<zp>()   ;  case 0x46: return LSR<zp>()   ;
-            case 0x48: return PHA()       ;  case 0x49: return EOR<imm>()  ;
-            case 0x4A: return LSR_A()     ;  case 0x4C: return JMP()       ;
-            case 0x4D: return EOR<abs>()  ;  case 0x4E: return LSR<abs>()  ;
-            case 0x50: return br<V,0>()   ;  case 0x51: return EOR<izy>()  ;
-            case 0x55: return EOR<zpx>()  ;  case 0x56: return LSR<zpx>()  ;
-            case 0x58: return flag<I,0>() ;  case 0x59: return EOR<aby>()  ;
-            case 0x5D: return EOR<abx>()  ;  case 0x5E: return LSR<_abx>() ;
-            case 0x60: return RTS()       ;  case 0x61: return ADC<izx>()  ;
-            case 0x65: return ADC<zp>()   ;  case 0x66: return ROR<zp>()   ;
-            case 0x68: return PLA()       ;  case 0x69: return ADC<imm>()  ;
-            case 0x6A: return ROR_A()     ;  case 0x6C: return JMP_IND()   ;
-            case 0x6D: return ADC<abs>()  ;  case 0x6E: return ROR<abs>()  ;
-            case 0x70: return br<V,1>()   ;  case 0x71: return ADC<izy>()  ;
-            case 0x75: return ADC<zpx>()  ;  case 0x76: return ROR<zpx>()  ;
-            case 0x78: return flag<I,1>() ;  case 0x79: return ADC<aby>()  ;
-            case 0x7D: return ADC<abx>()  ;  case 0x7E: return ROR<_abx>() ;
-            case 0x81: return st<A,izx>() ;  case 0x84: return st<Y,zp>()  ;
-            case 0x85: return st<A,zp>()  ;  case 0x86: return st<X,zp>()  ;
-            case 0x88: return dec<Y>()    ;  case 0x8A: return tr<X,A>()   ;
-            case 0x8C: return st<Y,abs>() ;  case 0x8D: return st<A,abs>() ;
-            case 0x8E: return st<X,abs>() ;  case 0x90: return br<C,0>()   ;
-            case 0x91: return st<A,izy>() ;  case 0x94: return st<Y,zpx>() ;
-            case 0x95: return st<A,zpx>() ;  case 0x96: return st<X,zpy>() ;
-            case 0x98: return tr<Y,A>()   ;  case 0x99: return st<A,aby>() ;
-            case 0x9A: return tr<X,S>()   ;  case 0x9D: return st<A,abx>() ;
-            case 0xA0: return ld<Y,imm>() ;  case 0xA1: return ld<A,izx>() ;
-            case 0xA2: return ld<X,imm>() ;  case 0xA4: return ld<Y,zp>()  ;
-            case 0xA5: return ld<A,zp>()  ;  case 0xA6: return ld<X,zp>()  ;
-            case 0xA8: return tr<A,Y>()   ;  case 0xA9: return ld<A,imm>() ;
-            case 0xAA: return tr<A,X>()   ;  case 0xAC: return ld<Y,abs>() ;
-            case 0xAD: return ld<A,abs>() ;  case 0xAE: return ld<X,abs>() ;
-            case 0xB0: return br<C,1>()   ;  case 0xB1: return ld<A,izy>() ;
-            case 0xB4: return ld<Y,zpx>() ;  case 0xB5: return ld<A,zpx>() ;
-            case 0xB6: return ld<X,zpy>() ;  case 0xB8: return flag<V,0>() ;
-            case 0xB9: return ld<A,aby>() ;  case 0xBA: return tr<S,X>()   ;
-            case 0xBC: return ld<Y,abx>() ;  case 0xBD: return ld<A,abx>() ;
-            case 0xBE: return ld<X,aby>() ;  case 0xC0: return cmp<Y,imm>();
-            case 0xC1: return cmp<A,izx>();  case 0xC4: return cmp<Y,zp>() ;
-            case 0xC5: return cmp<A,zp>() ;  case 0xC6: return DEC<zp>()   ;
-            case 0xC8: return inc<Y>()    ;  case 0xC9: return cmp<A,imm>();
-            case 0xCA: return dec<X>()    ;  case 0xCC: return cmp<Y,abs>();
-            case 0xCD: return cmp<A,abs>();  case 0xCE: return DEC<abs>()  ;
-            case 0xD0: return br<Z,0>()   ;  case 0xD1: return cmp<A,izy>();
-            case 0xD5: return cmp<A,zpx>();  case 0xD6: return DEC<zpx>()  ;
-            case 0xD8: return flag<D,0>() ;  case 0xD9: return cmp<A,aby>();
-            case 0xDD: return cmp<A,abx>();  case 0xDE: return DEC<_abx>() ;
-            case 0xE0: return cmp<X,imm>();  case 0xE1: return SBC<izx>()  ;
-            case 0xE4: return cmp<X,zp>() ;  case 0xE5: return SBC<zp>()   ;
-            case 0xE6: return INC<zp>()   ;  case 0xE8: return inc<X>()    ;
-            case 0xE9: return SBC<imm>()  ;  case 0xEA: return NOP()       ;
-            case 0xEC: return cmp<X,abs>();  case 0xED: return SBC<abs>()  ;
-            case 0xEE: return INC<abs>()  ;  case 0xF0: return br<Z,1>()   ;
-            case 0xF1: return SBC<izy>()  ;  case 0xF5: return SBC<zpx>()  ;
-            case 0xF6: return INC<zpx>()  ;  case 0xF8: return flag<D,1>() ;
-            case 0xF9: return SBC<aby>()  ;  case 0xFD: return SBC<abx>()  ;
-            case 0xFE: return INC<_abx>() ;
-            default: {
-                std::cout <<
-                    "Invalid OPcode! PC: " <<
-                    PC <<
-                    " OPcode: 0x" <<
-                    std::hex <<
-                    (int)rd(PC-1) <<
-                    std::endl;
-                return NOP();
+bool CPU::executeImplied(Byte opcode)
+{
+    switch (static_cast<OperationImplied>(opcode))
+    {
+        case NOP:
+            break;
+        case BRK:
+            interrupt(BRK_);
+            break;
+        case JSR:
+            //Push address of next instruction - 1, thus r_PC + 1 instead of r_PC + 2
+            //since r_PC and r_PC + 1 are address of subroutine
+            pushStack(static_cast<Byte>((r_PC + 1) >> 8));
+            pushStack(static_cast<Byte>(r_PC + 1));
+            r_PC = readAddress(r_PC);
+            break;
+        case RTS:
+            r_PC = pullStack();
+            r_PC |= pullStack() << 8;
+            ++r_PC;
+            break;
+        case RTI:
+            {
+                Byte flags = pullStack();
+                f_N = flags & 0x80;
+                f_V = flags & 0x40;
+                f_D = flags & 0x8;
+                f_I = flags & 0x4;
+                f_Z = flags & 0x2;
+                f_C = flags & 0x1;
             }
+            r_PC = pullStack();
+            r_PC |= pullStack() << 8;
+            break;
+        case JMP:
+            r_PC = readAddress(r_PC);
+            break;
+        case JMPI:
+            {
+                Address location = readAddress(r_PC);
+                //6502 has a bug such that the when the vector of anindirect address begins at the last byte of a page,
+                //the second byte is fetched from the beginning of that page rather than the beginning of the next
+                //Recreating here:
+                Address Page = location & 0xff00;
+                r_PC = m_bus.read(location) |
+                       m_bus.read(Page | ((location + 1) & 0xff)) << 8;
+            }
+            break;
+        case PHP:
+            {
+                Byte flags = f_N << 7 |
+                             f_V << 6 |
+                               1 << 5 | //supposed to always be 1
+                               1 << 4 | //PHP pushes with the B flag as 1, no matter what
+                             f_D << 3 |
+                             f_I << 2 |
+                             f_Z << 1 |
+                             f_C;
+                pushStack(flags);
+            }
+            break;
+        case PLP:
+            {
+                Byte flags = pullStack();
+                f_N = flags & 0x80;
+                f_V = flags & 0x40;
+                f_D = flags & 0x8;
+                f_I = flags & 0x4;
+                f_Z = flags & 0x2;
+                f_C = flags & 0x1;
+            }
+            break;
+        case PHA:
+            pushStack(r_A);
+            break;
+        case PLA:
+            r_A = pullStack();
+            setZN(r_A);
+            break;
+        case DEY:
+            --r_Y;
+            setZN(r_Y);
+            break;
+        case DEX:
+            --r_X;
+            setZN(r_X);
+            break;
+        case TAY:
+            r_Y = r_A;
+            setZN(r_Y);
+            break;
+        case INY:
+            ++r_Y;
+            setZN(r_Y);
+            break;
+        case INX:
+            ++r_X;
+            setZN(r_X);
+            break;
+        case CLC:
+            f_C = false;
+            break;
+        case SEC:
+            f_C = true;
+            break;
+        case CLI:
+            f_I = false;
+            break;
+        case SEI:
+            f_I = true;
+            break;
+        case CLD:
+            f_D = false;
+            break;
+        case SED:
+            f_D = true;
+            break;
+        case TYA:
+            r_A = r_Y;
+            setZN(r_A);
+            break;
+        case CLV:
+            f_V = false;
+            break;
+        case TXA:
+            r_A = r_X;
+            setZN(r_A);
+            break;
+        case TXS:
+            r_SP = r_X;
+            break;
+        case TAX:
+            r_X = r_A;
+            setZN(r_X);
+            break;
+        case TSX:
+            r_X = r_SP;
+            setZN(r_X);
+            break;
+        default:
+            return false;
+    };
+    return true;
+}
+
+bool CPU::executeBranch(Byte opcode)
+{
+    if ((opcode & BranchInstructionMask) == BranchInstructionMaskResult)
+    {
+        //branch is initialized to the condition required (for the flag specified later)
+        bool branch = opcode & BranchConditionMask;
+
+        //set branch to true if the given condition is met by the given flag
+        //We use xnor here, it is true if either both operands are true or false
+        switch (opcode >> BranchOnFlagShift)
+        {
+            case Negative:
+                branch = !(branch ^ f_N);
+                break;
+            case Overflow:
+                branch = !(branch ^ f_V);
+                break;
+            case Carry:
+                branch = !(branch ^ f_C);
+                break;
+            case Zero:
+                branch = !(branch ^ f_Z);
+                break;
+            default:
+                return false;
         }
-    }
 
-    void set_nmi(bool v) { nmi = v; }
-    void set_irq(bool v) { irq = v; }
-
-    void power() {
-        remainingCycles = 0;
-
-        P.set(0x04);
-        A = X = Y = S = 0x00;
-        memset(ram, 0xFF, sizeof(ram));
-
-        nmi = irq = false;
-        INT<RESET>();
-    }
-
-    void run_frame() {
-        remainingCycles += TOTAL_CYCLES;
-
-        while (remainingCycles > 0) {
-            if (nmi) INT<NMI>();
-            else if (irq && !P[I]) INT<IRQ>();
-
-            exec();
+        if (branch)
+        {
+            int8_t offset = m_bus.read(r_PC++);
+            ++m_skipCycles;
+            auto newPC = static_cast<Address>(r_PC + offset);
+            setPageCrossed(r_PC, newPC, 2);
+            r_PC = newPC;
         }
+        else
+            ++r_PC;
+        return true;
     }
+    return false;
+}
 
-    CPUState* get_state() {
-        CPUState* state = new CPUState();
-        // copy the RAM array into the CPU state
-        std::copy(std::begin(ram), std::end(ram), std::begin(state->ram));
-        // copy the registers
-        state->A = A;
-        state->X = X;
-        state->Y = Y;
-        state->S = S;
-        // copy the program counter
-        state->PC = PC;
-        // copy the flags
-        state->P = P;
-        // copy the interrupt flags
-        state->nmi = nmi;
-        state->irq = irq;
+bool CPU::executeType1(Byte opcode)
+{
+    if ((opcode & InstructionModeMask) == 0x1)
+    {
+        Address location = 0; //Location of the operand, could be in RAM
+        auto op = static_cast<Operation1>((opcode & OperationMask) >> OperationShift);
+        switch (static_cast<AddrMode1>(
+                (opcode & AddrModeMask) >> AddrModeShift))
+        {
+            case IndexedIndirectX:
+                {
+                    Byte zero_addr = r_X + m_bus.read(r_PC++);
+                    //Addresses wrap in zero page mode, thus pass through a mask
+                    location = m_bus.read(zero_addr & 0xff) | m_bus.read((zero_addr + 1) & 0xff) << 8;
+                }
+                break;
+            case ZeroPage:
+                location = m_bus.read(r_PC++);
+                break;
+            case Immediate:
+                location = r_PC++;
+                break;
+            case Absolute:
+                location = readAddress(r_PC);
+                r_PC += 2;
+                break;
+            case IndirectY:
+                {
+                    Byte zero_addr = m_bus.read(r_PC++);
+                    location = m_bus.read(zero_addr & 0xff) | m_bus.read((zero_addr + 1) & 0xff) << 8;
+                    if (op != STA)
+                        setPageCrossed(location, location + r_Y);
+                    location += r_Y;
+                }
+                break;
+            case IndexedX:
+                // Address wraps around in the zero page
+                location = (m_bus.read(r_PC++) + r_X) & 0xff;
+                break;
+            case AbsoluteY:
+                location = readAddress(r_PC);
+                r_PC += 2;
+                if (op != STA)
+                    setPageCrossed(location, location + r_Y);
+                location += r_Y;
+                break;
+            case AbsoluteX:
+                location = readAddress(r_PC);
+                r_PC += 2;
+                if (op != STA)
+                    setPageCrossed(location, location + r_X);
+                location += r_X;
+                break;
+            default:
+                return false;
+        }
 
-        return state;
+        switch (op)
+        {
+            case ORA:
+                r_A |= m_bus.read(location);
+                setZN(r_A);
+                break;
+            case AND:
+                r_A &= m_bus.read(location);
+                setZN(r_A);
+                break;
+            case EOR:
+                r_A ^= m_bus.read(location);
+                setZN(r_A);
+                break;
+            case ADC:
+                {
+                    Byte operand = m_bus.read(location);
+                    std::uint16_t sum = r_A + operand + f_C;
+                    //Carry forward or UNSIGNED overflow
+                    f_C = sum & 0x100;
+                    //SIGNED overflow, would only happen if the sign of sum is
+                    //different from BOTH the operands
+                    f_V = (r_A ^ sum) & (operand ^ sum) & 0x80;
+                    r_A = static_cast<Byte>(sum);
+                    setZN(r_A);
+                }
+                break;
+            case STA:
+                m_bus.write(location, r_A);
+                break;
+            case LDA:
+                r_A = m_bus.read(location);
+                setZN(r_A);
+                break;
+            case SBC:
+                {
+                    //High carry means "no borrow", thus negate and subtract
+                    std::uint16_t subtrahend = m_bus.read(location),
+                             diff = r_A - subtrahend - !f_C;
+                    //if the ninth bit is 1, the resulting number is negative => borrow => low carry
+                    f_C = !(diff & 0x100);
+                    //Same as ADC, except instead of the subtrahend,
+                    //substitute with it's one complement
+                    f_V = (r_A ^ diff) & (~subtrahend ^ diff) & 0x80;
+                    r_A = diff;
+                    setZN(diff);
+                }
+                break;
+            case CMP:
+                {
+                    std::uint16_t diff = r_A - m_bus.read(location);
+                    f_C = !(diff & 0x100);
+                    setZN(diff);
+                }
+                break;
+            default:
+                return false;
+        }
+        return true;
     }
+    return false;
+}
 
-    void set_state(CPUState* state) {
-        // copy the RAM array into the CPU state
-        std::copy(std::begin(state->ram), std::end(state->ram), std::begin(ram));
-        // copy the registers
-        A = state->A;
-        X = state->X;
-        Y = state->Y;
-        S = state->S;
-        // copy the program counter
-        PC = state->PC;
-        // copy the flags
-        P = state->P;
-        // copy the interrupt flags
-        nmi = state->nmi;
-        irq = state->irq;
+bool CPU::executeType2(Byte opcode)
+{
+    if ((opcode & InstructionModeMask) == 2)
+    {
+        Address location = 0;
+        auto op = static_cast<Operation2>((opcode & OperationMask) >> OperationShift);
+        auto addr_mode =
+                static_cast<AddrMode2>((opcode & AddrModeMask) >> AddrModeShift);
+        switch (addr_mode)
+        {
+            case Immediate_:
+                location = r_PC++;
+                break;
+            case ZeroPage_:
+                location = m_bus.read(r_PC++);
+                break;
+            case Accumulator:
+                break;
+            case Absolute_:
+                location = readAddress(r_PC);
+                r_PC += 2;
+                break;
+            case Indexed:
+                {
+                    location = m_bus.read(r_PC++);
+                    Byte index;
+                    if (op == LDX || op == STX)
+                        index = r_Y;
+                    else
+                        index = r_X;
+                    //The mask wraps address around zero page
+                    location = (location + index) & 0xff;
+                }
+                break;
+            case AbsoluteIndexed:
+                {
+                    location = readAddress(r_PC);
+                    r_PC += 2;
+                    Byte index;
+                    if (op == LDX || op == STX)
+                        index = r_Y;
+                    else
+                        index = r_X;
+                    setPageCrossed(location, location + index);
+                    location += index;
+                }
+                break;
+            default:
+                return false;
+        }
+
+        std::uint16_t operand = 0;
+        switch (op)
+        {
+            case ASL:
+            case ROL:
+                if (addr_mode == Accumulator)
+                {
+                    auto prev_C = f_C;
+                    f_C = r_A & 0x80;
+                    r_A <<= 1;
+                    //If Rotating, set the bit-0 to the the previous carry
+                    r_A = r_A | (prev_C && (op == ROL));
+                    setZN(r_A);
+                }
+                else
+                {
+                    auto prev_C = f_C;
+                    operand = m_bus.read(location);
+                    f_C = operand & 0x80;
+                    operand = operand << 1 | (prev_C && (op == ROL));
+                    setZN(operand);
+                    m_bus.write(location, operand);
+                }
+                break;
+            case LSR:
+            case ROR:
+                if (addr_mode == Accumulator)
+                {
+                    auto prev_C = f_C;
+                    f_C = r_A & 1;
+                    r_A >>= 1;
+                    //If Rotating, set the bit-7 to the previous carry
+                    r_A = r_A | (prev_C && (op == ROR)) << 7;
+                    setZN(r_A);
+                }
+                else
+                {
+                    auto prev_C = f_C;
+                    operand = m_bus.read(location);
+                    f_C = operand & 1;
+                    operand = operand >> 1 | (prev_C && (op == ROR)) << 7;
+                    setZN(operand);
+                    m_bus.write(location, operand);
+                }
+                break;
+            case STX:
+                m_bus.write(location, r_X);
+                break;
+            case LDX:
+                r_X = m_bus.read(location);
+                setZN(r_X);
+                break;
+            case DEC:
+                {
+                    auto tmp = m_bus.read(location) - 1;
+                    setZN(tmp);
+                    m_bus.write(location, tmp);
+                }
+                break;
+            case INC:
+                {
+                    auto tmp = m_bus.read(location) + 1;
+                    setZN(tmp);
+                    m_bus.write(location, tmp);
+                }
+                break;
+            default:
+                return false;
+        }
+        return true;
     }
+    return false;
+}
+
+bool CPU::executeType0(Byte opcode)
+{
+    if ((opcode & InstructionModeMask) == 0x0)
+    {
+        Address location = 0;
+        switch (static_cast<AddrMode2>((opcode & AddrModeMask) >> AddrModeShift))
+        {
+            case Immediate_:
+                location = r_PC++;
+                break;
+            case ZeroPage_:
+                location = m_bus.read(r_PC++);
+                break;
+            case Absolute_:
+                location = readAddress(r_PC);
+                r_PC += 2;
+                break;
+            case Indexed:
+                // Address wraps around in the zero page
+                location = (m_bus.read(r_PC++) + r_X) & 0xff;
+                break;
+            case AbsoluteIndexed:
+                location = readAddress(r_PC);
+                r_PC += 2;
+                setPageCrossed(location, location + r_X);
+                location += r_X;
+                break;
+            default:
+                return false;
+        }
+        std::uint16_t operand = 0;
+        switch (static_cast<Operation0>((opcode & OperationMask) >> OperationShift))
+        {
+            case BIT:
+                operand = m_bus.read(location);
+                f_Z = !(r_A & operand);
+                f_V = operand & 0x40;
+                f_N = operand & 0x80;
+                break;
+            case STY:
+                m_bus.write(location, r_Y);
+                break;
+            case LDY:
+                r_Y = m_bus.read(location);
+                setZN(r_Y);
+                break;
+            case CPY:
+                {
+                    std::uint16_t diff = r_Y - m_bus.read(location);
+                    f_C = !(diff & 0x100);
+                    setZN(diff);
+                }
+                break;
+            case CPX:
+                {
+                    std::uint16_t diff = r_X - m_bus.read(location);
+                    f_C = !(diff & 0x100);
+                    setZN(diff);
+                }
+                break;
+            default:
+                return false;
+        }
+
+        return true;
+    }
+    return false;
+}
+
+Address CPU::readAddress(Address addr)
+{
+    return m_bus.read(addr) | m_bus.read(addr + 1) << 8;
 }

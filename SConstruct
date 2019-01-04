@@ -22,7 +22,6 @@ ENV = Environment(
     CPPPATH=['#nes_py/cpp/include'],
 )
 
-
 # Compile the shared library for the Python interface
 CPP = Glob('nes_py/cpp/build/*/*.cpp') + Glob('nes_py/cpp/build/*/*/*.cpp')
 ENV.SharedLibrary('nes_py/_nes_env.so', CPP)

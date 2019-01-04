@@ -1,4 +1,4 @@
-gym>=0.10.5
+gym>=0.10.9
 numpy>=1.12.1
 opencv-python>=3.4.0.12
 Pillow==5.0.0

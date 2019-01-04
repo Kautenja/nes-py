@@ -1,66 +1,67 @@
 """A CTypes interface to the C++ NES environment."""
+import ctypes
+import glob
+import itertools
 import os
 import sys
-import ctypes
-import itertools
-from glob import glob
 import gym
-import numpy as np
-from numpy.ctypeslib import as_ctypes
+from gym.spaces import Box
 from gym.spaces import Discrete
+import numpy as np
 
 
-# the path to the directory this
+# the path to the directory this file is in
 _MODULE_PATH = os.path.dirname(__file__)
-# the relative path to the C++ shared object library. it can be built on
-# many different systems so all we know is the defined prefix
+# the pattern to find the C++ shared object library
 _SO_PATH = 'lib_nes_env*'
 # the absolute path to the C++ shared object library
 _LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
-# load the library from the shared object file. use a glob to locate the
-# .so file based on the build systems nomenclature
-_LIB = ctypes.cdll.LoadLibrary(glob(_LIB_PATH)[0])
+# load the library from the shared object file
+try:
+    _LIB = ctypes.cdll.LoadLibrary(glob.glob(_LIB_PATH)[0])
+except IndexError:
+    raise OSError('missing static lib_nes_env*.so library!')
 
 
-# setup the argument and return types for NESEnv_init
-_LIB.NESEnv_init.argtypes = [ctypes.c_wchar_p]
-_LIB.NESEnv_init.restype = ctypes.c_void_p
-# setup the argument and return types for NESEnv_width
-_LIB.NESEnv_width.argtypes = None
-_LIB.NESEnv_width.restype = ctypes.c_uint
-# setup the argument and return types for NESEnv_height
-_LIB.NESEnv_height.argtypes = None
-_LIB.NESEnv_height.restype = ctypes.c_uint
-# setup the argument and return types for NESEnv_read_mem
-_LIB.NESEnv_read_mem.argtypes = [ctypes.c_void_p, ctypes.c_ushort]
-_LIB.NESEnv_read_mem.restype = ctypes.c_ubyte
-# setup the argument and return types for NESEnv_write_mem
-_LIB.NESEnv_write_mem.argtypes = [ctypes.c_void_p, ctypes.c_ushort, ctypes.c_ubyte]
-_LIB.NESEnv_write_mem.restype = None
-# setup the argument and return types for NESEnv_screen_buffer
-_LIB.NESEnv_screen_buffer.argtypes = [ctypes.c_void_p]
-_LIB.NESEnv_screen_buffer.restype = ctypes.c_void_p
-# setup the argument and return types for NESEnv_reset
-_LIB.NESEnv_reset.argtypes = [ctypes.c_void_p]
-_LIB.NESEnv_reset.restype = None
-# setup the argument and return types for NESEnv_step
-_LIB.NESEnv_step.argtypes = [ctypes.c_void_p, ctypes.c_ubyte]
-_LIB.NESEnv_step.restype = None
-# setup the argument and return types for NESEnv_close
-_LIB.NESEnv_close.argtypes = [ctypes.c_void_p]
-_LIB.NESEnv_close.restype = None
-# setup the argument and return types for NESEnv_backup
-_LIB.NESEnv_backup.argtypes = [ctypes.c_void_p]
-_LIB.NESEnv_backup.restype = None
-# setup the argument and return types for NESEnv_restore
-_LIB.NESEnv_restore.argtypes = [ctypes.c_void_p]
-_LIB.NESEnv_restore.restype = None
+# setup the argument and return types for Initialize
+_LIB.Initialize.argtypes = [ctypes.c_wchar_p]
+_LIB.Initialize.restype = ctypes.c_void_p
+# setup the argument and return types for GetNESWidth
+_LIB.GetNESWidth.argtypes = None
+_LIB.GetNESWidth.restype = ctypes.c_uint
+# setup the argument and return types for GetNESHeight
+_LIB.GetNESHeight.argtypes = None
+_LIB.GetNESHeight.restype = ctypes.c_uint
+# setup the argument and return types for ReadMemory
+_LIB.ReadMemory.argtypes = [ctypes.c_void_p, ctypes.c_ushort]
+_LIB.ReadMemory.restype = ctypes.c_ubyte
+# setup the argument and return types for WriteMemory
+_LIB.WriteMemory.argtypes = [ctypes.c_void_p, ctypes.c_ushort, ctypes.c_ubyte]
+_LIB.WriteMemory.restype = None
+# setup the argument and return types for GetScreenBuffer
+_LIB.GetScreenBuffer.argtypes = [ctypes.c_void_p]
+_LIB.GetScreenBuffer.restype = ctypes.c_void_p
+# setup the argument and return types for Reset
+_LIB.Reset.argtypes = [ctypes.c_void_p]
+_LIB.Reset.restype = None
+# setup the argument and return types for Step
+_LIB.Step.argtypes = [ctypes.c_void_p, ctypes.c_ubyte]
+_LIB.Step.restype = None
+# setup the argument and return types for Close
+_LIB.Close.argtypes = [ctypes.c_void_p]
+_LIB.Close.restype = None
+# setup the argument and return types for Backup
+_LIB.Backup.argtypes = [ctypes.c_void_p]
+_LIB.Backup.restype = None
+# setup the argument and return types for Restore
+_LIB.Restore.argtypes = [ctypes.c_void_p]
+_LIB.Restore.restype = None
 
 
 # height in pixels of the NES screen
-SCREEN_HEIGHT = _LIB.NESEnv_height()
+SCREEN_HEIGHT = _LIB.GetNESHeight()
 # width in pixels of the NES screen
-SCREEN_WIDTH = _LIB.NESEnv_width()
+SCREEN_WIDTH = _LIB.GetNESWidth()
 # shape of the screen as 24-bit RGB (standard for NumPy)
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 # shape of the screen as 32-bit RGB (C++ memory arrangement)
@@ -87,7 +88,7 @@ class NESEnv(gym.Env):
     reward_range = (-float('inf'), float('inf'))
 
     # observation space for the environment is static across all instances
-    observation_space = gym.spaces.Box(
+    observation_space = Box(
         low=0,
         high=255,
         shape=SCREEN_SHAPE_24_BIT,
@@ -144,19 +145,20 @@ class NESEnv(gym.Env):
         self._steps = 0
 
         # initialize the C++ object for running the environment
-        self._env = _LIB.NESEnv_init(self._rom_path)
+        self._env = _LIB.Initialize(self._rom_path)
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
         # setup a flag to determine whether the environment has a backup stored
         self._has_backup = False
-        # setup the NumPy screen from the C++ matrix
+        # setup the NumPy screen from the C++ vector
         self.screen = None
+        self.done = True
         self._setup_screen()
 
     def _setup_screen(self):
         """Setup the screen buffer from the C++ code."""
         # get the address of the screen
-        address = _LIB.NESEnv_screen_buffer(self._env)
+        address = _LIB.GetScreenBuffer(self._env)
         # create a buffer from the contents of the address location
         buffer_ = ctypes.cast(address, ctypes.POINTER(SCREEN_TENSOR)).contents
         # create a NumPy array from the buffer
@@ -183,7 +185,7 @@ class NESEnv(gym.Env):
             (int) the 8-bit value at the given memory address
 
         """
-        return _LIB.NESEnv_read_mem(self._env, address)
+        return _LIB.ReadMemory(self._env, address)
 
     def _write_mem(self, address, value):
         """
@@ -197,7 +199,7 @@ class NESEnv(gym.Env):
             None
 
         """
-        _LIB.NESEnv_write_mem(self._env, address, value)
+        _LIB.WriteMemory(self._env, address, value)
 
     def _frame_advance(self, action):
         """
@@ -210,11 +212,11 @@ class NESEnv(gym.Env):
             None
 
         """
-        _LIB.NESEnv_step(self._env, action)
+        _LIB.Step(self._env, action)
 
     def _backup(self):
         """Backup the NES state in the emulator."""
-        _LIB.NESEnv_backup(self._env)
+        _LIB.Backup(self._env)
         self._has_backup = True
 
     def _del_backup(self):
@@ -223,10 +225,7 @@ class NESEnv(gym.Env):
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
-        _LIB.NESEnv_restore(self._env)
-        # TODO: determine _why_ the screen address changes on the first call
-        #       to restore. It seems to stabilize afterwards
-        self._setup_screen()
+        _LIB.Restore(self._env)
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -246,11 +245,13 @@ class NESEnv(gym.Env):
         self._will_reset()
         # reset the emulator
         if not self._has_backup:
-            _LIB.NESEnv_reset(self._env)
+            _LIB.Reset(self._env)
         else:
             self._restore()
         # call the after reset callback
         self._did_reset()
+        # set the done flag to false
+        self.done = False
         # return the screen from the emulator
         return self.screen
 
@@ -273,37 +274,39 @@ class NESEnv(gym.Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
+        if self.done:
+            raise ValueError('cannot step in a done environment! call `reset`')
         # setup the reward, done, and info for this step
         reward = 0
-        done = False
+        self.done = False
         info = {}
         # iterate over the frames to skip
         for _ in range(self._frames_per_step):
             # pass the action to the emulator as an unsigned byte
-            _LIB.NESEnv_step(self._env, action)
+            _LIB.Step(self._env, action)
             # get the reward for this step
             reward += self._get_reward()
             # get the done flag for this step
-            done = done or self._get_done()
+            self.done = self.done or self._get_done()
             # get the info for this step
             info = self._get_info()
             # if done terminate the collection early
-            if done:
+            if self.done:
                 break
         # call the after step callback
-        self._did_step(done)
+        self._did_step(self.done)
         # increment the steps counter
         self._steps += 1
         # set the done flag to true if the steps are past the max
         if self._steps >= self._max_episode_steps:
-            done = True
+            self.done = True
         # bound the reward in [min, max]
         if reward < self.reward_range[0]:
             reward = self.reward_range[0]
         elif reward > self.reward_range[1]:
             reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
-        return self.screen, reward, done, info
+        return self.screen, reward, self.done, info
 
     def _get_reward(self):
         """Return the reward after a step occurs."""
@@ -336,7 +339,7 @@ class NESEnv(gym.Env):
         if self._env is None:
             raise ValueError('env has already been closed.')
         # purge the environment from C++ memory
-        _LIB.NESEnv_close(self._env)
+        _LIB.Close(self._env)
         # deallocate the object locally
         self._env = None
         # if there is an image viewer open, delete it

@@ -23,7 +23,7 @@
 [python-home]: https://python.org
 
 nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
-Windows based on the [LaiNES](https://github.com/AndreaOrru/LaiNES) emulator.
+Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
 
 # Installation
 
@@ -106,5 +106,5 @@ You can check the compatibility for each ROM in the following
 
 # Disclaimer
 
-**This project is provided for educational purposes only. It is not affiliated with and has 
+**This project is provided for educational purposes only. It is not affiliated with and has
 not been approved by Nintendo.**

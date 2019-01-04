@@ -64,7 +64,7 @@ setup(
     ext_modules=[LIB_NES_ENV],
     zip_safe=False,
     install_requires=[
-        'gym>=0.10.5',
+        'gym>=0.10.9',
         'numpy>=1.12.1',
         'opencv-python>=3.4.0.12',
         'pygame>=1.9.3',

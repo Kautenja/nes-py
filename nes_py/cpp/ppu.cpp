@@ -1,480 +1,413 @@
-#include <cstring>
-#include "cpu.hpp"
 #include "ppu.hpp"
+#include "log.hpp"
 
-namespace PPU {
-#include "palette.inc"
-    /// Mirroring mode
-    Mirroring mirroring;
-    /// VRAM for name-tables
-    u8 ciRam[0x800];
-    /// VRAM for palettes
-    u8 cgRam[0x20];
-    /// VRAM for sprite properties
-    u8 oamMem[0x100];
-    /// Sprite buffers
-    Sprite oam[8], secOam[8];
-    /// Video buffer
-    u32 pixels[256 * 240];
+PPU::PPU(PictureBus& bus) :
+    m_bus(bus),
+    m_spriteMemory(64 * 4)
+{
 
-    /// Loopy V, T
-    Addr vAddr, tAddr;
-    /// Fine X
-    u8 fX;
-    /// OAM address
-    u8 oamAddr;
+}
 
-    /// PPUCTRL   ($2000) register
-    Ctrl ctrl;
-    /// PPUMASK   ($2001) register
-    Mask mask;
-    /// PPUSTATUS ($2002) register
-    Status status;
+void PPU::reset()
+{
+    m_longSprites = m_generateInterrupt = m_greyscaleMode = m_vblank = false;
+    m_showBackground = m_showSprites = m_evenFrame = m_firstWrite = true;
+    m_bgPage = m_sprPage = Low;
+    m_dataAddress = m_cycle = m_scanline = m_spriteDataAddress = m_fineXScroll = m_tempAddress = 0;
+    //m_baseNameTable = 0x2000;
+    m_dataAddrIncrement = 1;
+    m_pipelineState = PreRender;
+    m_scanlineSprites.reserve(8);
+    m_scanlineSprites.resize(0);
+}
 
-    /// Background latches:
-    u8 nt, at, bgL, bgH;
-    /// Background shift registers:
-    u8 atShiftL, atShiftH; u16 bgShiftL, bgShiftH;
-    bool atLatchL, atLatchH;
+void PPU::setInterruptCallback(std::function<void(void)> cb)
+{
+    m_vblankCallback = cb;
+}
 
-    /// Rendering counters:
-    int scanline, dot;
-    bool frameOdd;
-
-    inline bool rendering() { return mask.bg || mask.spr; }
-    inline int spr_height() { return ctrl.sprSz ? 16 : 8; }
-
-    /// the GUI this PPU has access to
-    GUI* gui;
-    void set_gui(GUI* new_gui) { gui = new_gui; }
-    GUI* get_gui() { return gui; }
-
-    /// the cartridge this PPU uses for game data
-    Cartridge* cartridge;
-    void set_cartridge(Cartridge* new_cartridge) { cartridge = new_cartridge; }
-    Cartridge* get_cartridge() { return cartridge; }
-
-    /// Get CIRAM address according to mirroring.
-    u16 nt_mirror(u16 addr) {
-        switch (mirroring) {
-            case VERTICAL:    return addr % 0x800;
-            case HORIZONTAL:  return ((addr / 2) & 0x400) + (addr % 0x400);
-            default:          return addr - 0x2000;
-        }
-    }
-    /// Set the PPU to the given mirroring mode.
-    void set_mirroring(Mirroring mode) { mirroring = mode; }
-
-    /// Read an address from PPU memory.
-    u8 rd(u16 addr) {
-        // CHR-ROM/RAM
-        if (0x0000 <= addr && addr <= 0x1FFF) {
-            return cartridge->chr_access<0>(addr);
-        }
-        // Nametables
-        else if (0x2000 <= addr && addr <= 0x3EFF) {
-            return ciRam[nt_mirror(addr)];
-        }
-        // Palettes
-        else if (0x3F00 <= addr && addr <= 0x3FFF) {
-            if ((addr & 0x13) == 0x10)
-                addr &= ~0x10;
-            return cgRam[addr & 0x1F] & (mask.gray ? 0x30 : 0xFF);
-        }
-
-        return 0;
-    }
-    /// Write a byte to PPU memory.
-    void wr(u16 addr, u8 v) {
-        // CHR-ROM/RAM
-        if (0x0000 <= addr && addr <= 0x1FFF) {
-            cartridge->chr_access<1>(addr, v);
-        }
-        // Nametables
-        else if (0x2000 <= addr && addr <= 0x3EFF) {
-            ciRam[nt_mirror(addr)] = v;
-        }
-        // Palettes
-        else if (0x3F00 <= addr && addr <= 0x3FFF) {
-            if ((addr & 0x13) == 0x10)
-                addr &= ~0x10;
-            cgRam[addr & 0x1F] = v;
-        }
-    }
-
-    /// Access PPU through registers.
-    template <bool write> u8 access(u16 index, u8 v) {
-        static u8 res;      // Result of the operation.
-        static u8 buffer;   // VRAM read buffer.
-        static bool latch;  // Detect second reading.
-
-        /* Write into register */
-        if (write) {
-            res = v;
-
-            switch (index) {
-                // PPUCTRL   ($2000).
-                case 0:  ctrl.r = v; tAddr.nt = ctrl.nt; break;
-                // PPUMASK   ($2001).
-                case 1:  mask.r = v; break;
-                // OAMADDR   ($2003).
-                case 3:  oamAddr = v; break;
-                // OAMDATA   ($2004).
-                case 4:  oamMem[oamAddr++] = v; break;
-                // PPUSCROLL ($2005).
-                case 5:
-                    // First write.
-                    if (!latch) { fX = v & 7; tAddr.cX = v >> 3; }
-                    // Second write.
-                    else  { tAddr.fY = v & 7; tAddr.cY = v >> 3; }
-                    latch = !latch; break;
-                // PPUADDR   ($2006).
-                case 6:
-                    // First write.
-                    if (!latch) { tAddr.h = v & 0x3F; }
-                    // Second write.
-                    else        { tAddr.l = v; vAddr.r = tAddr.r; }
-                    latch = !latch; break;
-                // PPUDATA ($2007).
-                case 7:  wr(vAddr.addr, v); vAddr.addr += ctrl.incr ? 32 : 1;
+void PPU::step()
+{
+    switch (m_pipelineState)
+    {
+        case PreRender:
+            if (m_cycle == 1)
+                m_vblank = m_sprZeroHit = false;
+            else if (m_cycle == ScanlineVisibleDots + 2 && m_showBackground && m_showSprites)
+            {
+                //Set bits related to horizontal position
+                m_dataAddress &= ~0x41f; //Unset horizontal bits
+                m_dataAddress |= m_tempAddress & 0x41f; //Copy
             }
-        }
-        /* Read from register */
-        else
-            switch (index) {
-                // PPUSTATUS ($2002):
-                case 2:  res = (res & 0x1F) | status.r; status.vBlank = 0; latch = 0; break;
-                // OAMDATA ($2004).
-                case 4:  res = oamMem[oamAddr]; break;
-                // PPUDATA ($2007).
-                case 7:
-                    if (vAddr.addr <= 0x3EFF) {
-                        res = buffer;
-                        buffer = rd(vAddr.addr);
+            else if (m_cycle > 280 && m_cycle <= 304 && m_showBackground && m_showSprites)
+            {
+                //Set vertical bits
+                m_dataAddress &= ~0x7be0; //Unset bits related to horizontal
+                m_dataAddress |= m_tempAddress & 0x7be0; //Copy
+            }
+//                 if (m_cycle > 257 && m_cycle < 320)
+//                     m_spriteDataAddress = 0;
+           //if rendering is on, every other frame is one cycle shorter
+            if (m_cycle >= ScanlineEndCycle - (!m_evenFrame && m_showBackground && m_showSprites))
+            {
+                m_pipelineState = Render;
+                m_cycle = m_scanline = 0;
+            }
+            break;
+        case Render:
+            if (m_cycle > 0 && m_cycle <= ScanlineVisibleDots)
+            {
+                Byte bgColor = 0, sprColor = 0;
+                bool bgOpaque = false, sprOpaque = true;
+                bool spriteForeground = false;
+
+                int x = m_cycle - 1;
+                int y = m_scanline;
+
+                if (m_showBackground)
+                {
+                    auto x_fine = (m_fineXScroll + x) % 8;
+                    if (!m_hideEdgeBackground || x >= 8)
+                    {
+                        //fetch tile
+                        auto addr = 0x2000 | (m_dataAddress & 0x0FFF); //mask off fine y
+                        //auto addr = 0x2000 + x / 8 + (y / 8) * (ScanlineVisibleDots / 8);
+                        Byte tile = read(addr);
+
+                        //fetch pattern
+                        //Each pattern occupies 16 bytes, so multiply by 16
+                        addr = (tile * 16) + ((m_dataAddress >> 12/*y % 8*/) & 0x7); //Add fine y
+                        addr |= m_bgPage << 12; //set whether the pattern is in the high or low page
+                        //Get the corresponding bit determined by (8 - x_fine) from the right
+                        bgColor = (read(addr) >> (7 ^ x_fine)) & 1; //bit 0 of palette entry
+                        bgColor |= ((read(addr + 8) >> (7 ^ x_fine)) & 1) << 1; //bit 1
+
+                        bgOpaque = bgColor; //flag used to calculate final pixel with the sprite pixel
+
+                        //fetch attribute and calculate higher two bits of palette
+                        addr = 0x23C0 | (m_dataAddress & 0x0C00) | ((m_dataAddress >> 4) & 0x38)
+                                    | ((m_dataAddress >> 2) & 0x07);
+                        auto attribute = read(addr);
+                        int shift = ((m_dataAddress >> 4) & 4) | (m_dataAddress & 2);
+                        //Extract and set the upper two bits for the color
+                        bgColor |= ((attribute >> shift) & 0x3) << 2;
                     }
+                    //Increment/wrap coarse X
+                    if (x_fine == 7)
+                    {
+                        if ((m_dataAddress & 0x001F) == 31) // if coarse X == 31
+                        {
+                            m_dataAddress &= ~0x001F;          // coarse X = 0
+                            m_dataAddress ^= 0x0400;           // switch horizontal nametable
+                        }
+                        else
+                            m_dataAddress += 1;                // increment coarse X
+                    }
+                }
+
+                if (m_showSprites && (!m_hideEdgeSprites || x >= 8))
+                {
+                    for (auto i : m_scanlineSprites)
+                    {
+                        Byte spr_x =     m_spriteMemory[i * 4 + 3];
+
+                        if (0 > x - spr_x || x - spr_x >= 8)
+                            continue;
+
+                        Byte spr_y     = m_spriteMemory[i * 4 + 0] + 1,
+                             tile      = m_spriteMemory[i * 4 + 1],
+                             attribute = m_spriteMemory[i * 4 + 2];
+
+                        int length = (m_longSprites) ? 16 : 8;
+
+                        int x_shift = (x - spr_x) % 8, y_offset = (y - spr_y) % length;
+
+                        if ((attribute & 0x40) == 0) //If NOT flipping horizontally
+                            x_shift ^= 7;
+                        if ((attribute & 0x80) != 0) //IF flipping vertically
+                            y_offset ^= (length - 1);
+
+                        Address addr = 0;
+
+                        if (!m_longSprites)
+                        {
+                            addr = tile * 16 + y_offset;
+                            if (m_sprPage == High) addr += 0x1000;
+                        }
+                        else //8x16 sprites
+                        {
+                            //bit-3 is one if it is the bottom tile of the sprite, multiply by two to get the next pattern
+                            y_offset = (y_offset & 7) | ((y_offset & 8) << 1);
+                            addr = (tile >> 1) * 32 + y_offset;
+                            addr |= (tile & 1) << 12; //Bank 0x1000 if bit-0 is high
+                        }
+
+                        sprColor |= (read(addr) >> (x_shift)) & 1; //bit 0 of palette entry
+                        sprColor |= ((read(addr + 8) >> (x_shift)) & 1) << 1; //bit 1
+
+                        if (!(sprOpaque = sprColor))
+                        {
+                            sprColor = 0;
+                            continue;
+                        }
+
+                        sprColor |= 0x10; //Select sprite palette
+                        sprColor |= (attribute & 0x3) << 2; //bits 2-3
+
+                        spriteForeground = !(attribute & 0x20);
+
+                        //Sprite-0 hit detection
+                        if (!m_sprZeroHit && m_showBackground && i == 0 && sprOpaque && bgOpaque)
+                        {
+                            m_sprZeroHit = true;
+                        }
+
+                        break; //Exit the loop now since we've found the highest priority sprite
+                    }
+                }
+
+                Byte paletteAddr = bgColor;
+
+                if ( (!bgOpaque && sprOpaque) || (bgOpaque && sprOpaque && spriteForeground) )
+                    paletteAddr = sprColor;
+                else if (!bgOpaque && !sprOpaque)
+                    paletteAddr = 0;
+
+                screen_buffer[y][x] = colors[m_bus.readPalette(paletteAddr)];
+
+            }
+            else if (m_cycle == ScanlineVisibleDots + 1 && m_showBackground)
+            {
+                //Shamelessly copied from nesdev wiki
+                if ((m_dataAddress & 0x7000) != 0x7000)  // if fine Y < 7
+                    m_dataAddress += 0x1000;              // increment fine Y
+                else
+                {
+                    m_dataAddress &= ~0x7000;             // fine Y = 0
+                    int y = (m_dataAddress & 0x03E0) >> 5;    // let y = coarse Y
+                    if (y == 29)
+                    {
+                        y = 0;                                // coarse Y = 0
+                        m_dataAddress ^= 0x0800;              // switch vertical nametable
+                    }
+                    else if (y == 31)
+                        y = 0;                                // coarse Y = 0, nametable not switched
                     else
-                        res = buffer = rd(vAddr.addr);
-                    vAddr.addr += ctrl.incr ? 32 : 1;
-            }
-        return res;
-    }
-    template u8 access<0>(u16, u8); template u8 access<1>(u16, u8);
-
-    /* Calculate graphics addresses */
-    inline u16 nt_addr() {
-        return 0x2000 | (vAddr.r & 0xFFF);
-    }
-    inline u16 at_addr() {
-        return 0x23C0 | (vAddr.nt << 10) | ((vAddr.cY / 4) << 3) | (vAddr.cX / 4);
-    }
-    inline u16 bg_addr() {
-        return (ctrl.bgTbl * 0x1000) + (nt * 16) + vAddr.fY;
-    }
-    /* Increment the scroll by one pixel */
-    inline void h_scroll() {
-        if (!rendering()) return;
-        if (vAddr.cX == 31) vAddr.r ^= 0x41F;
-        else vAddr.cX++;
-    }
-    inline void v_scroll() {
-        if (!rendering()) return;
-        if (vAddr.fY < 7) vAddr.fY++;
-        else {
-            vAddr.fY = 0;
-            if      (vAddr.cY == 31)   vAddr.cY = 0;
-            else if (vAddr.cY == 29) { vAddr.cY = 0; vAddr.nt ^= 0b10; }
-            else                       vAddr.cY++;
-        }
-    }
-    /* Copy scrolling data from loopy T to loopy V */
-    inline void h_update() {
-        if (!rendering()) return;
-        vAddr.r = (vAddr.r & ~0x041F) | (tAddr.r & 0x041F);
-    }
-    inline void v_update() {
-        if (!rendering()) return;
-        vAddr.r = (vAddr.r & ~0x7BE0) | (tAddr.r & 0x7BE0);
-    }
-    /* Put new data into the shift registers */
-    inline void reload_shift() {
-        bgShiftL = (bgShiftL & 0xFF00) | bgL;
-        bgShiftH = (bgShiftH & 0xFF00) | bgH;
-
-        atLatchL = (at & 1);
-        atLatchH = (at & 2);
-    }
-
-    /* Clear secondary OAM */
-    void clear_oam() {
-        for (int i = 0; i < 8; i++) {
-            secOam[i].id    = 64;
-            secOam[i].y     = 0xFF;
-            secOam[i].tile  = 0xFF;
-            secOam[i].attr  = 0xFF;
-            secOam[i].x     = 0xFF;
-            secOam[i].dataL = 0;
-            secOam[i].dataH = 0;
-        }
-    }
-
-    /* Fill secondary OAM with the sprite infos for the next scanline */
-    void eval_sprites() {
-        int n = 0;
-        for (int i = 0; i < 64; i++) {
-            int line = (scanline == 261 ? -1 : scanline) - oamMem[i*4 + 0];
-            // If the sprite is in the scanline, copy its properties
-            // into secondary OAM:
-            if (line >= 0 && line < spr_height()) {
-                secOam[n].id   = i;
-                secOam[n].y    = oamMem[i*4 + 0];
-                secOam[n].tile = oamMem[i*4 + 1];
-                secOam[n].attr = oamMem[i*4 + 2];
-                secOam[n].x    = oamMem[i*4 + 3];
-
-                if (++n >= 8) {
-                    status.sprOvf = true;
-                    break;
+                        y += 1;                               // increment coarse Y
+                    m_dataAddress = (m_dataAddress & ~0x03E0) | (y << 5);
+                                                            // put coarse Y back into m_dataAddress
                 }
             }
-        }
-    }
-
-    /* Load the sprite info into primary OAM and fetch their tile data. */
-    void load_sprites() {
-        u16 addr;
-        for (int i = 0; i < 8; i++) {
-            // Copy secondary OAM into primary.
-            oam[i] = secOam[i];
-
-            // Different address modes depending on the sprite height:
-            if (spr_height() == 16)
-                addr = ((oam[i].tile & 1) * 0x1000) + ((oam[i].tile & ~1) * 16);
-            else
-                addr = ( ctrl.sprTbl      * 0x1000) + ( oam[i].tile       * 16);
-
-            // Line inside the sprite.
-            unsigned sprY = (scanline - oam[i].y) % spr_height();
-            // Vertical flip.
-            if (oam[i].attr & 0x80) sprY ^= spr_height() - 1;
-            // Select the second tile if on 8x16.
-            addr += sprY + (sprY & 8);
-
-            oam[i].dataL = rd(addr + 0);
-            oam[i].dataH = rd(addr + 8);
-        }
-    }
-
-    /* Process a pixel, draw it if it's on screen */
-    void pixel() {
-        u8 palette = 0, objPalette = 0;
-        bool objPriority = 0;
-        int x = dot - 2;
-
-        if (scanline < 240 && x >= 0 && x < 256) {
-            if (mask.bg && !(!mask.bgLeft && x < 8)) {
-                // Background:
-                palette = (NTH_BIT(bgShiftH, 15 - fX) << 1) |
-                           NTH_BIT(bgShiftL, 15 - fX);
-                if (palette)
-                    palette |= ((NTH_BIT(atShiftH,  7 - fX) << 1) |
-                                 NTH_BIT(atShiftL,  7 - fX))      << 2;
+            else if (m_cycle == ScanlineVisibleDots + 2 && m_showBackground && m_showSprites)
+            {
+                //Copy bits related to horizontal position
+                m_dataAddress &= ~0x41f;
+                m_dataAddress |= m_tempAddress & 0x41f;
             }
-            // Sprites:
-            if (mask.spr && !(!mask.sprLeft && x < 8))
-                for (int i = 7; i >= 0; i--) {
-                    // Void entry.
-                    if (oam[i].id == 64) continue;
-                    unsigned sprX = x - oam[i].x;
-                    // Not in range.
-                    if (sprX >= 8) continue;
-                    // Horizontal flip.
-                    if (oam[i].attr & 0x40) sprX ^= 7;
 
-                    u8 sprPalette = (NTH_BIT(oam[i].dataH, 7 - sprX) << 1) |
-                                     NTH_BIT(oam[i].dataL, 7 - sprX);
-                    // Transparent pixel.
-                    if (sprPalette == 0) continue;
+//                 if (m_cycle > 257 && m_cycle < 320)
+//                     m_spriteDataAddress = 0;
 
-                    if (oam[i].id == 0 && palette && x != 255)
-                        status.sprHit = true;
-                    sprPalette |= (oam[i].attr & 3) << 2;
-                    objPalette  = sprPalette + 16;
-                    objPriority = oam[i].attr & 0x20;
+            if (m_cycle >= ScanlineEndCycle)
+            {
+                //Find and index sprites that are on the next Scanline
+                //This isn't where/when this indexing, actually copying in 2C02 is done
+                //but (I think) it shouldn't hurt any games if this is done here
+
+                m_scanlineSprites.resize(0);
+
+                int range = 8;
+                if (m_longSprites)
+                    range = 16;
+
+                std::size_t j = 0;
+                for (std::size_t i = m_spriteDataAddress / 4; i < 64; ++i)
+                {
+                    auto diff = (m_scanline - m_spriteMemory[i * 4]);
+                    if (0 <= diff && diff < range)
+                    {
+                        m_scanlineSprites.push_back(i);
+                        ++j;
+                        if (j >= 8)
+                        {
+                            break;
+                        }
+                    }
                 }
-            // Evaluate priority:
-            if (objPalette && (palette == 0 || objPriority == 0))
-                palette = objPalette;
 
-            pixels[scanline*256 + x] = nesRgb[rd(0x3F00 + (rendering() ? palette : 0))];
-        }
-        // Perform background shifts:
-        bgShiftL <<= 1; bgShiftH <<= 1;
-        atShiftL = (atShiftL << 1) | atLatchL;
-        atShiftH = (atShiftH << 1) | atLatchH;
+                ++m_scanline;
+                m_cycle = 0;
+            }
+
+            if (m_scanline >= VisibleScanlines)
+                m_pipelineState = PostRender;
+
+            break;
+        case PostRender:
+            if (m_cycle >= ScanlineEndCycle)
+            {
+                ++m_scanline;
+                m_cycle = 0;
+                m_pipelineState = VerticalBlank;
+            }
+
+            break;
+        case VerticalBlank:
+            if (m_cycle == 1 && m_scanline == VisibleScanlines + 1)
+            {
+                m_vblank = true;
+                if (m_generateInterrupt) m_vblankCallback();
+            }
+
+            if (m_cycle >= ScanlineEndCycle)
+            {
+                ++m_scanline;
+                m_cycle = 0;
+            }
+
+            if (m_scanline >= FrameEndScanline)
+            {
+                m_pipelineState = PreRender;
+                m_scanline = 0;
+                m_evenFrame = !m_evenFrame;
+//                     m_vblank = false;
+            }
+
+            break;
+        default:
+            LOG(Error) << "Well, this shouldn't have happened." << std::endl;
     }
 
-    /* Execute a cycle of a scanline */
-    template<Scanline s> void scanline_cycle() {
-        static u16 addr;
+    ++m_cycle;
+}
 
-        if (s == NMI && dot == 1) { status.vBlank = true; if (ctrl.nmi) CPU::set_nmi(); }
-        else if (s == POST && dot == 0) gui->new_frame(pixels);
-        else if (s == VISIBLE || s == PRE) {
-            // Sprites:
-            switch (dot) {
-                case   1: clear_oam(); if (s == PRE) { status.sprOvf = status.sprHit = false; } break;
-                case 257: eval_sprites(); break;
-                case 321: load_sprites(); break;
-            }
-            // Background
-            if ((2 <= dot && dot <= 255) || (322 <= dot && dot <= 337)) {
-                pixel();
-                switch (dot % 8) {
-                    // Nametable:
-                    case 1:  addr  = nt_addr(); reload_shift(); break;
-                    case 2:  nt    = rd(addr);  break;
-                    // Attribute:
-                    case 3:  addr  = at_addr(); break;
-                    case 4:  at    = rd(addr);  if (vAddr.cY & 2) at >>= 4;
-                                                if (vAddr.cX & 2) at >>= 2; break;
-                    // Background (low bits):
-                    case 5:  addr  = bg_addr(); break;
-                    case 6:  bgL   = rd(addr);  break;
-                    // Background (high bits):
-                    case 7:  addr += 8;         break;
-                    case 0:  bgH   = rd(addr); h_scroll(); break;
-                }
-            }
-            // Vertical bump
-            else if (dot == 256) {
-                pixel();
-                bgH = rd(addr);
-                v_scroll();
-            }
-            // Update horizontal position
-            else if (dot == 257) {
-                pixel();
-                reload_shift();
-                h_update();
-            }
-            // Update vertical position
-            else if (280 <= dot && dot <= 304) {
-                if (s == PRE)
-                    v_update();
-            }
-            // No shift reloading
-            else if (dot == 1) {
-                addr = nt_addr();
-                if (s == PRE)
-                    status.vBlank = false;
-            }
-            else if (dot == 321 || dot == 339) {
-                addr = nt_addr();
-            }
-            // Nametable fetch instead of attribute
-            else if (dot == 338) {
-                nt = rd(addr);
-            }
-            else if (dot == 340) {
-                nt = rd(addr);
-                if (s == PRE && rendering() && frameOdd)
-                    dot++;
-            }
+Byte PPU::readOAM(Byte addr)
+{
+    return m_spriteMemory[addr];
+}
 
-            // Signal scanline to mapper:
-            if (dot == 260 && rendering()) cartridge->signal_scanline();
-        }
+void PPU::writeOAM(Byte addr, Byte value)
+{
+    m_spriteMemory[addr] = value;
+}
+
+void PPU::doDMA(const Byte* page_ptr)
+{
+    std::memcpy(m_spriteMemory.data() + m_spriteDataAddress, page_ptr, 256 - m_spriteDataAddress);
+    if (m_spriteDataAddress)
+        std::memcpy(m_spriteMemory.data(), page_ptr + (256 - m_spriteDataAddress), m_spriteDataAddress);
+    //std::memcpy(m_spriteMemory.data(), page_ptr, 256);
+}
+
+void PPU::control(Byte ctrl)
+{
+    m_generateInterrupt = ctrl & 0x80;
+    m_longSprites = ctrl & 0x20;
+    m_bgPage = static_cast<CharacterPage>(!!(ctrl & 0x10));
+    m_sprPage = static_cast<CharacterPage>(!!(ctrl & 0x8));
+    if (ctrl & 0x4)
+        m_dataAddrIncrement = 0x20;
+    else
+        m_dataAddrIncrement = 1;
+    //m_baseNameTable = (ctrl & 0x3) * 0x400 + 0x2000;
+
+    //Set the nametable in the temp address, this will be reflected in the data address during rendering
+    m_tempAddress &= ~0xc00;                 //Unset
+    m_tempAddress |= (ctrl & 0x3) << 10;     //Set according to ctrl bits
+}
+
+void PPU::setMask(Byte mask)
+{
+    m_greyscaleMode = mask & 0x1;
+    m_hideEdgeBackground = !(mask & 0x2);
+    m_hideEdgeSprites = !(mask & 0x4);
+    m_showBackground = mask & 0x8;
+    m_showSprites = mask & 0x10;
+}
+
+Byte PPU::getStatus()
+{
+    Byte status = m_sprZeroHit << 6 |
+                  m_vblank << 7;
+    //m_dataAddress = 0;
+    m_vblank = false;
+    m_firstWrite = true;
+    return status;
+}
+
+void PPU::setDataAddress(Byte addr)
+{
+    //m_dataAddress = ((m_dataAddress << 8) & 0xff00) | addr;
+    if (m_firstWrite)
+    {
+        m_tempAddress &= ~0xff00; //Unset the upper byte
+        m_tempAddress |= (addr & 0x3f) << 8;
+        m_firstWrite = false;
+    }
+    else
+    {
+        m_tempAddress &= ~0xff; //Unset the lower byte;
+        m_tempAddress |= addr;
+        m_dataAddress = m_tempAddress;
+        m_firstWrite = true;
+    }
+}
+
+Byte PPU::getData()
+{
+    auto data = m_bus.read(m_dataAddress);
+    m_dataAddress += m_dataAddrIncrement;
+
+    //Reads are delayed by one byte/read when address is in this range
+    if (m_dataAddress < 0x3f00)
+    {
+        //Return from the data buffer and store the current value in the buffer
+        std::swap(data, m_dataBuffer);
     }
 
-    void step() {
-        if (0 <= scanline && scanline <= 239)
-            scanline_cycle<VISIBLE>();
-        else if (scanline == 240)
-            scanline_cycle<POST>();
-        else if (scanline == 241)
-            scanline_cycle<NMI>();
-        else if (scanline == 261)
-            scanline_cycle<PRE>();
-        // Update dot and scanline counters:
-        if (++dot > 340) {
-            dot %= 341;
-            if (++scanline > 261) {
-                scanline = 0;
-                frameOdd ^= 1;
-            }
-        }
+    return data;
+}
+
+Byte PPU::getOAMData()
+{
+    return readOAM(m_spriteDataAddress);
+}
+
+void PPU::setData(Byte data)
+{
+    m_bus.write(m_dataAddress, data);
+    m_dataAddress += m_dataAddrIncrement;
+}
+
+void PPU::setOAMAddress(Byte addr)
+{
+    m_spriteDataAddress = addr;
+}
+
+void PPU::setOAMData(Byte value)
+{
+    writeOAM(m_spriteDataAddress++, value);
+}
+
+void PPU::setScroll(Byte scroll)
+{
+    if (m_firstWrite)
+    {
+        m_tempAddress &= ~0x1f;
+        m_tempAddress |= (scroll >> 3) & 0x1f;
+        m_fineXScroll = scroll & 0x7;
+        m_firstWrite = false;
     }
-
-    void reset() {
-        frameOdd = false;
-        scanline = dot = 0;
-        ctrl.r = mask.r = status.r = 0;
-
-        memset(pixels, 0x00, sizeof(pixels));
-        memset(ciRam,  0xFF, sizeof(ciRam));
-        memset(oamMem, 0x00, sizeof(oamMem));
+    else
+    {
+        m_tempAddress &= ~0x73e0;
+        m_tempAddress |= ((scroll & 0x7) << 12) |
+                         ((scroll & 0xf8) << 2);
+        m_firstWrite = true;
     }
+}
 
-    PPUState* get_state() {
-        PPUState* state = new PPUState();
-        state->mirroring = mirroring;
-        std::copy(std::begin(ciRam), std::end(ciRam), std::begin(state->ciRam));
-        std::copy(std::begin(cgRam), std::end(cgRam), std::begin(state->cgRam));
-        std::copy(std::begin(oamMem), std::end(oamMem), std::begin(state->oamMem));
-        std::copy(std::begin(oam), std::end(oam), std::begin(state->oam));
-        std::copy(std::begin(secOam), std::end(secOam), std::begin(state->secOam));
-        std::copy(std::begin(pixels), std::end(pixels), std::begin(state->pixels));
-        state->vAddr = vAddr;
-        state->tAddr = tAddr;
-        state->fX = fX;
-        state->oamAddr = oamAddr;
-        state->ctrl = ctrl;
-        state->mask = mask;
-        state->status = status;
-        state->nt = nt;
-        state->at = at;
-        state->bgL = bgL;
-        state->bgH = bgH;
-        state->atShiftL = atShiftL;
-        state->atShiftH = atShiftH;
-        state->bgShiftL = bgShiftL;
-        state->bgShiftH = bgShiftH;
-        state->atLatchL = atLatchL;
-        state->atLatchH = atLatchH;
-        state->scanline = scanline;
-        state->dot = dot;
-        state->frameOdd = frameOdd;
-
-        return state;
-    }
-
-    void set_state(PPUState* state) {
-        mirroring = state->mirroring;
-        std::copy(std::begin(state->ciRam), std::end(state->ciRam), std::begin(ciRam));
-        std::copy(std::begin(state->cgRam), std::end(state->cgRam), std::begin(cgRam));
-        std::copy(std::begin(state->oamMem), std::end(state->oamMem), std::begin(oamMem));
-        std::copy(std::begin(state->oam), std::end(state->oam), std::begin(oam));
-        std::copy(std::begin(state->secOam), std::end(state->secOam), std::begin(secOam));
-        std::copy(std::begin(state->pixels), std::end(state->pixels), std::begin(pixels));
-        vAddr = state->vAddr;
-        tAddr = state->tAddr;
-        fX = state->fX;
-        oamAddr = state->oamAddr;
-        ctrl = state->ctrl;
-        mask = state->mask;
-        status = state->status;
-        nt = state->nt;
-        at = state->at;
-        bgL = state->bgL;
-        bgH = state->bgH;
-        atShiftL = state->atShiftL;
-        atShiftH = state->atShiftH;
-        bgShiftL = state->bgShiftL;
-        bgShiftH = state->bgShiftH;
-        atLatchL = state->atLatchL;
-        atLatchH = state->atLatchH;
-        scanline = state->scanline;
-        dot = state->dot;
-        frameOdd = state->frameOdd;
-    }
+Byte PPU::read(Address addr)
+{
+    return m_bus.read(addr);
 }

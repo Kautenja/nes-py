@@ -1,6 +1,5 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
-# from PIL import Image
 
 
 class ShouldImportNESEnv(TestCase):
@@ -47,6 +46,15 @@ class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):
         self.assertRaises(ValueError, NESEnv, path)
 
 
+class ShouldRaiseErrorOnStepBeforeReset(TestCase):
+    def test(self):
+        import os
+        from ..nes_env import NESEnv
+        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+        env = NESEnv(path)
+        self.assertRaises(ValueError, env.step, 0)
+
+
 class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
         import os
@@ -64,6 +72,19 @@ def create_smb1_instance():
     from ..nes_env import NESEnv
     path = os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
     return NESEnv(path)
+
+
+class ShouldReadAndWriteMemory(TestCase):
+    def test(self):
+        env = create_smb1_instance()
+        env.reset()
+        for _ in range(90):
+            env.step(8)
+            env.step(0)
+        self.assertEqual(129, env._read_mem(0x0776))
+        env._write_mem(0x0776, 0)
+        self.assertEqual(0, env._read_mem(0x0776))
+        env.close()
 
 
 class ShouldResetAndCloseEnv(TestCase):
@@ -105,30 +126,29 @@ class ShouldStepEnv(TestCase):
         env.close()
 
 
-class ShouldStepEnvBackupRestore(TestCase):
-    def test(self):
-        import numpy as np
-        done = True
-        env = create_smb1_instance()
+# class ShouldStepEnvBackupRestore(TestCase):
+#     def test(self):
+#         import numpy as np
+#         done = True
+#         env = create_smb1_instance()
 
-        for _ in range(250):
-            if done:
-                state = env.reset()
-                done = False
-            state, _, done, _ = env.step(0)
+#         for _ in range(250):
+#             if done:
+#                 state = env.reset()
+#                 done = False
+#             state, _, done, _ = env.step(0)
 
-        backup = state.copy()
-        # Image.fromarray(backup).save('state.png')
-        env._backup()
+#         backup = state.copy()
 
-        for _ in range(250):
-            if done:
-                state = env.reset()
-                done = False
-            state, _, done, _ = env.step(0)
+#         env._backup()
 
-        # Image.fromarray(state).save('state1.png')
-        self.assertFalse(np.array_equal(backup, state))
-        env._restore()
-        self.assertTrue(np.array_equal(backup, env.screen))
-        env.close()
+#         for _ in range(250):
+#             if done:
+#                 state = env.reset()
+#                 done = False
+#             state, _, done, _ = env.step(0)
+
+#         self.assertFalse(np.array_equal(backup, state))
+#         env._restore()
+#         self.assertTrue(np.array_equal(backup, env.screen))
+#         env.close()

@@ -1,26 +1,24 @@
 """A CTypes interface to the C++ NES environment."""
+import ctypes
+import glob
+import itertools
 import os
 import sys
-import ctypes
-import itertools
-from glob import glob
 import gym
 import numpy as np
 
 
-# the path to the directory this
+# the path to the directory this file is in
 _MODULE_PATH = os.path.dirname(__file__)
-# the relative path to the C++ shared object library. it can be built on
-# many different systems so all we know is the defined prefix
+# the pattern to find the C++ shared object library
 _SO_PATH = 'lib_nes_env*'
 # the absolute path to the C++ shared object library
 _LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
-# load the library from the shared object file. use a glob to locate the
-# .so file based on the build systems nomenclature
+# load the library from the shared object file
 try:
-    _LIB = ctypes.cdll.LoadLibrary(glob(_LIB_PATH)[0])
+    _LIB = ctypes.cdll.LoadLibrary(glob.glob(_LIB_PATH)[0])
 except IndexError:
-    raise OSError('missing static lib_nes_env library!')
+    raise OSError('missing static lib_nes_env*.so library!')
 
 
 # setup the argument and return types for Initialize

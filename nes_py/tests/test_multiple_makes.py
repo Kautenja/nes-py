@@ -40,7 +40,7 @@ class ShouldMakeMultipleEnvironemntsParallel(object):
     num_execs = 4
 
     # the number of steps to take per environment
-    steps = 1000
+    steps = 10
 
     def test(self):
         from ..nes_env import NESEnv
@@ -69,7 +69,7 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
     num_envs = 4
 
     # the number of steps to take per environment
-    steps = 1000
+    steps = 10
 
     def test(self):
         from ..nes_env import NESEnv

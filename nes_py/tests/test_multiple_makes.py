@@ -31,32 +31,32 @@ def play(steps):
     env.close()
 
 
-class ShouldMakeMultipleEnvironemntsParallel(object):
+# class ShouldMakeMultipleEnvironemntsParallel(object):
 
-    # the class to the parallel initializer (Thread, Process, etc.)
-    parallel_initializer = None
+#     # the class to the parallel initializer (Thread, Process, etc.)
+#     parallel_initializer = None
 
-    # the number of parallel executions
-    num_execs = 4
+#     # the number of parallel executions
+#     num_execs = 4
 
-    # the number of steps to take per environment
-    steps = 1000
+#     # the number of steps to take per environment
+#     steps = 1000
 
-    def test(self):
-        from ..nes_env import NESEnv
-        procs = [None] * self.num_execs
-        args = (self.steps, )
-        # spawn the parallel instances
-        for idx in range(self.num_execs):
-            procs[idx] = self.parallel_initializer(target=play, args=args)
-            procs[idx].start()
-        # join the parallel instances
-        for proc in procs:
-            proc.join()
+#     def test(self):
+#         from ..nes_env import NESEnv
+#         procs = [None] * self.num_execs
+#         args = (self.steps, )
+#         # spawn the parallel instances
+#         for idx in range(self.num_execs):
+#             procs[idx] = self.parallel_initializer(target=play, args=args)
+#             procs[idx].start()
+#         # join the parallel instances
+#         for proc in procs:
+#             proc.join()
 
 
-class ProcessTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
-    parallel_initializer = Process
+# class ProcessTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
+#     parallel_initializer = Process
 
 
 # TODO: fix C++ code to allow multiple instances in the same thread

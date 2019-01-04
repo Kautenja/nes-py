@@ -70,6 +70,8 @@ void Emulator::reset() {
 
 void Emulator::step(unsigned char action) {
     // TODO: send action to controller
+    std::cout << (int) action << std::endl;
+    controller1.write_buttons(action);
     // approximate a frame
     for (int i = 0; i < 29781; i++) {
         // PPU steps 3 times per clock cycle

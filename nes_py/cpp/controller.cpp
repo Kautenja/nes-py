@@ -1,27 +1,29 @@
 #include "controller.hpp"
 
-Controller::Controller() : m_keyStates(0) { }
+Controller::Controller() {
+    is_strobe = true;
+    joypad_buttons = 0;
+    joypad_bits = 0;
+}
+
+void Controller::write_buttons(uint8_t buttons) {
+    joypad_buttons = buttons;
+}
 
 void Controller::strobe(Byte b) {
-    // m_strobe = (b & 1);
-    // if (!m_strobe) {
-    //     m_keyStates = 0;
-    //     int shift = 0;
-    //     for (int button = A; button < TotalButtons; ++button) {
-    //         m_keyStates |= (sf::Keyboard::isKeyPressed(m_keyBindings[static_cast<Buttons>(button)]) << shift);
-    //         ++shift;
-    //     }
-    // }
+    is_strobe = (b & 1);
+    if (!is_strobe) {
+        joypad_bits = joypad_buttons;
+    }
 }
 
 Byte Controller::read() {
-    return 0;
-    // Byte ret;
-    // if (m_strobe)
-    //     ret = sf::Keyboard::isKeyPressed(m_keyBindings[A]);
-    // else {
-    //     ret = (m_keyStates & 1);
-    //     m_keyStates >>= 1;
-    // }
-    // return ret | 0x40;
+    Byte ret;
+    if (is_strobe)
+        ret = (joypad_buttons & 1);
+    else {
+        ret = (joypad_bits & 1);
+        joypad_bits >>= 1;
+    }
+    return ret | 0x40;
 }

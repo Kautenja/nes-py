@@ -72,11 +72,11 @@ void Emulator::step(unsigned char action) {
     // TODO: send action to controller
     // approximate a frame
     for (int i = 0; i < 29781; i++) {
-        //PPU
+        // PPU steps 3 times per clock cycle
         ppu.step();
         ppu.step();
         ppu.step();
-        //CPU
+        // CPU steps once per clock cycle (obviously)
         cpu.step();
     }
 }

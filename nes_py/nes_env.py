@@ -150,6 +150,7 @@ class NESEnv(gym.Env):
         self._has_backup = False
         # setup the NumPy screen from the C++ vector
         self.screen = None
+        self.done = True
         self._setup_screen()
 
     def _setup_screen(self):
@@ -247,6 +248,8 @@ class NESEnv(gym.Env):
             self._restore()
         # call the after reset callback
         self._did_reset()
+        # set the done flag to false
+        self.done = False
         # return the screen from the emulator
         return self.screen
 
@@ -269,9 +272,11 @@ class NESEnv(gym.Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
+        if self.done:
+            raise ValueError('cannot step in a done environment! call `reset`')
         # setup the reward, done, and info for this step
         reward = 0
-        done = False
+        self.done = False
         info = {}
         # iterate over the frames to skip
         for _ in range(self._frames_per_step):
@@ -280,26 +285,26 @@ class NESEnv(gym.Env):
             # get the reward for this step
             reward += self._get_reward()
             # get the done flag for this step
-            done = done or self._get_done()
+            self.done = self.done or self._get_done()
             # get the info for this step
             info = self._get_info()
             # if done terminate the collection early
-            if done:
+            if self.done:
                 break
         # call the after step callback
-        self._did_step(done)
+        self._did_step(self.done)
         # increment the steps counter
         self._steps += 1
         # set the done flag to true if the steps are past the max
         if self._steps >= self._max_episode_steps:
-            done = True
+            self.done = True
         # bound the reward in [min, max]
         if reward < self.reward_range[0]:
             reward = self.reward_range[0]
         elif reward > self.reward_range[1]:
             reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
-        return self.screen, reward, done, info
+        return self.screen, reward, self.done, info
 
     def _get_reward(self):
         """Return the reward after a step occurs."""

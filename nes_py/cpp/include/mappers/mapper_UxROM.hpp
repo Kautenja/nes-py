@@ -6,10 +6,8 @@ class MapperUxROM : public Mapper {
 
 private:
     bool m_usesCharacterRAM;
-
     const Byte* m_lastBankPtr;
     Address m_selectPRG;
-
     std::vector<Byte> m_characterRAM;
 
 public:
@@ -17,7 +15,6 @@ public:
     void writePRG (Address addr, Byte value);
     Byte readPRG (Address addr);
     const Byte* getPagePtr(Address addr);
-
     Byte readCHR (Address addr);
     void writeCHR (Address addr, Byte value);
 

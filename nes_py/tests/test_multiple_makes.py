@@ -63,23 +63,23 @@ class ThreadTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
     parallel_initializer = Thread
 
 
-# class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
+class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
 
-#     # the number of environments to spawn
-#     num_envs = 4
+    # the number of environments to spawn
+    num_envs = 4
 
-#     # the number of steps to take per environment
-#     steps = 1000
+    # the number of steps to take per environment
+    steps = 1000
 
-#     def test(self):
-#         from ..nes_env import NESEnv
-#         path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
-#         envs = [NESEnv(path) for _ in range(self.num_envs)]
-#         dones = [False] * self.num_envs
+    def test(self):
+        from ..nes_env import NESEnv
+        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+        envs = [NESEnv(path) for _ in range(self.num_envs)]
+        dones = [True] * self.num_envs
 
-#         for step in range(self.steps):
-#             for idx in range(self.num_envs):
-#                 if dones[idx]:
-#                     state = envs[idx].reset()
-#                 action = envs[idx].action_space.sample()
-#                 state, reward, done, info = envs[idx].step(action)
+        for step in range(self.steps):
+            for idx in range(self.num_envs):
+                if dones[idx]:
+                    state = envs[idx].reset()
+                action = envs[idx].action_space.sample()
+                state, reward, done, info = envs[idx].step(action)

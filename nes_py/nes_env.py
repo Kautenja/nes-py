@@ -148,7 +148,7 @@ class NESEnv(gym.Env):
         self.viewer = None
         # setup a flag to determine whether the environment has a backup stored
         self._has_backup = False
-        # setup the NumPy screen from the C++ matrix
+        # setup the NumPy screen from the C++ vector
         self.screen = None
         self._setup_screen()
 

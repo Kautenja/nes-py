@@ -2,23 +2,24 @@
 #define MAPPERUXROM_H
 #include "mapper.hpp"
 
-class MapperUxROM : public Mapper
-{
-    public:
-        MapperUxROM(Cartridge& cart);
-        void writePRG (Address addr, Byte value);
-        Byte readPRG (Address addr);
-        const Byte* getPagePtr(Address addr);
+class MapperUxROM : public Mapper {
 
-        Byte readCHR (Address addr);
-        void writeCHR (Address addr, Byte value);
-    private:
-        bool m_usesCharacterRAM;
+private:
+    bool m_usesCharacterRAM;
 
-        const Byte* m_lastBankPtr;
-        Address m_selectPRG;
+    const Byte* m_lastBankPtr;
+    Address m_selectPRG;
 
-        std::vector<Byte> m_characterRAM;
+    std::vector<Byte> m_characterRAM;
+
+public:
+    MapperUxROM(Cartridge& cart);
+    void writePRG (Address addr, Byte value);
+    Byte readPRG (Address addr);
+    const Byte* getPagePtr(Address addr);
+
+    Byte readCHR (Address addr);
+    void writeCHR (Address addr, Byte value);
 
 };
 

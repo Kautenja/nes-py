@@ -24,21 +24,21 @@ enum IORegisters
 
 class MainBus
 {
-    public:
-        MainBus();
-        Byte read(Address addr);
-        void write(Address addr, Byte value);
-        bool setMapper(Mapper* mapper);
-        bool setWriteCallback(IORegisters reg, std::function<void(Byte)> callback);
-        bool setReadCallback(IORegisters reg, std::function<Byte(void)> callback);
-        const Byte* getPagePtr(Byte page);
-    private:
-        std::vector<Byte> m_RAM;
-        std::vector<Byte> m_extRAM;
-        Mapper* m_mapper;
+public:
+    MainBus();
+    Byte read(Address addr);
+    void write(Address addr, Byte value);
+    bool setMapper(Mapper* mapper);
+    bool setWriteCallback(IORegisters reg, std::function<void(Byte)> callback);
+    bool setReadCallback(IORegisters reg, std::function<Byte(void)> callback);
+    const Byte* getPagePtr(Byte page);
+private:
+    std::vector<Byte> m_RAM;
+    std::vector<Byte> m_extRAM;
+    Mapper* m_mapper;
 
-        std::map<IORegisters, std::function<void(Byte)>> m_writeCallbacks;
-        std::map<IORegisters, std::function<Byte(void)>> m_readCallbacks;;
+    std::map<IORegisters, std::function<void(Byte)>> m_writeCallbacks;
+    std::map<IORegisters, std::function<Byte(void)>> m_readCallbacks;
 };
 
 #endif // MEMORY_H

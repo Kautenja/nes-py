@@ -17,6 +17,7 @@ const int NESVideoHeight = VisibleScanlines;
 
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
+
 private:
     /// the path to the ROM for this environment
     std::string rom_path;

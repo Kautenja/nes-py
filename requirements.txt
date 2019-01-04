@@ -1,5 +1,5 @@
 gym>=0.10.9
-matplotlib>=2.3.2
+matplotlib>=2.0.2
 numpy>=1.12.1
 opencv-python>=3.4.0.12
 Pillow==5.0.0

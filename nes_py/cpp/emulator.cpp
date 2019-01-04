@@ -71,11 +71,11 @@ uint32_t* Emulator::get_screen_buffer() {
 }
 
 void Emulator::reset() {
-    // TODO:
+    loadRom();
 }
 
 void Emulator::step(unsigned char action) {
-    //Around one frame
+    // approximate a frame
     for (int i = 0; i < 29781; i++) {
         //PPU
         ppu.step();

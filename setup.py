@@ -59,7 +59,7 @@ setup(
     url='https://github.com/Kautenja/nes-py',
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
-    license='BSD-2-Clause',
+    license='Proprietary',
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[LIB_NES_ENV],
     zip_safe=False,

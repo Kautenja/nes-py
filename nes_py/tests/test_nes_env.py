@@ -74,6 +74,19 @@ def create_smb1_instance():
     return NESEnv(path)
 
 
+class ShouldReadAndWriteMemory(TestCase):
+    def test(self):
+        env = create_smb1_instance()
+        env.reset()
+        for _ in range(90):
+            env.step(8)
+            env.step(0)
+        self.assertEqual(129, env._read_mem(0x0776))
+        env._write_mem(0x0776, 0)
+        self.assertEqual(0, env._read_mem(0x0776))
+        env.close()
+
+
 class ShouldResetAndCloseEnv(TestCase):
     def test(self):
         env = create_smb1_instance()

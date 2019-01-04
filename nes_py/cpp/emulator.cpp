@@ -90,10 +90,9 @@ void Emulator::restore() {
 }
 
 uint8_t Emulator::read_memory(uint16_t address) {
-    // TODO:
-    return 0;
+    return bus.read(address);
 }
 
 void Emulator::write_memory(uint16_t address, uint8_t value) {
-    // TODO:
+    bus.write(address, value);
 }

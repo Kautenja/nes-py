@@ -47,6 +47,16 @@ class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):
         self.assertRaises(ValueError, NESEnv, path)
 
 
+class ShouldRaiseErrorOnStepBeforeReset(TestCase):
+    def test(self):
+        import os
+        from ..nes_env import NESEnv
+        import gym
+        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+        env = NESEnv(path)
+        self.assertRaises(ValueError, env.step, 0)
+
+
 class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
         import os

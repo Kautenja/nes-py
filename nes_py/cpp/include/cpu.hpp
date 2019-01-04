@@ -12,13 +12,13 @@ public:
         BRK_
     };
 
-    CPU(MainBus &mem);
+    CPU();
 
     //Assuming sequential execution, for asynchronously calling this with Execute, further work needed
-    void interrupt(InterruptType type);
+    void interrupt(MainBus &m_bus, InterruptType type);
 
-    void step();
-    void reset();
+    void step(MainBus &m_bus);
+    void reset(MainBus &m_bus);
     void reset(Address start_addr);
     void log();
 
@@ -27,16 +27,16 @@ public:
 private:
     //Instructions are split into five sets to make decoding easier.
     //These functions return true if they succeed
-    bool executeImplied(Byte opcode);
-    bool executeBranch(Byte opcode);
-    bool executeType0(Byte opcode);
-    bool executeType1(Byte opcode);
-    bool executeType2(Byte opcode);
+    bool executeImplied(MainBus &m_bus, Byte opcode);
+    bool executeBranch(MainBus &m_bus, Byte opcode);
+    bool executeType0(MainBus &m_bus, Byte opcode);
+    bool executeType1(MainBus &m_bus, Byte opcode);
+    bool executeType2(MainBus &m_bus, Byte opcode);
 
-    Address readAddress(Address addr);
+    Address readAddress(MainBus &m_bus, Address addr);
 
-    void pushStack(Byte value);
-    Byte pullStack();
+    void pushStack(MainBus &m_bus, Byte value);
+    Byte pullStack(MainBus &m_bus);
 
     //If a and b are in different pages, increases the m_SkipCycles by inc
     void setPageCrossed(Address a, Address b, int inc = 1);
@@ -62,7 +62,6 @@ private:
     bool f_V;
     bool f_N;
 
-    MainBus &m_bus;
 };
 
 #endif // CPU_H

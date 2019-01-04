@@ -3,13 +3,11 @@
 #include "log.hpp"
 #include <iomanip>
 
-CPU::CPU(MainBus &mem) :
-    m_bus(mem)
-{}
+CPU::CPU() { }
 
-void CPU::reset()
+void CPU::reset(MainBus &m_bus)
 {
-    reset(readAddress(ResetVector));
+    reset(readAddress(m_bus, ResetVector));
 }
 
 void CPU::reset(Address start_addr)
@@ -22,7 +20,7 @@ void CPU::reset(Address start_addr)
     r_SP = 0xfd; //documented startup state
 }
 
-void CPU::interrupt(InterruptType type)
+void CPU::interrupt(MainBus &m_bus, InterruptType type)
 {
     if (f_I && type != NMI && type != BRK_)
         return;
@@ -30,8 +28,8 @@ void CPU::interrupt(InterruptType type)
     if (type == BRK_) //Add one if BRK, a quirk of 6502
         ++r_PC;
 
-    pushStack(r_PC >> 8);
-    pushStack(r_PC);
+    pushStack(m_bus, r_PC >> 8);
+    pushStack(m_bus, r_PC);
 
     Byte flags = f_N << 7 |
                  f_V << 6 |
@@ -41,7 +39,7 @@ void CPU::interrupt(InterruptType type)
                  f_I << 2 |
                  f_Z << 1 |
                  f_C;
-    pushStack(flags);
+    pushStack(m_bus, flags);
 
     f_I = true;
 
@@ -49,23 +47,23 @@ void CPU::interrupt(InterruptType type)
     {
         case IRQ:
         case BRK_:
-            r_PC = readAddress(IRQVector);
+            r_PC = readAddress(m_bus, IRQVector);
             break;
         case NMI:
-            r_PC = readAddress(NMIVector);
+            r_PC = readAddress(m_bus, NMIVector);
             break;
     }
 
     m_skipCycles += 7;
 }
 
-void CPU::pushStack(Byte value)
+void CPU::pushStack(MainBus &m_bus, Byte value)
 {
     m_bus.write(0x100 | r_SP, value);
     --r_SP; //Hardware stacks grow downward!
 }
 
-Byte CPU::pullStack()
+Byte CPU::pullStack(MainBus &m_bus)
 {
     return m_bus.read(0x100 | ++r_SP);
 }
@@ -89,7 +87,7 @@ void CPU::skipDMACycles()
     m_skipCycles += (m_cycles & 1); //+1 if on odd cycle
 }
 
-void CPU::step()
+void CPU::step(MainBus &m_bus)
 {
     ++m_cycles;
 
@@ -124,8 +122,8 @@ void CPU::step()
 
     //Using short-circuit evaluation, call the other function only if the first failed
     //ExecuteImplied must be called first and ExecuteBranch must be before ExecuteType0
-    if (CycleLength && (executeImplied(opcode) || executeBranch(opcode) ||
-                    executeType1(opcode) || executeType2(opcode) || executeType0(opcode)))
+    if (CycleLength && (executeImplied(m_bus, opcode) || executeBranch(m_bus, opcode) ||
+                    executeType1(m_bus, opcode) || executeType2(m_bus, opcode) || executeType0(m_bus, opcode)))
     {
         m_skipCycles += CycleLength;
         //m_cycles %= 340; //compatibility with Nintendulator log
@@ -137,30 +135,30 @@ void CPU::step()
     }
 }
 
-bool CPU::executeImplied(Byte opcode)
+bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
 {
     switch (static_cast<OperationImplied>(opcode))
     {
         case NOP:
             break;
         case BRK:
-            interrupt(BRK_);
+            interrupt(m_bus, BRK_);
             break;
         case JSR:
             //Push address of next instruction - 1, thus r_PC + 1 instead of r_PC + 2
             //since r_PC and r_PC + 1 are address of subroutine
-            pushStack(static_cast<Byte>((r_PC + 1) >> 8));
-            pushStack(static_cast<Byte>(r_PC + 1));
-            r_PC = readAddress(r_PC);
+            pushStack(m_bus, static_cast<Byte>((r_PC + 1) >> 8));
+            pushStack(m_bus, static_cast<Byte>(r_PC + 1));
+            r_PC = readAddress(m_bus, r_PC);
             break;
         case RTS:
-            r_PC = pullStack();
-            r_PC |= pullStack() << 8;
+            r_PC = pullStack(m_bus);
+            r_PC |= pullStack(m_bus) << 8;
             ++r_PC;
             break;
         case RTI:
             {
-                Byte flags = pullStack();
+                Byte flags = pullStack(m_bus);
                 f_N = flags & 0x80;
                 f_V = flags & 0x40;
                 f_D = flags & 0x8;
@@ -168,15 +166,15 @@ bool CPU::executeImplied(Byte opcode)
                 f_Z = flags & 0x2;
                 f_C = flags & 0x1;
             }
-            r_PC = pullStack();
-            r_PC |= pullStack() << 8;
+            r_PC = pullStack(m_bus);
+            r_PC |= pullStack(m_bus) << 8;
             break;
         case JMP:
-            r_PC = readAddress(r_PC);
+            r_PC = readAddress(m_bus, r_PC);
             break;
         case JMPI:
             {
-                Address location = readAddress(r_PC);
+                Address location = readAddress(m_bus, r_PC);
                 //6502 has a bug such that the when the vector of anindirect address begins at the last byte of a page,
                 //the second byte is fetched from the beginning of that page rather than the beginning of the next
                 //Recreating here:
@@ -195,12 +193,12 @@ bool CPU::executeImplied(Byte opcode)
                              f_I << 2 |
                              f_Z << 1 |
                              f_C;
-                pushStack(flags);
+                pushStack(m_bus, flags);
             }
             break;
         case PLP:
             {
-                Byte flags = pullStack();
+                Byte flags = pullStack(m_bus);
                 f_N = flags & 0x80;
                 f_V = flags & 0x40;
                 f_D = flags & 0x8;
@@ -210,10 +208,10 @@ bool CPU::executeImplied(Byte opcode)
             }
             break;
         case PHA:
-            pushStack(r_A);
+            pushStack(m_bus, r_A);
             break;
         case PLA:
-            r_A = pullStack();
+            r_A = pullStack(m_bus);
             setZN(r_A);
             break;
         case DEY:
@@ -282,7 +280,7 @@ bool CPU::executeImplied(Byte opcode)
     return true;
 }
 
-bool CPU::executeBranch(Byte opcode)
+bool CPU::executeBranch(MainBus &m_bus, Byte opcode)
 {
     if ((opcode & BranchInstructionMask) == BranchInstructionMaskResult)
     {
@@ -324,7 +322,7 @@ bool CPU::executeBranch(Byte opcode)
     return false;
 }
 
-bool CPU::executeType1(Byte opcode)
+bool CPU::executeType1(MainBus &m_bus, Byte opcode)
 {
     if ((opcode & InstructionModeMask) == 0x1)
     {
@@ -347,7 +345,7 @@ bool CPU::executeType1(Byte opcode)
                 location = r_PC++;
                 break;
             case Absolute:
-                location = readAddress(r_PC);
+                location = readAddress(m_bus, r_PC);
                 r_PC += 2;
                 break;
             case IndirectY:
@@ -364,14 +362,14 @@ bool CPU::executeType1(Byte opcode)
                 location = (m_bus.read(r_PC++) + r_X) & 0xff;
                 break;
             case AbsoluteY:
-                location = readAddress(r_PC);
+                location = readAddress(m_bus, r_PC);
                 r_PC += 2;
                 if (op != STA)
                     setPageCrossed(location, location + r_Y);
                 location += r_Y;
                 break;
             case AbsoluteX:
-                location = readAddress(r_PC);
+                location = readAddress(m_bus, r_PC);
                 r_PC += 2;
                 if (op != STA)
                     setPageCrossed(location, location + r_X);
@@ -444,7 +442,7 @@ bool CPU::executeType1(Byte opcode)
     return false;
 }
 
-bool CPU::executeType2(Byte opcode)
+bool CPU::executeType2(MainBus &m_bus, Byte opcode)
 {
     if ((opcode & InstructionModeMask) == 2)
     {
@@ -463,7 +461,7 @@ bool CPU::executeType2(Byte opcode)
             case Accumulator:
                 break;
             case Absolute_:
-                location = readAddress(r_PC);
+                location = readAddress(m_bus, r_PC);
                 r_PC += 2;
                 break;
             case Indexed:
@@ -480,7 +478,7 @@ bool CPU::executeType2(Byte opcode)
                 break;
             case AbsoluteIndexed:
                 {
-                    location = readAddress(r_PC);
+                    location = readAddress(m_bus, r_PC);
                     r_PC += 2;
                     Byte index;
                     if (op == LDX || op == STX)
@@ -569,7 +567,7 @@ bool CPU::executeType2(Byte opcode)
     return false;
 }
 
-bool CPU::executeType0(Byte opcode)
+bool CPU::executeType0(MainBus &m_bus, Byte opcode)
 {
     if ((opcode & InstructionModeMask) == 0x0)
     {
@@ -583,7 +581,7 @@ bool CPU::executeType0(Byte opcode)
                 location = m_bus.read(r_PC++);
                 break;
             case Absolute_:
-                location = readAddress(r_PC);
+                location = readAddress(m_bus, r_PC);
                 r_PC += 2;
                 break;
             case Indexed:
@@ -591,7 +589,7 @@ bool CPU::executeType0(Byte opcode)
                 location = (m_bus.read(r_PC++) + r_X) & 0xff;
                 break;
             case AbsoluteIndexed:
-                location = readAddress(r_PC);
+                location = readAddress(m_bus, r_PC);
                 r_PC += 2;
                 setPageCrossed(location, location + r_X);
                 location += r_X;
@@ -638,7 +636,7 @@ bool CPU::executeType0(Byte opcode)
     return false;
 }
 
-Address CPU::readAddress(Address addr)
+Address CPU::readAddress(MainBus &m_bus, Address addr)
 {
     return m_bus.read(addr) | m_bus.read(addr + 1) << 8;
 }

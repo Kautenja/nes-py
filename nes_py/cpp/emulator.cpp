@@ -4,7 +4,7 @@
 #include <chrono>
 
 Emulator::Emulator(std::string rom_path) :
-    cpu(bus),
+    cpu(),
     ppu(picture_bus),
     rom_path(rom_path) {
     // raise an error if IO callback setup fails
@@ -32,8 +32,20 @@ Emulator::Emulator(std::string rom_path) :
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
     }
     // set the interrupt callback for the PPU
-    ppu.setInterruptCallback([&](){ cpu.interrupt(CPU::NMI); });
+    ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
 }
+
+// Emulator::Emulator(Emulator* emulator) {
+//     rom_path = emulator->rom_path;
+//     bus = emulator->bus;
+//     picture_bus = emulator->picture_bus;
+//     cartridge = emulator->cartridge;
+//     // mapper = emulator->mapper;
+//     controller1 = emulator->controller1;
+//     controller2 = emulator->controller2;
+//     cpu = emulator->cpu;
+//     ppu = emulator->ppu;
+// }
 
 void Emulator::loadRom() {
     if (!cartridge.loadFromFile(rom_path))
@@ -50,7 +62,7 @@ void Emulator::loadRom() {
     if (!bus.setMapper(mapper.get()) || !picture_bus.setMapper(mapper.get()))
         return;
 
-    cpu.reset();
+    cpu.reset(bus);
     ppu.reset();
 }
 
@@ -77,7 +89,7 @@ void Emulator::step(unsigned char action) {
         ppu.step();
         ppu.step();
         // CPU steps once per clock cycle (obviously)
-        cpu.step();
+        cpu.step(bus);
     }
 }
 

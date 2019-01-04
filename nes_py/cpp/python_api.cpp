@@ -68,9 +68,11 @@ extern "C" {
         delete emulator;
     }
 
-    /// Backup the game state in the emulator
-    external void Backup(Emulator* emulator) {
-        emulator->backup();
+    /// Copy the game state in the emulator
+    external Emulator* Clone(Emulator* emulator) {
+        // Emulator clone = *emulator;
+        // return *clone;
+        return new Emulator("");
     }
 
     /// Restore a game state in the emulator

@@ -11,15 +11,18 @@ Emulator::Emulator(std::string rom_path) :
     cpu_cycle_duration(std::chrono::nanoseconds(559)),
     rom_path(rom_path) {
     // raise an error if IO callback setup fails
-    if(!bus.setReadCallback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
+    if(
+        !bus.setReadCallback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
         !bus.setReadCallback(PPUDATA, [&](void) {return ppu.getData();}) ||
         !bus.setReadCallback(JOY1, [&](void) {return controller1.read();}) ||
         !bus.setReadCallback(JOY2, [&](void) {return controller2.read();}) ||
         !bus.setReadCallback(OAMDATA, [&](void) {return ppu.getOAMData();})
-    )
+    ) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
+    }
     // raise an error if IO callback setup fails
-    if(!bus.setWriteCallback(PPUCTRL, [&](Byte b) {ppu.control(b);}) ||
+    if(
+        !bus.setWriteCallback(PPUCTRL, [&](Byte b) {ppu.control(b);}) ||
         !bus.setWriteCallback(PPUMASK, [&](Byte b) {ppu.setMask(b);}) ||
         !bus.setWriteCallback(OAMADDR, [&](Byte b) {ppu.setOAMAddress(b);}) ||
         !bus.setWriteCallback(PPUADDR, [&](Byte b) {ppu.setDataAddress(b);}) ||
@@ -27,8 +30,10 @@ Emulator::Emulator(std::string rom_path) :
         !bus.setWriteCallback(PPUDATA, [&](Byte b) {ppu.setData(b);}) ||
         !bus.setWriteCallback(OAMDMA, [&](Byte b) {DMA(b);}) ||
         !bus.setWriteCallback(JOY1, [&](Byte b) {controller1.strobe(b); controller2.strobe(b);}) ||
-        !bus.setWriteCallback(OAMDATA, [&](Byte b) {ppu.setOAMData(b);}))
+        !bus.setWriteCallback(OAMDATA, [&](Byte b) {ppu.setOAMData(b);})
+    ) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
+    }
     // set the interrupt callback for the PPU
     ppu.setInterruptCallback([&](){ cpu.interrupt(CPU::NMI); });
 }
@@ -68,6 +73,7 @@ void Emulator::DMA(Byte page) {
 
 uint32_t* Emulator::get_screen_buffer() {
     // TODO:
+    return nullptr;
 }
 
 void Emulator::reset() {
@@ -88,6 +94,7 @@ void Emulator::restore() {
 
 uint8_t Emulator::read_memory(uint16_t address) {
     // TODO:
+    return 0;
 }
 
 void Emulator::write_memory(uint16_t address, uint8_t value) {

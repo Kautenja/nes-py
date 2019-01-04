@@ -29,12 +29,12 @@ extern "C" {
     }
 
     /// Return the width of the NES.
-    external unsigned GetNESWidth(Emulator* emulator) {
+    external unsigned GetNESWidth() {
         return NESVideoWidth;
     }
 
     /// Return the height of the NES.
-    external unsigned GetNESHeight(Emulator* emulator) {
+    external unsigned GetNESHeight() {
         return NESVideoHeight;
     }
 

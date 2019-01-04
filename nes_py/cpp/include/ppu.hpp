@@ -99,7 +99,7 @@ private:
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
     /// the number of visible scan line dots
-    std::uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots] = {0};
+    std::uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots] = {{0}};
 
 };
 

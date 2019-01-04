@@ -95,10 +95,10 @@ There you will find instructions for:
 nes-py implements several common mappers, which should be enough for a good
 percentage of the games:
 
-0.  NROM (Mapper 000)
-1.  MMC1 / SxROM (Mapper 001)
-2.  UxROM (Mapper 002)
-3.  CNROM (Mapper 003)
+0.  NROM
+1.  MMC1 / SxROM
+2.  UxROM
+3.  CNROM
 
 You can check the compatibility for each ROM in the following
 [list](https://github.com/Kautenja/nes-py/blob/master/nesmapper.txt)

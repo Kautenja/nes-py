@@ -1,8 +1,6 @@
 """A method to play gym environments using human IO inputs."""
-import os
 import gym
 import pygame
-import numpy as np
 from .visualize.realtime_plot import RealtimePlot
 
 

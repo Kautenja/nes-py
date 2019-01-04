@@ -1,6 +1,5 @@
 """Methods for playing the game randomly, or as a human."""
 from tqdm import tqdm
-import gym
 from .play_human import play
 
 

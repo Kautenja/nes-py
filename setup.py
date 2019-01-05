@@ -14,7 +14,10 @@ class BuildExt(build_ext):
 
     def build_extensions(self):
         """Build the extensions."""
-        self.compiler.compiler_so.remove("-Wstrict-prototypes")
+        try:
+            self.compiler.compiler_so.remove("-Wstrict-prototypes")
+        except (AttributeError, ValueError):
+            pass
         build_ext.build_extensions(self)
 
 

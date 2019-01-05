@@ -75,8 +75,7 @@ void Emulator::reset() {
     if (!cartridge.loadFromFile(rom_path))
         return;
     // create the mapper based on the mapper ID in the iNES header of the ROM
-    mapper = Mapper::createMapper(
-        static_cast<Mapper::Type>(cartridge.getMapper()),
+    mapper = Mapper::create(
         cartridge,
         [&](){ picture_bus.update_mirroring(); }
     );

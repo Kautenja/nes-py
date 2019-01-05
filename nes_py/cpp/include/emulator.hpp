@@ -19,6 +19,15 @@ const int NESVideoHeight = VisibleScanlines;
 class Emulator {
 
 private:
+
+    /// an enumeration of mapper IDs
+    enum Type {
+        NROM  = 0,
+        // SxROM = 1,
+        // UxROM = 2,
+        // CNROM = 3,
+    };
+
     /// the path to the ROM for this environment
     std::string rom_path;
 

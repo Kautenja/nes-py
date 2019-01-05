@@ -34,6 +34,9 @@ public:
     /// Delete this mapper's data
     virtual ~Mapper() { };
 
+    /// Create a mapper based on given type, a game cartridge
+    static Mapper* create (Cartridge& cart, std::function<void(void)> mirroring_cb);
+
     /// Create a clone of this mapper.
     ///
     /// @param cartridge the cartridge to create a clone of the mapper with
@@ -82,13 +85,6 @@ public:
 
     /// Return true if this mapper has extended RAM, false otherwise.
     bool hasExtendedRAM() { return m_cartridge.hasExtendedRAM(); };
-
-    /// TODO: remove this functional envy
-    static Mapper* createMapper (
-        Type mapper_t,
-        Cartridge& cart,
-        std::function<void(void)> mirroring_cb
-    );
 
 protected:
     /// The cartridge this mapper associates with

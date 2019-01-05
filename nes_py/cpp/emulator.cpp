@@ -3,14 +3,11 @@
 #include <thread>
 #include <chrono>
 
-Emulator::Emulator(std::string rom_path) :
-    cpu(),
-    ppu(picture_bus),
-    rom_path(rom_path) {
+Emulator::Emulator(std::string rom_path) : cpu(), ppu(), rom_path(rom_path) {
     // raise an error if IO callback setup fails
     if(
         !bus.setReadCallback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
-        !bus.setReadCallback(PPUDATA, [&](void) {return ppu.getData();}) ||
+        !bus.setReadCallback(PPUDATA, [&](void) {return ppu.getData(picture_bus);}) ||
         !bus.setReadCallback(JOY1, [&](void) {return controller1.read();}) ||
         !bus.setReadCallback(JOY2, [&](void) {return controller2.read();}) ||
         !bus.setReadCallback(OAMDATA, [&](void) {return ppu.getOAMData();})
@@ -24,7 +21,7 @@ Emulator::Emulator(std::string rom_path) :
         !bus.setWriteCallback(OAMADDR, [&](Byte b) {ppu.setOAMAddress(b);}) ||
         !bus.setWriteCallback(PPUADDR, [&](Byte b) {ppu.setDataAddress(b);}) ||
         !bus.setWriteCallback(PPUSCROL, [&](Byte b) {ppu.setScroll(b);}) ||
-        !bus.setWriteCallback(PPUDATA, [&](Byte b) {ppu.setData(b);}) ||
+        !bus.setWriteCallback(PPUDATA, [&](Byte b) {ppu.setData(picture_bus, b);}) ||
         !bus.setWriteCallback(OAMDMA, [&](Byte b) {DMA(b);}) ||
         !bus.setWriteCallback(JOY1, [&](Byte b) {controller1.strobe(b); controller2.strobe(b);}) ||
         !bus.setWriteCallback(OAMDATA, [&](Byte b) {ppu.setOAMData(b);})
@@ -35,17 +32,17 @@ Emulator::Emulator(std::string rom_path) :
     ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
 }
 
-// Emulator::Emulator(Emulator* emulator) {
-//     rom_path = emulator->rom_path;
-//     bus = emulator->bus;
-//     picture_bus = emulator->picture_bus;
-//     cartridge = emulator->cartridge;
-//     // mapper = emulator->mapper;
-//     controller1 = emulator->controller1;
-//     controller2 = emulator->controller2;
-//     cpu = emulator->cpu;
-//     ppu = emulator->ppu;
-// }
+Emulator::Emulator(Emulator* emulator) {
+    rom_path = emulator->rom_path;
+    bus = emulator->bus;
+    picture_bus = emulator->picture_bus;
+    cartridge = emulator->cartridge;
+    // mapper = emulator->mapper;
+    controller1 = emulator->controller1;
+    controller2 = emulator->controller2;
+    cpu = emulator->cpu;
+    ppu = emulator->ppu;
+}
 
 void Emulator::loadRom() {
     if (!cartridge.loadFromFile(rom_path))
@@ -85,9 +82,9 @@ void Emulator::step(unsigned char action) {
     // approximate a frame
     for (int i = 0; i < 29781; i++) {
         // PPU steps 3 times per clock cycle
-        ppu.step();
-        ppu.step();
-        ppu.step();
+        ppu.step(picture_bus);
+        ppu.step(picture_bus);
+        ppu.step(picture_bus);
         // CPU steps once per clock cycle (obviously)
         cpu.step(bus);
     }

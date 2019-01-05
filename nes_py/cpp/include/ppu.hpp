@@ -17,8 +17,8 @@ const int AttributeOffset = 0x3C0;
 class PPU
 {
 public:
-    PPU(PictureBus &bus);
-    void step();
+    PPU();
+    void step(PictureBus& bus);
     void reset();
 
     void setInterruptCallback(std::function<void(void)> cb);
@@ -32,10 +32,10 @@ public:
     void setOAMAddress(Byte addr);
     void setDataAddress(Byte addr);
     void setScroll(Byte scroll);
-    void setData(Byte data);
+    void setData(PictureBus& m_bus, Byte data);
     //Read by the program
     Byte getStatus();
-    Byte getData();
+    Byte getData(PictureBus& m_bus);
     Byte getOAMData();
     void setOAMData(Byte value);
 
@@ -45,8 +45,7 @@ public:
 private:
     Byte readOAM(Byte addr);
     void writeOAM(Byte addr, Byte value);
-    Byte read(Address addr);
-    PictureBus &m_bus;
+    Byte read(PictureBus& m_bus, Address addr);
 
     std::function<void(void)> m_vblankCallback;
 

@@ -55,11 +55,11 @@ public:
     ///
     Emulator(std::string rom_path);
 
-    // / Create a new emulator as a copy of another emulator state
-    // /
-    // / @param emulator the emulator to copy the state from
-    // /
-    // Emulator(Emulator* emulator);
+    /// Create a new emulator as a copy of another emulator state
+    ///
+    /// @param emulator the emulator to copy the state from
+    ///
+    Emulator(Emulator* emulator);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///

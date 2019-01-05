@@ -184,35 +184,6 @@ class NESEnv(gym.Env):
         self.ram = np.frombuffer(buffer_, dtype='uint8')
         # TODO: handle endian-ness of machine?
 
-    # TODO: remove this
-    def _read_mem(self, address):
-        """
-        Read a byte from the given memory address.
-
-        Args:
-            address (int): the 16-bit address to read from
-
-        Returns:
-            (int) the 8-bit value at the given memory address
-
-        """
-        return self.ram[address]
-
-    # TODO: remove this
-    def _write_mem(self, address, value):
-        """
-        Write a byte to the given memory address.
-
-        Args:
-            address (int): the 16-bit address to write to
-            value (int): the 8-bit value to write to memory
-
-        Returns:
-            None
-
-        """
-        self.ram[address] = value
-
     def _frame_advance(self, action):
         """
         Advance a frame in the emulator with an action.

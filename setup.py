@@ -15,7 +15,7 @@ class BuildExt(build_ext):
     def build_extensions(self):
         """Build the extensions."""
         self.compiler.compiler_so.remove("-Wstrict-prototypes")
-        super(BuildExt, self).build_extensions()
+        build_ext.build_extensions(self)
 
 
 # read the contents from the README file

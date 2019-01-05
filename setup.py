@@ -1,7 +1,7 @@
 """The setup script for installing and distributing the nes-py package."""
-from distutils.command.build_ext import build_ext
 from glob import glob
 from setuptools import setup, find_packages, Extension
+from setuptools.command.build_ext import build_ext
 
 
 class BuildExt(build_ext):
@@ -15,7 +15,7 @@ class BuildExt(build_ext):
     def build_extensions(self):
         """Build the extensions."""
         self.compiler.compiler_so.remove("-Wstrict-prototypes")
-        build_ext.build_extensions(self)
+        super(BuildExt, self).build_extensions()
 
 
 # read the contents from the README file

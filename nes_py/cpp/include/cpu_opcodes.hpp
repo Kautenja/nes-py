@@ -18,16 +18,14 @@ const auto NMIVector = 0xfffa;
 const auto ResetVector = 0xfffc;
 const auto IRQVector = 0xfffe;
 
-enum BranchOnFlag
-{
+enum BranchOnFlag {
     Negative,
     Overflow,
     Carry,
     Zero
 };
 
-enum Operation1
-{
+enum Operation1 {
     ORA,
     AND,
     EOR,
@@ -38,8 +36,7 @@ enum Operation1
     SBC,
 };
 
-enum AddrMode1
-{
+enum AddrMode1 {
     IndexedIndirectX,
     ZeroPage,
     Immediate,
@@ -50,8 +47,7 @@ enum AddrMode1
     AbsoluteX,
 };
 
-enum Operation2
-{
+enum Operation2 {
     ASL,
     ROL,
     LSR,
@@ -62,8 +58,7 @@ enum Operation2
     INC,
 };
 
-enum AddrMode2
-{
+enum AddrMode2 {
     Immediate_,
     ZeroPage_,
     Accumulator,
@@ -72,8 +67,7 @@ enum AddrMode2
     AbsoluteIndexed = 7,
 };
 
-enum Operation0
-{
+enum Operation0 {
     BIT  = 1,
     STY  = 4,
     LDY,
@@ -81,8 +75,7 @@ enum Operation0
     CPX,
 };
 
-enum OperationImplied
-{
+enum OperationImplied {
     NOP = 0xea,
     BRK = 0x00,
     JSR = 0x20,

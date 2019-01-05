@@ -10,11 +10,11 @@ all: test deployment
 #
 
 # build the LaiNES CPP code
-laines:
+lib_nes_env:
 	scons
 
 # run the Python test suite
-test: laines
+test: lib_nes_env
 	${PYTHON} -m unittest discover .
 
 #

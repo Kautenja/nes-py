@@ -78,7 +78,7 @@ void Emulator::reset() {
     mapper = Mapper::createMapper(
         static_cast<Mapper::Type>(cartridge.getMapper()),
         cartridge,
-        [&](){ picture_bus.updateMirroring(); }
+        [&](){ picture_bus.update_mirroring(); }
     );
     // if the mapper is a nullptr, the mapper ID is not supported at this time
     if (!mapper) {
@@ -86,7 +86,7 @@ void Emulator::reset() {
         return;
     }
     // if setting the mapper on the buses fails, return
-    if (!bus.setMapper(mapper) || !picture_bus.setMapper(mapper))
+    if (!bus.set_mapper(mapper) || !picture_bus.set_mapper(mapper))
         return;
     // reset the CPU and PPU
     cpu.reset(bus);

@@ -160,7 +160,7 @@ void PPU::cycle(PictureBus& m_bus) {
                 else if (!bgOpaque && !sprOpaque)
                     paletteAddr = 0;
 
-                screen_buffer[y][x] = colors[m_bus.readPalette(paletteAddr)];
+                screen_buffer[y][x] = colors[m_bus.read_palette(paletteAddr)];
 
             }
             else if (m_cycle == ScanlineVisibleDots + 1 && m_showBackground) {

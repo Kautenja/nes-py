@@ -98,7 +98,7 @@ const uint8_t* MainBus::getPagePtr(uint8_t page) {
     return nullptr;
 }
 
-bool MainBus::setMapper(Mapper* mapper) {
+bool MainBus::set_mapper(Mapper* mapper) {
     m_mapper = mapper;
 
     if (!mapper) {

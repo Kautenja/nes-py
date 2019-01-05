@@ -68,7 +68,7 @@ extern "C" {
         delete emulator;
     }
 
-    /// Copy the game state in the emulator
+    /// Create a deep copy (i.e., a clone) of the given emulator
     external Emulator* Clone(Emulator* emulator) {
         return new Emulator(emulator);
     }

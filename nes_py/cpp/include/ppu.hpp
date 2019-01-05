@@ -37,22 +37,22 @@ public:
     //Addresses written to by the program
     void control(Byte ctrl);
     void setMask(Byte mask);
-    void setOAMAddress(Byte addr);
+    void setOAMAddress(Byte addr) { m_spriteDataAddress = addr; };
     void setDataAddress(Byte addr);
     void setScroll(Byte scroll);
     void setData(PictureBus& m_bus, Byte data);
     //Read by the program
     Byte getStatus();
     Byte getData(PictureBus& m_bus);
-    Byte getOAMData();
-    void setOAMData(Byte value);
+    Byte getOAMData() { return readOAM(m_spriteDataAddress); };
+    void setOAMData(Byte value) { writeOAM(m_spriteDataAddress++, value); };
 
     /// Return a pointer to the screen buffer.
     std::uint32_t* get_screen_buffer() { return *screen_buffer; };
 
 private:
-    Byte readOAM(Byte addr);
-    void writeOAM(Byte addr, Byte value);
+    Byte readOAM(Byte addr) { return m_spriteMemory[addr]; };
+    void writeOAM(Byte addr, Byte value) { m_spriteMemory[addr] = value; };
 
     std::function<void(void)> m_vblankCallback;
 

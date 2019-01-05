@@ -48,7 +48,7 @@ public:
     void setOAMData(uint8_t value) { writeOAM(m_spriteDataAddress++, value); };
 
     /// Return a pointer to the screen buffer.
-    std::uint32_t* get_screen_buffer() { return *screen_buffer; };
+    uint32_t* get_screen_buffer() { return *screen_buffer; };
 
 private:
     uint8_t readOAM(uint8_t addr) { return m_spriteMemory[addr]; };
@@ -105,7 +105,7 @@ private:
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
     /// the number of visible scan line dots
-    uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots] = {{0}};
+    uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots];
 
 };
 

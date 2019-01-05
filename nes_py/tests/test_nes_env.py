@@ -81,9 +81,9 @@ class ShouldReadAndWriteMemory(TestCase):
         for _ in range(90):
             env.step(8)
             env.step(0)
-        self.assertEqual(129, env._read_mem(0x0776))
-        env._write_mem(0x0776, 0)
-        self.assertEqual(0, env._read_mem(0x0776))
+        self.assertEqual(129, env.ram[0x0776])
+        env.ram[0x0776] = 0
+        self.assertEqual(0, env.ram[0x0776])
         env.close()
 
 

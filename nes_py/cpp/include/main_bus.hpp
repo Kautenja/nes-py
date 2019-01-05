@@ -39,6 +39,12 @@ public:
     /// Initialize a new main bus.
     MainBus() : m_RAM(0x800, 0), m_mapper(nullptr) { };
 
+    /// Return a 8-bit pointer to the RAM buffer's first address.
+    ///
+    /// @return a 8-bit pointer to the RAM buffer's first address
+    ///
+    uint8_t* get_memory_buffer() { return &m_RAM.front(); };
+
     /// Read a byte from an address on the RAM.
     ///
     /// @param addr the 16-bit address of the byte to read in the RAM

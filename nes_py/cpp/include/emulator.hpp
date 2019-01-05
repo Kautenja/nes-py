@@ -65,20 +65,11 @@ public:
     ///
     uint32_t* get_screen_buffer() { return ppu.get_screen_buffer(); };
 
-    /// Read a byte from a 16-bit memory address
+    /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
-    /// @param address the address to read from memory
+    /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    /// @return the byte located at the given memory address
-    ///
-    uint8_t read_memory(uint16_t address) { return bus.read(address); };
-
-    /// Write a byte to a 16-bit memory address
-    ///
-    /// @param address the address to write to in memory
-    /// @param value the byte to write to the memory address
-    ///
-    void write_memory(uint16_t address, uint8_t value) { bus.write(address, value); };
+    uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
     void reset();

@@ -23,24 +23,21 @@ except IndexError:
     raise OSError('missing static lib_nes_env*.so library!')
 
 
-# setup the argument and return types for Initialize
-_LIB.Initialize.argtypes = [ctypes.c_wchar_p]
-_LIB.Initialize.restype = ctypes.c_void_p
 # setup the argument and return types for GetNESWidth
 _LIB.GetNESWidth.argtypes = None
 _LIB.GetNESWidth.restype = ctypes.c_uint
 # setup the argument and return types for GetNESHeight
 _LIB.GetNESHeight.argtypes = None
 _LIB.GetNESHeight.restype = ctypes.c_uint
-# setup the argument and return types for ReadMemory
-_LIB.ReadMemory.argtypes = [ctypes.c_void_p, ctypes.c_ushort]
-_LIB.ReadMemory.restype = ctypes.c_ubyte
-# setup the argument and return types for WriteMemory
-_LIB.WriteMemory.argtypes = [ctypes.c_void_p, ctypes.c_ushort, ctypes.c_ubyte]
-_LIB.WriteMemory.restype = None
-# setup the argument and return types for GetScreenBuffer
-_LIB.GetScreenBuffer.argtypes = [ctypes.c_void_p]
-_LIB.GetScreenBuffer.restype = ctypes.c_void_p
+# setup the argument and return types for Initialize
+_LIB.Initialize.argtypes = [ctypes.c_wchar_p]
+_LIB.Initialize.restype = ctypes.c_void_p
+# setup the argument and return types for Screen
+_LIB.Screen.argtypes = [ctypes.c_void_p]
+_LIB.Screen.restype = ctypes.c_void_p
+# setup the argument and return types for GetMemoryBuffer
+_LIB.Memory.argtypes = [ctypes.c_void_p]
+_LIB.Memory.restype = ctypes.c_void_p
 # setup the argument and return types for Reset
 _LIB.Reset.argtypes = [ctypes.c_void_p]
 _LIB.Reset.restype = None
@@ -65,6 +62,10 @@ SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 # create a type for the screen tensor matrix from C++
 SCREEN_TENSOR = ctypes.c_byte * np.prod(SCREEN_SHAPE_32_BIT)
+
+
+# create a type for the RAM vector from C++
+RAM_VECTOR = ctypes.c_byte * 0x800
 
 
 # the magic bytes expected at the first four bytes of the iNES ROM header.
@@ -149,13 +150,15 @@ class NESEnv(gym.Env):
         self._backup_env = None
         # setup the NumPy screen from the C++ vector
         self.screen = None
+        self.ram = None
         self.done = True
         self._setup_screen()
+        self._setup_ram()
 
     def _setup_screen(self):
         """Setup the screen buffer from the C++ code."""
         # get the address of the screen
-        address = _LIB.GetScreenBuffer(self._env)
+        address = _LIB.Screen(self._env)
         # create a buffer from the contents of the address location
         buffer_ = ctypes.cast(address, ctypes.POINTER(SCREEN_TENSOR)).contents
         # create a NumPy array from the buffer
@@ -171,32 +174,15 @@ class NESEnv(gym.Env):
         # store the instance to screen
         self.screen = screen
 
-    def _read_mem(self, address):
-        """
-        Read a byte from the given memory address.
-
-        Args:
-            address (int): the 16-bit address to read from
-
-        Returns:
-            (int) the 8-bit value at the given memory address
-
-        """
-        return _LIB.ReadMemory(self._env, address)
-
-    def _write_mem(self, address, value):
-        """
-        Write a byte to the given memory address.
-
-        Args:
-            address (int): the 16-bit address to write to
-            value (int): the 8-bit value to write to memory
-
-        Returns:
-            None
-
-        """
-        _LIB.WriteMemory(self._env, address, value)
+    def _setup_ram(self):
+        """Setup the RAM buffer from the C++ code."""
+        # get the address of the RAM
+        address = _LIB.Memory(self._env)
+        # create a buffer from the contents of the address location
+        buffer_ = ctypes.cast(address, ctypes.POINTER(RAM_VECTOR)).contents
+        # create a NumPy array from the buffer
+        self.ram = np.frombuffer(buffer_, dtype='uint8')
+        # TODO: handle endian-ness of machine?
 
     def _frame_advance(self, action):
         """

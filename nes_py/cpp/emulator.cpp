@@ -97,9 +97,9 @@ void Emulator::DMA(Byte page) {
     // skip the DMA cycles on the CPU
     cpu.skipDMACycles();
     // get the pointer to the next page from the bus
-    auto page_ptr = bus.get_page_pointer(page);
+    auto page_pointer = bus.get_page_pointer(page);
     // do the DMA page change on the PPU
-    ppu.doDMA(page_ptr);
+    ppu.doDMA(page_pointer);
 }
 
 void Emulator::step(unsigned char action) {

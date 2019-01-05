@@ -87,12 +87,6 @@ public:
     ///
     void step(unsigned char action);
 
-    /// Backup the game state to the backup.
-    void backup();
-
-    /// Restore the game state from the backup.
-    void restore();
-
     /// Read a byte from a 16-bit memory address
     ///
     /// @param address the address to read from memory

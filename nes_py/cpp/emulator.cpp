@@ -93,14 +93,6 @@ void Emulator::step(unsigned char action) {
     }
 }
 
-void Emulator::backup() {
-    // TODO:
-}
-
-void Emulator::restore() {
-    // TODO:
-}
-
 uint8_t Emulator::read_memory(uint16_t address) {
     return bus.read(address);
 }

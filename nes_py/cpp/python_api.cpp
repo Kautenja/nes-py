@@ -70,14 +70,7 @@ extern "C" {
 
     /// Copy the game state in the emulator
     external Emulator* Clone(Emulator* emulator) {
-        // Emulator clone = *emulator;
-        // return *clone;
-        return new Emulator("");
-    }
-
-    /// Restore a game state in the emulator
-    external void Restore(Emulator* emulator) {
-        emulator->restore();
+        return new Emulator(emulator);
     }
 
 }

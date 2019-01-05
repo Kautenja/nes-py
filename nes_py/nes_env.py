@@ -50,15 +50,9 @@ _LIB.Step.restype = None
 # setup the argument and return types for Close
 _LIB.Close.argtypes = [ctypes.c_void_p]
 _LIB.Close.restype = None
-# setup the argument and return types for Backup
-# _LIB.Backup.argtypes = [ctypes.c_void_p]
-# _LIB.Backup.restype = None
-
+# setup the argument and return types for Clone
 _LIB.Clone.argtypes = [ctypes.c_void_p]
 _LIB.Clone.restype = ctypes.c_void_p
-# setup the argument and return types for Restore
-_LIB.Restore.argtypes = [ctypes.c_void_p]
-_LIB.Restore.restype = None
 
 
 # height in pixels of the NES screen
@@ -220,7 +214,6 @@ class NESEnv(gym.Env):
     def _backup(self):
         """Backup the NES state in the emulator."""
         self._backup_env = _LIB.Clone(self._env)
-        print(self._backup_env)
 
     def _del_backup(self):
         """Delete the backup for the environment."""
@@ -228,7 +221,7 @@ class NESEnv(gym.Env):
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
-        _LIB.Restore(self._env)
+        self._env = self._backup_env
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""

@@ -29,9 +29,11 @@ public:
     virtual uint8_t readCHR (Address addr) = 0;
     virtual void writeCHR (Address addr, uint8_t value) = 0;
 
-    virtual NameTableMirroring getNameTableMirroring();
+    virtual NameTableMirroring getNameTableMirroring() {
+        return static_cast<NameTableMirroring>(m_cartridge.getNameTableMirroring());
+    };
 
-    bool hasExtendedRAM();
+    bool hasExtendedRAM() { return m_cartridge.hasExtendedRAM(); };
 
     static Mapper* createMapper (
         Type mapper_t,

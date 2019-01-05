@@ -4,14 +4,6 @@
 #include "mappers/mapper_UxROM.hpp"
 #include "mappers/mapper_CNROM.hpp"
 
-NameTableMirroring Mapper::getNameTableMirroring() {
-    return static_cast<NameTableMirroring>(m_cartridge.getNameTableMirroring());
-}
-
-bool Mapper::hasExtendedRAM() {
-    return m_cartridge.hasExtendedRAM();
-}
-
 Mapper* Mapper::createMapper(
     Mapper::Type mapper_t,
     Cartridge& cart,

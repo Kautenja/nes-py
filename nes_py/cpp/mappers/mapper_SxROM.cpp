@@ -43,11 +43,6 @@ uint8_t MapperSxROM::readPRG(Address addr)
         return *(m_secondBankPRG + (addr & 0x3fff));
 }
 
-NameTableMirroring MapperSxROM::getNameTableMirroring()
-{
-    return m_mirroing;
-}
-
 void MapperSxROM::writePRG(Address addr, uint8_t value)
 {
     if (!(value & 0x80)) //if reset bit is NOT set

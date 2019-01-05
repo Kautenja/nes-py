@@ -29,7 +29,7 @@ public:
     const uint8_t* getPagePtr(Address addr);
     uint8_t readCHR (Address addr);
     void writeCHR (Address addr, uint8_t value);
-    NameTableMirroring getNameTableMirroring();
+    NameTableMirroring getNameTableMirroring() { return m_mirroing; };
 
 };
 

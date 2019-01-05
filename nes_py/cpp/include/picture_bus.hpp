@@ -10,7 +10,7 @@ class PictureBus {
 private:
     /// the VRAM on the picture bus
     std::vector<uint8_t> m_RAM;
-    //indices where they start in RAM vector
+    /// indexes where they start in RAM vector
     std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
     /// the palette for decoding RGB tuples
     std::vector<uint8_t> m_palette;

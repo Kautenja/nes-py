@@ -201,8 +201,8 @@ void PPU::cycle(PictureBus& m_bus) {
                 if (m_longSprites)
                     range = 16;
 
-                int j = 0;
-                for (std::size_t i = m_spriteDataAddress / 4; i < 64; ++i) {
+                uint8_t j = 0;
+                for (uint8_t i = m_spriteDataAddress / 4; i < 64; ++i) {
                     auto diff = (m_scanline - m_spriteMemory[i * 4]);
                     if (0 <= diff && diff < range) {
                         m_scanlineSprites.push_back(i);

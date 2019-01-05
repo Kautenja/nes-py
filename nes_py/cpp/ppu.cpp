@@ -21,7 +21,7 @@ void PPU::setInterruptCallback(std::function<void(void)> cb)
     m_vblankCallback = cb;
 }
 
-void PPU::step(PictureBus& m_bus)
+void PPU::cycle(PictureBus& m_bus)
 {
     switch (m_pipelineState)
     {

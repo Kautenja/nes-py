@@ -19,11 +19,11 @@ public:
     /// Initialize a new PPU
     PPU();
 
-    /// Perform a single step on the PPU
-    void step(PictureBus& bus);
+    /// Perform a single cycle on the PPU
+    void cycle(PictureBus& bus);
 
-    /// Perform the number of PPU steps that fit into a clock cycle (3)
-    inline void cpu_step(PictureBus& bus) { step(bus); step(bus); step(bus); };
+    /// Perform the number of PPU cycles that fit into a clock cycle (3)
+    inline void step(PictureBus& bus) { cycle(bus); cycle(bus); cycle(bus); };
 
     /// Reset the PPU
     void reset();

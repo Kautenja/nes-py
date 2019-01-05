@@ -110,7 +110,7 @@ void Emulator::step(unsigned char action) {
     controller1.write_buttons(action);
     // approximate a frame
     for (int i = 0; i < 29781; i++) {
-        ppu.cpu_step(picture_bus);
+        ppu.step(picture_bus);
         cpu.step(bus);
     }
 }

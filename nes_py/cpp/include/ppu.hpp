@@ -14,13 +14,21 @@ const int FrameEndScanline = 261;
 
 const int AttributeOffset = 0x3C0;
 
-class PPU
-{
+class PPU {
 public:
+    /// Initialize a new PPU
     PPU();
+
+    /// Perform a single step on the PPU
     void step(PictureBus& bus);
+
+    /// Perform the number of PPU steps that fit into a clock cycle (3)
+    inline void cpu_step(PictureBus& bus) { step(bus); step(bus); step(bus); };
+
+    /// Reset the PPU
     void reset();
 
+    /// Set the interrupt callback for the CPU
     void setInterruptCallback(std::function<void(void)> cb);
 
     void doDMA(const Byte* page_ptr);

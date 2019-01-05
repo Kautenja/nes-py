@@ -92,5 +92,5 @@ setup(
             'nes_py = nes_py._app.cli:main',
         ],
     },
-    cmdclass = {'build_ext': BuildExt},
+    cmdclass={'build_ext': BuildExt},
 )

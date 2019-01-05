@@ -1,7 +1,4 @@
-/// File: python_api.py
-/// Description: The API definition for ctypes in Python.
-///
-#include <cstdint>
+#include <stdint.h>
 #include <cstring>
 #include "emulator.hpp"
 

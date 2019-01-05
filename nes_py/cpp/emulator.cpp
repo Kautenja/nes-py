@@ -40,8 +40,8 @@ Emulator::Emulator(Emulator* emulator) {
     picture_bus = emulator->picture_bus;
     cartridge = emulator->cartridge;
     // mapper = emulator->mapper;
-    // bus.setMapper(mapper);
-    // picture_bus.setMapper(mapper);
+    // bus.set_mapper(mapper);
+    // picture_bus.set_mapper(mapper);
     // raise an error if IO callback setup fails
     if (
         !bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||

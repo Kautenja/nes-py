@@ -32,12 +32,6 @@ _LIB.GetNESWidth.restype = ctypes.c_uint
 # setup the argument and return types for GetNESHeight
 _LIB.GetNESHeight.argtypes = None
 _LIB.GetNESHeight.restype = ctypes.c_uint
-# setup the argument and return types for ReadMemory
-_LIB.ReadMemory.argtypes = [ctypes.c_void_p, ctypes.c_ushort]
-_LIB.ReadMemory.restype = ctypes.c_ubyte
-# setup the argument and return types for WriteMemory
-_LIB.WriteMemory.argtypes = [ctypes.c_void_p, ctypes.c_ushort, ctypes.c_ubyte]
-_LIB.WriteMemory.restype = None
 # setup the argument and return types for GetScreenBuffer
 _LIB.GetScreenBuffer.argtypes = [ctypes.c_void_p]
 _LIB.GetScreenBuffer.restype = ctypes.c_void_p
@@ -188,7 +182,9 @@ class NESEnv(gym.Env):
         buffer_ = ctypes.cast(address, ctypes.POINTER(RAM_VECTOR)).contents
         # create a NumPy array from the buffer
         self.ram = np.frombuffer(buffer_, dtype='uint8')
+        # TODO: handle endian-ness of machine?
 
+    # TODO: remove this
     def _read_mem(self, address):
         """
         Read a byte from the given memory address.
@@ -201,8 +197,8 @@ class NESEnv(gym.Env):
 
         """
         return self.ram[address]
-        # return _LIB.ReadMemory(self._env, address)
 
+    # TODO: remove this
     def _write_mem(self, address, value):
         """
         Write a byte to the given memory address.
@@ -216,7 +212,6 @@ class NESEnv(gym.Env):
 
         """
         self.ram[address] = value
-        # _LIB.WriteMemory(self._env, address, value)
 
     def _frame_advance(self, action):
         """

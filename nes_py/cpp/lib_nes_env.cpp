@@ -35,16 +35,6 @@ extern "C" {
         return NESVideoHeight;
     }
 
-    /// Read a byte from memory
-    external uint8_t ReadMemory(Emulator* emulator, uint16_t address) {
-        return emulator->read_memory(address);
-    }
-
-    /// Set a byte in memory
-    external void WriteMemory(Emulator* emulator, uint16_t address, uint8_t value) {
-        emulator->write_memory(address, value);
-    }
-
     /// Return the pointer to the screen buffer
     external uint32_t* GetScreenBuffer(Emulator* emulator) {
         return emulator->get_screen_buffer();

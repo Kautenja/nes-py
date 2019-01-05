@@ -71,21 +71,6 @@ public:
     ///
     uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
 
-    /// Read a byte from a 16-bit memory address
-    ///
-    /// @param address the address to read from memory
-    ///
-    /// @return the byte located at the given memory address
-    ///
-    uint8_t read_memory(uint16_t address) { return bus.read(address); };
-
-    /// Write a byte to a 16-bit memory address
-    ///
-    /// @param address the address to write to in memory
-    /// @param value the byte to write to the memory address
-    ///
-    void write_memory(uint16_t address, uint8_t value) { bus.write(address, value); };
-
     /// Load the ROM into the NES.
     void reset();
 

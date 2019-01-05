@@ -44,7 +44,7 @@ private:
     Controller controller1, controller2;
 
     /// Skip DMA cycle and perform a DMA copy.
-    void DMA(Byte page);
+    void DMA(uint8_t page);
 
 public:
     /// Initialize a new emulator with a path to a ROM file.

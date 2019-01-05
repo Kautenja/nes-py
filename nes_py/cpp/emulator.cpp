@@ -14,15 +14,15 @@ Emulator::Emulator(std::string rom_path) : cpu(), ppu(), rom_path(rom_path) {
     }
     // raise an error if IO callback setup fails
     if (
-        !bus.set_write_callback(PPUCTRL, [&](Byte b) {ppu.control(b);}) ||
-        !bus.set_write_callback(PPUMASK, [&](Byte b) {ppu.setMask(b);}) ||
-        !bus.set_write_callback(OAMADDR, [&](Byte b) {ppu.setOAMAddress(b);}) ||
-        !bus.set_write_callback(PPUADDR, [&](Byte b) {ppu.setDataAddress(b);}) ||
-        !bus.set_write_callback(PPUSCROL, [&](Byte b) {ppu.setScroll(b);}) ||
-        !bus.set_write_callback(PPUDATA, [&](Byte b) {ppu.setData(picture_bus, b);}) ||
-        !bus.set_write_callback(OAMDMA, [&](Byte b) {DMA(b);}) ||
-        !bus.set_write_callback(JOY1, [&](Byte b) {controller1.strobe(b); controller2.strobe(b);}) ||
-        !bus.set_write_callback(OAMDATA, [&](Byte b) {ppu.setOAMData(b);})
+        !bus.set_write_callback(PPUCTRL, [&](uint8_t b) {ppu.control(b);}) ||
+        !bus.set_write_callback(PPUMASK, [&](uint8_t b) {ppu.setMask(b);}) ||
+        !bus.set_write_callback(OAMADDR, [&](uint8_t b) {ppu.setOAMAddress(b);}) ||
+        !bus.set_write_callback(PPUADDR, [&](uint8_t b) {ppu.setDataAddress(b);}) ||
+        !bus.set_write_callback(PPUSCROL, [&](uint8_t b) {ppu.setScroll(b);}) ||
+        !bus.set_write_callback(PPUDATA, [&](uint8_t b) {ppu.setData(picture_bus, b);}) ||
+        !bus.set_write_callback(OAMDMA, [&](uint8_t b) {DMA(b);}) ||
+        !bus.set_write_callback(JOY1, [&](uint8_t b) {controller1.strobe(b); controller2.strobe(b);}) ||
+        !bus.set_write_callback(OAMDATA, [&](uint8_t b) {ppu.setOAMData(b);})
     ) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
     }
@@ -54,15 +54,15 @@ Emulator::Emulator(Emulator* emulator) {
     }
     // raise an error if IO callback setup fails
     if (
-        !bus.set_write_callback(PPUCTRL, [&](Byte b) {ppu.control(b);}) ||
-        !bus.set_write_callback(PPUMASK, [&](Byte b) {ppu.setMask(b);}) ||
-        !bus.set_write_callback(OAMADDR, [&](Byte b) {ppu.setOAMAddress(b);}) ||
-        !bus.set_write_callback(PPUADDR, [&](Byte b) {ppu.setDataAddress(b);}) ||
-        !bus.set_write_callback(PPUSCROL, [&](Byte b) {ppu.setScroll(b);}) ||
-        !bus.set_write_callback(PPUDATA, [&](Byte b) {ppu.setData(picture_bus, b);}) ||
-        !bus.set_write_callback(OAMDMA, [&](Byte b) {DMA(b);}) ||
-        !bus.set_write_callback(JOY1, [&](Byte b) {controller1.strobe(b); controller2.strobe(b);}) ||
-        !bus.set_write_callback(OAMDATA, [&](Byte b) {ppu.setOAMData(b);})
+        !bus.set_write_callback(PPUCTRL, [&](uint8_t b) {ppu.control(b);}) ||
+        !bus.set_write_callback(PPUMASK, [&](uint8_t b) {ppu.setMask(b);}) ||
+        !bus.set_write_callback(OAMADDR, [&](uint8_t b) {ppu.setOAMAddress(b);}) ||
+        !bus.set_write_callback(PPUADDR, [&](uint8_t b) {ppu.setDataAddress(b);}) ||
+        !bus.set_write_callback(PPUSCROL, [&](uint8_t b) {ppu.setScroll(b);}) ||
+        !bus.set_write_callback(PPUDATA, [&](uint8_t b) {ppu.setData(picture_bus, b);}) ||
+        !bus.set_write_callback(OAMDMA, [&](uint8_t b) {DMA(b);}) ||
+        !bus.set_write_callback(JOY1, [&](uint8_t b) {controller1.strobe(b); controller2.strobe(b);}) ||
+        !bus.set_write_callback(OAMDATA, [&](uint8_t b) {ppu.setOAMData(b);})
     ) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
     }
@@ -93,7 +93,7 @@ void Emulator::reset() {
     ppu.reset();
 }
 
-void Emulator::DMA(Byte page) {
+void Emulator::DMA(uint8_t page) {
     // skip the DMA cycles on the CPU
     cpu.skipDMACycles();
     // get the pointer to the next page from the bus

@@ -3,8 +3,6 @@
 #include "log.hpp"
 #include <iomanip>
 
-CPU::CPU() { }
-
 void CPU::reset(MainBus &m_bus)
 {
     reset(readAddress(m_bus, ResetVector));
@@ -31,7 +29,7 @@ void CPU::interrupt(MainBus &m_bus, InterruptType type)
     pushStack(m_bus, r_PC >> 8);
     pushStack(m_bus, r_PC);
 
-    Byte flags = f_N << 7 |
+    uint8_t flags = f_N << 7 |
                  f_V << 6 |
                    1 << 5 | //unused bit, supposed to be always 1
       (type == BRK_) << 4 | //B flag set if BRK
@@ -57,18 +55,7 @@ void CPU::interrupt(MainBus &m_bus, InterruptType type)
     m_skipCycles += 7;
 }
 
-void CPU::pushStack(MainBus &m_bus, Byte value)
-{
-    m_bus.write(0x100 | r_SP, value);
-    --r_SP; //Hardware stacks grow downward!
-}
-
-Byte CPU::pullStack(MainBus &m_bus)
-{
-    return m_bus.read(0x100 | ++r_SP);
-}
-
-void CPU::setZN(Byte value)
+void CPU::setZN(uint8_t value)
 {
     f_Z = !value;
     f_N = value & 0x80;
@@ -116,7 +103,7 @@ void CPU::step(MainBus &m_bus)
     //           << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((m_cycles - 1) * 3) % 341
     //           << std::endl;
 
-    Byte opcode = m_bus.read(r_PC++);
+    uint8_t opcode = m_bus.read(r_PC++);
 
     auto CycleLength = OperationCycles[opcode];
 
@@ -135,7 +122,7 @@ void CPU::step(MainBus &m_bus)
     }
 }
 
-bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
+bool CPU::executeImplied(MainBus &m_bus, uint8_t opcode)
 {
     switch (static_cast<OperationImplied>(opcode))
     {
@@ -147,8 +134,8 @@ bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
         case JSR:
             //Push address of next instruction - 1, thus r_PC + 1 instead of r_PC + 2
             //since r_PC and r_PC + 1 are address of subroutine
-            pushStack(m_bus, static_cast<Byte>((r_PC + 1) >> 8));
-            pushStack(m_bus, static_cast<Byte>(r_PC + 1));
+            pushStack(m_bus, static_cast<uint8_t>((r_PC + 1) >> 8));
+            pushStack(m_bus, static_cast<uint8_t>(r_PC + 1));
             r_PC = readAddress(m_bus, r_PC);
             break;
         case RTS:
@@ -158,7 +145,7 @@ bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
             break;
         case RTI:
             {
-                Byte flags = pullStack(m_bus);
+                uint8_t flags = pullStack(m_bus);
                 f_N = flags & 0x80;
                 f_V = flags & 0x40;
                 f_D = flags & 0x8;
@@ -185,7 +172,7 @@ bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
             break;
         case PHP:
             {
-                Byte flags = f_N << 7 |
+                uint8_t flags = f_N << 7 |
                              f_V << 6 |
                                1 << 5 | //supposed to always be 1
                                1 << 4 | //PHP pushes with the B flag as 1, no matter what
@@ -198,7 +185,7 @@ bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
             break;
         case PLP:
             {
-                Byte flags = pullStack(m_bus);
+                uint8_t flags = pullStack(m_bus);
                 f_N = flags & 0x80;
                 f_V = flags & 0x40;
                 f_D = flags & 0x8;
@@ -280,7 +267,7 @@ bool CPU::executeImplied(MainBus &m_bus, Byte opcode)
     return true;
 }
 
-bool CPU::executeBranch(MainBus &m_bus, Byte opcode)
+bool CPU::executeBranch(MainBus &m_bus, uint8_t opcode)
 {
     if ((opcode & BranchInstructionMask) == BranchInstructionMaskResult)
     {
@@ -322,7 +309,7 @@ bool CPU::executeBranch(MainBus &m_bus, Byte opcode)
     return false;
 }
 
-bool CPU::executeType1(MainBus &m_bus, Byte opcode)
+bool CPU::executeType1(MainBus &m_bus, uint8_t opcode)
 {
     if ((opcode & InstructionModeMask) == 0x1)
     {
@@ -333,7 +320,7 @@ bool CPU::executeType1(MainBus &m_bus, Byte opcode)
         {
             case IndexedIndirectX:
                 {
-                    Byte zero_addr = r_X + m_bus.read(r_PC++);
+                    uint8_t zero_addr = r_X + m_bus.read(r_PC++);
                     //Addresses wrap in zero page mode, thus pass through a mask
                     location = m_bus.read(zero_addr & 0xff) | m_bus.read((zero_addr + 1) & 0xff) << 8;
                 }
@@ -350,7 +337,7 @@ bool CPU::executeType1(MainBus &m_bus, Byte opcode)
                 break;
             case IndirectY:
                 {
-                    Byte zero_addr = m_bus.read(r_PC++);
+                    uint8_t zero_addr = m_bus.read(r_PC++);
                     location = m_bus.read(zero_addr & 0xff) | m_bus.read((zero_addr + 1) & 0xff) << 8;
                     if (op != STA)
                         setPageCrossed(location, location + r_Y);
@@ -395,14 +382,14 @@ bool CPU::executeType1(MainBus &m_bus, Byte opcode)
                 break;
             case ADC:
                 {
-                    Byte operand = m_bus.read(location);
+                    uint8_t operand = m_bus.read(location);
                     std::uint16_t sum = r_A + operand + f_C;
                     //Carry forward or UNSIGNED overflow
                     f_C = sum & 0x100;
                     //SIGNED overflow, would only happen if the sign of sum is
                     //different from BOTH the operands
                     f_V = (r_A ^ sum) & (operand ^ sum) & 0x80;
-                    r_A = static_cast<Byte>(sum);
+                    r_A = static_cast<uint8_t>(sum);
                     setZN(r_A);
                 }
                 break;
@@ -442,7 +429,7 @@ bool CPU::executeType1(MainBus &m_bus, Byte opcode)
     return false;
 }
 
-bool CPU::executeType2(MainBus &m_bus, Byte opcode)
+bool CPU::executeType2(MainBus &m_bus, uint8_t opcode)
 {
     if ((opcode & InstructionModeMask) == 2)
     {
@@ -467,7 +454,7 @@ bool CPU::executeType2(MainBus &m_bus, Byte opcode)
             case Indexed:
                 {
                     location = m_bus.read(r_PC++);
-                    Byte index;
+                    uint8_t index;
                     if (op == LDX || op == STX)
                         index = r_Y;
                     else
@@ -480,7 +467,7 @@ bool CPU::executeType2(MainBus &m_bus, Byte opcode)
                 {
                     location = readAddress(m_bus, r_PC);
                     r_PC += 2;
-                    Byte index;
+                    uint8_t index;
                     if (op == LDX || op == STX)
                         index = r_Y;
                     else
@@ -567,7 +554,7 @@ bool CPU::executeType2(MainBus &m_bus, Byte opcode)
     return false;
 }
 
-bool CPU::executeType0(MainBus &m_bus, Byte opcode)
+bool CPU::executeType0(MainBus &m_bus, uint8_t opcode)
 {
     if ((opcode & InstructionModeMask) == 0x0)
     {

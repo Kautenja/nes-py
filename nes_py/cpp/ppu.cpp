@@ -67,22 +67,22 @@ void PPU::step(PictureBus& m_bus)
                         //fetch tile
                         auto addr = 0x2000 | (m_dataAddress & 0x0FFF); //mask off fine y
                         //auto addr = 0x2000 + x / 8 + (y / 8) * (ScanlineVisibleDots / 8);
-                        Byte tile = read(m_bus, addr);
+                        Byte tile = m_bus.read(addr);
 
                         //fetch pattern
                         //Each pattern occupies 16 bytes, so multiply by 16
                         addr = (tile * 16) + ((m_dataAddress >> 12/*y % 8*/) & 0x7); //Add fine y
                         addr |= m_bgPage << 12; //set whether the pattern is in the high or low page
                         //Get the corresponding bit determined by (8 - x_fine) from the right
-                        bgColor = (read(m_bus, addr) >> (7 ^ x_fine)) & 1; //bit 0 of palette entry
-                        bgColor |= ((read(m_bus, addr + 8) >> (7 ^ x_fine)) & 1) << 1; //bit 1
+                        bgColor = (m_bus.read(addr) >> (7 ^ x_fine)) & 1; //bit 0 of palette entry
+                        bgColor |= ((m_bus.read(addr + 8) >> (7 ^ x_fine)) & 1) << 1; //bit 1
 
                         bgOpaque = bgColor; //flag used to calculate final pixel with the sprite pixel
 
                         //fetch attribute and calculate higher two bits of palette
                         addr = 0x23C0 | (m_dataAddress & 0x0C00) | ((m_dataAddress >> 4) & 0x38)
                                     | ((m_dataAddress >> 2) & 0x07);
-                        auto attribute = read(m_bus, addr);
+                        auto attribute = m_bus.read(addr);
                         int shift = ((m_dataAddress >> 4) & 4) | (m_dataAddress & 2);
                         //Extract and set the upper two bits for the color
                         bgColor |= ((attribute >> shift) & 0x3) << 2;
@@ -137,8 +137,8 @@ void PPU::step(PictureBus& m_bus)
                             addr |= (tile & 1) << 12; //Bank 0x1000 if bit-0 is high
                         }
 
-                        sprColor |= (read(m_bus, addr) >> (x_shift)) & 1; //bit 0 of palette entry
-                        sprColor |= ((read(m_bus, addr + 8) >> (x_shift)) & 1) << 1; //bit 1
+                        sprColor |= (m_bus.read(addr) >> (x_shift)) & 1; //bit 0 of palette entry
+                        sprColor |= ((m_bus.read(addr + 8) >> (x_shift)) & 1) << 1; //bit 1
 
                         if (!(sprOpaque = sprColor))
                         {
@@ -400,9 +400,4 @@ void PPU::setScroll(Byte scroll)
                          ((scroll & 0xf8) << 2);
         m_firstWrite = true;
     }
-}
-
-Byte PPU::read(PictureBus& m_bus, Address addr)
-{
-    return m_bus.read(addr);
 }

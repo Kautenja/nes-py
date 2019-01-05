@@ -45,7 +45,6 @@ public:
 private:
     Byte readOAM(Byte addr);
     void writeOAM(Byte addr, Byte value);
-    Byte read(PictureBus& m_bus, Address addr);
 
     std::function<void(void)> m_vblankCallback;
 

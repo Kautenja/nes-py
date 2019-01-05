@@ -68,13 +68,13 @@ void CPU::step(MainBus &m_bus) {
 
     m_skipCycles = 0;
 
-    int psw =    f_N << 7 |
-                 f_V << 6 |
-                   1 << 5 |
-                 f_D << 3 |
-                 f_I << 2 |
-                 f_Z << 1 |
-                 f_C;
+    // int psw =    f_N << 7 |
+    //              f_V << 6 |
+    //                1 << 5 |
+    //              f_D << 3 |
+    //              f_I << 2 |
+    //              f_Z << 1 |
+    //              f_C;
     // std::cout << std::hex << std::setfill('0') << std::uppercase
     //           << std::setw(4) << +r_PC
     //           << "  "

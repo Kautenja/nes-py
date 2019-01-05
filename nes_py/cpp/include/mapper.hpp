@@ -4,8 +4,7 @@
 #include <memory>
 #include <functional>
 
-enum NameTableMirroring
-{
+enum NameTableMirroring {
     Horizontal  = 0,
     Vertical    = 1,
     FourScreen  = 8,
@@ -13,12 +12,9 @@ enum NameTableMirroring
     OneScreenHigher,
 };
 
-
-class Mapper
-{
+class Mapper {
 public:
-    enum Type
-    {
+    enum Type {
         NROM  = 0,
         SxROM = 1,
         UxROM = 2,
@@ -35,10 +31,7 @@ public:
 
     virtual NameTableMirroring getNameTableMirroring();
 
-    bool inline hasExtendedRAM()
-    {
-        return m_cartridge.hasExtendedRAM();
-    }
+    bool hasExtendedRAM();
 
     static Mapper* createMapper (
         Type mapper_t,

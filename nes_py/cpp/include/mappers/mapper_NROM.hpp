@@ -25,7 +25,7 @@ public:
     /// @param other the other mapper to clone data from
     /// @param cart the new cartridge to associate with
     ///
-    MapperNROM(const MapperNROM other, Cartridge& cart);
+    MapperNROM(const MapperNROM& other, Cartridge& cart);
 
     /// Create a clone of this mapper.
     ///

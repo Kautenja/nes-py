@@ -16,12 +16,11 @@ MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart, Mapper::NROM) {
         m_usesCharacterRAM = false;
 }
 
-MapperNROM::MapperNROM(const MapperNROM other, Cartridge& cart) :
+MapperNROM::MapperNROM(const MapperNROM& other, Cartridge& cart) :
     Mapper(cart, Mapper::NROM),
     m_oneBank(other.m_oneBank),
     m_usesCharacterRAM(other.m_usesCharacterRAM),
     m_characterRAM(other.m_characterRAM) { }
-
 
 Mapper* MapperNROM::clone(Cartridge& cartridge) const {
     return new MapperNROM(*this, cartridge);

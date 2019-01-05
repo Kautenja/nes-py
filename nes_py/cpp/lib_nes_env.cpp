@@ -50,6 +50,11 @@ extern "C" {
         return emulator->get_screen_buffer();
     }
 
+    /// Return the pointer to the memory buffer
+    external uint8_t* GetMemoryBuffer(Emulator* emulator) {
+        return emulator->get_memory_buffer();
+    }
+
     /// Reset the emulator
     external void Reset(Emulator* emulator) {
         emulator->reset();

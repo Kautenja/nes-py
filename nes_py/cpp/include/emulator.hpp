@@ -65,6 +65,12 @@ public:
     ///
     uint32_t* get_screen_buffer() { return ppu.get_screen_buffer(); };
 
+    /// Return a 8-bit pointer to the RAM buffer's first address.
+    ///
+    /// @return a 8-bit pointer to the RAM buffer's first address
+    ///
+    uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
+
     /// Read a byte from a 16-bit memory address
     ///
     /// @param address the address to read from memory

@@ -14,14 +14,13 @@ private:
     bool executeType1(MainBus &m_bus, uint8_t opcode);
     bool executeType2(MainBus &m_bus, uint8_t opcode);
 
-    Address readAddress(MainBus &m_bus, Address addr);
-
+    Address readAddress(MainBus &m_bus, Address addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
     void pushStack(MainBus &m_bus, uint8_t value) {  m_bus.write(0x100 | r_SP--, value); };
     uint8_t pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
 
     //If a and b are in different pages, increases the m_SkipCycles by inc
     void setPageCrossed(Address a, Address b, int inc = 1);
-    void setZN(uint8_t value);
+    void setZN(uint8_t value) { f_Z = !value; f_N = value & 0x80; };
 
     int m_skipCycles;
     int m_cycles;

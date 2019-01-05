@@ -20,7 +20,7 @@ private:
     /// whether this cartridge uses extended RAM
     bool m_extendedRAM;
     /// whether this cartridge has CHR RAM
-    bool m_chrRAM;
+    // bool m_chrRAM;
 
 public:
     /// Initialize a new cartridge

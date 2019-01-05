@@ -1,6 +1,21 @@
 """The setup script for installing and distributing the nes-py package."""
+from distutils.command.build_ext import build_ext
 from glob import glob
 from setuptools import setup, find_packages, Extension
+
+
+class BuildExt(build_ext):
+    """
+    A build extension to omit the '-Wstrict-prototypes' flag.
+
+    Reference:
+        https://stackoverflow.com/questions/8106258/cc1plus-warning-command-line-option-wstrict-prototypes-is-valid-for-ada-c-o
+    """
+
+    def build_extensions(self):
+        """Build the extensions."""
+        self.compiler.compiler_so.remove("-Wstrict-prototypes")
+        build_ext.build_extensions(self)
 
 
 # read the contents from the README file
@@ -32,29 +47,6 @@ LIB_NES_ENV = Extension(LIB_NAME,
     include_dirs=INCLUDE_DIRS,
     extra_compile_args=EXTRA_COMPILE_ARGS,
 )
-
-
-
-from distutils.command.build_ext import build_ext
-from distutils.sysconfig import customize_compiler
-
-class BuildExt(build_ext):
-    """
-    A build extension to omit the '-Wstrict-prototypes' flag.
-
-    Reference:
-        https://stackoverflow.com/questions/8106258/cc1plus-warning-command-line-option-wstrict-prototypes-is-valid-for-ada-c-o
-    """
-
-    def build_extensions(self):
-        """Build the extensions."""
-        customize_compiler(self.compiler)
-        try:
-            # remove the '-Wstrict-prototypes' flag from the compiler
-            self.compiler.compiler_so.remove("-Wstrict-prototypes")
-        except (AttributeError, ValueError):
-            pass
-        build_ext.build_extensions(self)
 
 
 setup(

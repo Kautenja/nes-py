@@ -30,16 +30,16 @@ Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
     ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
 }
 
-Emulator::Emulator(Emulator* emulator) {
-    rom_path = emulator->rom_path;
-    controller1 = emulator->controller1;
-    controller2 = emulator->controller2;
-    cpu = emulator->cpu;
-    ppu = emulator->ppu;
-    bus = emulator->bus;
-    picture_bus = emulator->picture_bus;
-    cartridge = emulator->cartridge;
-    mapper = emulator->mapper->clone(cartridge);
+Emulator::Emulator(const Emulator &emulator) :
+    rom_path(emulator.rom_path),
+    controller1(emulator.controller1),
+    controller2(emulator.controller2),
+    cpu(emulator.cpu),
+    ppu(emulator.ppu),
+    bus(emulator.bus),
+    picture_bus(emulator.picture_bus),
+    cartridge(emulator.cartridge),
+    mapper(emulator.mapper->clone(cartridge)) {
     bus.set_mapper(mapper);
     picture_bus.set_mapper(mapper);
     // raise an error if IO callback setup fails

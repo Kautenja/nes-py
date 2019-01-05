@@ -47,7 +47,7 @@ extern "C" {
     EXP void Close(Emulator* emu) { delete emu; }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP Emulator* Clone(Emulator* emu) { return new Emulator(emu); }
+    EXP Emulator* Clone(Emulator* emu) { return new Emulator(*emu); }
 
 }
 

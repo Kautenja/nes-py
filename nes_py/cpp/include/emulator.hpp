@@ -66,7 +66,7 @@ public:
     ///
     /// @param emulator the emulator to copy the state from
     ///
-    Emulator(Emulator* emulator);
+    Emulator(const Emulator &emulator);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///

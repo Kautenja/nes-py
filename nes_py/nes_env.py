@@ -23,21 +23,21 @@ except IndexError:
     raise OSError('missing static lib_nes_env*.so library!')
 
 
-# setup the argument and return types for Initialize
-_LIB.Initialize.argtypes = [ctypes.c_wchar_p]
-_LIB.Initialize.restype = ctypes.c_void_p
 # setup the argument and return types for GetNESWidth
 _LIB.GetNESWidth.argtypes = None
 _LIB.GetNESWidth.restype = ctypes.c_uint
 # setup the argument and return types for GetNESHeight
 _LIB.GetNESHeight.argtypes = None
 _LIB.GetNESHeight.restype = ctypes.c_uint
-# setup the argument and return types for GetScreenBuffer
-_LIB.GetScreenBuffer.argtypes = [ctypes.c_void_p]
-_LIB.GetScreenBuffer.restype = ctypes.c_void_p
+# setup the argument and return types for Initialize
+_LIB.Initialize.argtypes = [ctypes.c_wchar_p]
+_LIB.Initialize.restype = ctypes.c_void_p
+# setup the argument and return types for Screen
+_LIB.Screen.argtypes = [ctypes.c_void_p]
+_LIB.Screen.restype = ctypes.c_void_p
 # setup the argument and return types for GetMemoryBuffer
-_LIB.GetMemoryBuffer.argtypes = [ctypes.c_void_p]
-_LIB.GetMemoryBuffer.restype = ctypes.c_void_p
+_LIB.Memory.argtypes = [ctypes.c_void_p]
+_LIB.Memory.restype = ctypes.c_void_p
 # setup the argument and return types for Reset
 _LIB.Reset.argtypes = [ctypes.c_void_p]
 _LIB.Reset.restype = None
@@ -158,7 +158,7 @@ class NESEnv(gym.Env):
     def _setup_screen(self):
         """Setup the screen buffer from the C++ code."""
         # get the address of the screen
-        address = _LIB.GetScreenBuffer(self._env)
+        address = _LIB.Screen(self._env)
         # create a buffer from the contents of the address location
         buffer_ = ctypes.cast(address, ctypes.POINTER(SCREEN_TENSOR)).contents
         # create a NumPy array from the buffer
@@ -177,7 +177,7 @@ class NESEnv(gym.Env):
     def _setup_ram(self):
         """Setup the RAM buffer from the C++ code."""
         # get the address of the RAM
-        address = _LIB.GetMemoryBuffer(self._env)
+        address = _LIB.Memory(self._env)
         # create a buffer from the contents of the address location
         buffer_ = ctypes.cast(address, ctypes.POINTER(RAM_VECTOR)).contents
         # create a NumPy array from the buffer

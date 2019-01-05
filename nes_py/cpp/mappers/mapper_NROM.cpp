@@ -23,7 +23,7 @@ MapperNROM::MapperNROM(Cartridge &cart) :
         m_usesCharacterRAM = false;
 }
 
-Byte MapperNROM::readPRG(Address addr)
+uint8_t MapperNROM::readPRG(Address addr)
 {
     if (!m_oneBank)
         return m_cartridge.getROM()[addr - 0x8000];
@@ -31,12 +31,12 @@ Byte MapperNROM::readPRG(Address addr)
         return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-void MapperNROM::writePRG(Address addr, Byte value)
+void MapperNROM::writePRG(Address addr, uint8_t value)
 {
     LOG(InfoVerbose) << "ROM memory write attempt at " << +addr << " to set " << +value << std::endl;
 }
 
-const Byte* MapperNROM::getPagePtr(Address addr)
+const uint8_t* MapperNROM::getPagePtr(Address addr)
 {
     if (!m_oneBank)
         return &m_cartridge.getROM()[addr - 0x8000];
@@ -44,7 +44,7 @@ const Byte* MapperNROM::getPagePtr(Address addr)
         return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-Byte MapperNROM::readCHR(Address addr)
+uint8_t MapperNROM::readCHR(Address addr)
 {
     if (m_usesCharacterRAM)
         return m_characterRAM[addr];
@@ -52,7 +52,7 @@ Byte MapperNROM::readCHR(Address addr)
         return m_cartridge.getVROM()[addr];
 }
 
-void MapperNROM::writeCHR(Address addr, Byte value)
+void MapperNROM::writeCHR(Address addr, uint8_t value)
 {
     if (m_usesCharacterRAM)
         m_characterRAM[addr] = value;

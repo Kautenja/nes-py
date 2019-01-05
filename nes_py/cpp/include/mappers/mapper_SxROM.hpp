@@ -10,25 +10,25 @@ private:
     bool m_usesCharacterRAM;
     int m_modeCHR;
     int m_modePRG;
-    Byte m_tempRegister;
+    uint8_t m_tempRegister;
     int m_writeCounter;
-    Byte m_regPRG;
-    Byte m_regCHR0;
-    Byte m_regCHR1;
-    const Byte* m_firstBankPRG;
-    const Byte* m_secondBankPRG;
-    const Byte* m_firstBankCHR;
-    const Byte* m_secondBankCHR;
-    std::vector<Byte> m_characterRAM;
+    uint8_t m_regPRG;
+    uint8_t m_regCHR0;
+    uint8_t m_regCHR1;
+    const uint8_t* m_firstBankPRG;
+    const uint8_t* m_secondBankPRG;
+    const uint8_t* m_firstBankCHR;
+    const uint8_t* m_secondBankCHR;
+    std::vector<uint8_t> m_characterRAM;
     void calculatePRGPointers();
 
 public:
     MapperSxROM(Cartridge& cart, std::function<void(void)> mirroring_cb);
-    void writePRG (Address addr, Byte value);
-    Byte readPRG (Address addr);
-    const Byte* getPagePtr(Address addr);
-    Byte readCHR (Address addr);
-    void writeCHR (Address addr, Byte value);
+    void writePRG (Address addr, uint8_t value);
+    uint8_t readPRG (Address addr);
+    const uint8_t* getPagePtr(Address addr);
+    uint8_t readCHR (Address addr);
+    void writeCHR (Address addr, uint8_t value);
     NameTableMirroring getNameTableMirroring();
 
 };

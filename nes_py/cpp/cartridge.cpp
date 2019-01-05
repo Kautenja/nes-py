@@ -10,22 +10,22 @@ Cartridge::Cartridge() :
 {
 
 }
-const std::vector<Byte>& Cartridge::getROM()
+const std::vector<uint8_t>& Cartridge::getROM()
 {
     return m_PRG_ROM;
 }
 
-const std::vector<Byte>& Cartridge::getVROM()
+const std::vector<uint8_t>& Cartridge::getVROM()
 {
     return m_CHR_ROM;
 }
 
-Byte Cartridge::getMapper()
+uint8_t Cartridge::getMapper()
 {
     return m_mapperNumber;
 }
 
-Byte Cartridge::getNameTableMirroring()
+uint8_t Cartridge::getNameTableMirroring()
 {
     return m_nameTableMirroring;
 }
@@ -44,7 +44,7 @@ bool Cartridge::loadFromFile(std::string path)
         return false;
     }
 
-    std::vector<Byte> header;
+    std::vector<uint8_t> header;
     LOG(Info) << "Reading ROM from path: " << path << std::endl;
 
     //Header
@@ -65,7 +65,7 @@ bool Cartridge::loadFromFile(std::string path)
 
     LOG(Info) << "Reading header, it dictates: \n";
 
-    Byte banks = header[4];
+    uint8_t banks = header[4];
     LOG(Info) << "16KB PRG-ROM Banks: " << +banks << std::endl;
     if (!banks)
     {
@@ -73,7 +73,7 @@ bool Cartridge::loadFromFile(std::string path)
         return false;
     }
 
-    Byte vbanks = header[5];
+    uint8_t vbanks = header[5];
     LOG(Info) << "8KB CHR-ROM Banks: " << +vbanks << std::endl;
 
     m_nameTableMirroring = header[6] & 0xB;

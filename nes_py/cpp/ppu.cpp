@@ -44,7 +44,7 @@ void PPU::cycle(PictureBus& m_bus) {
             break;
         case Render:
             if (m_cycle > 0 && m_cycle <= ScanlineVisibleDots) {
-                Byte bgColor = 0, sprColor = 0;
+                uint8_t bgColor = 0, sprColor = 0;
                 bool bgOpaque = false, sprOpaque = true;
                 bool spriteForeground = false;
 
@@ -58,7 +58,7 @@ void PPU::cycle(PictureBus& m_bus) {
                         // mask off fine y
                         auto addr = 0x2000 | (m_dataAddress & 0x0FFF);
                         //auto addr = 0x2000 + x / 8 + (y / 8) * (ScanlineVisibleDots / 8);
-                        Byte tile = m_bus.read(addr);
+                        uint8_t tile = m_bus.read(addr);
 
                         //fetch pattern
                         //Each pattern occupies 16 bytes, so multiply by 16
@@ -100,12 +100,12 @@ void PPU::cycle(PictureBus& m_bus) {
 
                 if (m_showSprites && (!m_hideEdgeSprites || x >= 8)) {
                     for (auto i : m_scanlineSprites) {
-                        Byte spr_x =     m_spriteMemory[i * 4 + 3];
+                        uint8_t spr_x =     m_spriteMemory[i * 4 + 3];
 
                         if (0 > x - spr_x || x - spr_x >= 8)
                             continue;
 
-                        Byte spr_y     = m_spriteMemory[i * 4 + 0] + 1,
+                        uint8_t spr_y     = m_spriteMemory[i * 4 + 0] + 1,
                              tile      = m_spriteMemory[i * 4 + 1],
                              attribute = m_spriteMemory[i * 4 + 2];
 
@@ -153,7 +153,7 @@ void PPU::cycle(PictureBus& m_bus) {
                     }
                 }
 
-                Byte paletteAddr = bgColor;
+                uint8_t paletteAddr = bgColor;
 
                 if ( (!bgOpaque && sprOpaque) || (bgOpaque && sprOpaque && spriteForeground) )
                     paletteAddr = sprColor;
@@ -256,14 +256,14 @@ void PPU::cycle(PictureBus& m_bus) {
     ++m_cycle;
 }
 
-void PPU::doDMA(const Byte* page_ptr) {
+void PPU::doDMA(const uint8_t* page_ptr) {
     std::memcpy(m_spriteMemory.data() + m_spriteDataAddress, page_ptr, 256 - m_spriteDataAddress);
     if (m_spriteDataAddress)
         std::memcpy(m_spriteMemory.data(), page_ptr + (256 - m_spriteDataAddress), m_spriteDataAddress);
     // std::memcpy(m_spriteMemory.data(), page_ptr, 256);
 }
 
-void PPU::control(Byte ctrl) {
+void PPU::control(uint8_t ctrl) {
     m_generateInterrupt = ctrl & 0x80;
     m_longSprites = ctrl & 0x20;
     m_bgPage = static_cast<CharacterPage>(!!(ctrl & 0x10));
@@ -279,7 +279,7 @@ void PPU::control(Byte ctrl) {
     m_tempAddress |= (ctrl & 0x3) << 10;     //Set according to ctrl bits
 }
 
-void PPU::setMask(Byte mask) {
+void PPU::setMask(uint8_t mask) {
     m_greyscaleMode = mask & 0x1;
     m_hideEdgeBackground = !(mask & 0x2);
     m_hideEdgeSprites = !(mask & 0x4);
@@ -287,15 +287,15 @@ void PPU::setMask(Byte mask) {
     m_showSprites = mask & 0x10;
 }
 
-Byte PPU::getStatus() {
-    Byte status = m_sprZeroHit << 6 | m_vblank << 7;
+uint8_t PPU::getStatus() {
+    uint8_t status = m_sprZeroHit << 6 | m_vblank << 7;
     //m_dataAddress = 0;
     m_vblank = false;
     m_firstWrite = true;
     return status;
 }
 
-void PPU::setDataAddress(Byte addr) {
+void PPU::setDataAddress(uint8_t addr) {
     //m_dataAddress = ((m_dataAddress << 8) & 0xff00) | addr;
     if (m_firstWrite) {
         //Unset the upper byte
@@ -312,7 +312,7 @@ void PPU::setDataAddress(Byte addr) {
     }
 }
 
-Byte PPU::getData(PictureBus& m_bus) {
+uint8_t PPU::getData(PictureBus& m_bus) {
     auto data = m_bus.read(m_dataAddress);
     m_dataAddress += m_dataAddrIncrement;
 
@@ -324,12 +324,12 @@ Byte PPU::getData(PictureBus& m_bus) {
     return data;
 }
 
-void PPU::setData(PictureBus& m_bus, Byte data) {
+void PPU::setData(PictureBus& m_bus, uint8_t data) {
     m_bus.write(m_dataAddress, data);
     m_dataAddress += m_dataAddrIncrement;
 }
 
-void PPU::setScroll(Byte scroll) {
+void PPU::setScroll(uint8_t scroll) {
     if (m_firstWrite) {
         m_tempAddress &= ~0x1f;
         m_tempAddress |= (scroll >> 3) & 0x1f;

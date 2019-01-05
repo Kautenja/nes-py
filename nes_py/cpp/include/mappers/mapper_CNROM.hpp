@@ -10,11 +10,11 @@ private:
 
 public:
     MapperCNROM(Cartridge& cart);
-    void writePRG (Address addr, Byte value);
-    Byte readPRG (Address addr);
-    const Byte* getPagePtr(Address addr);
-    Byte readCHR (Address addr);
-    void writeCHR (Address addr, Byte value);
+    void writePRG (Address addr, uint8_t value);
+    uint8_t readPRG (Address addr);
+    const uint8_t* getPagePtr(Address addr);
+    uint8_t readCHR (Address addr);
+    void writeCHR (Address addr, uint8_t value);
 
 };
 

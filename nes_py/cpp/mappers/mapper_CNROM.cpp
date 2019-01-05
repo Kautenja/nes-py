@@ -15,7 +15,7 @@ MapperCNROM::MapperCNROM(Cartridge &cart) :
     }
 }
 
-Byte MapperCNROM::readPRG(Address addr)
+uint8_t MapperCNROM::readPRG(Address addr)
 {
     if (!m_oneBank)
         return m_cartridge.getROM()[addr - 0x8000];
@@ -23,12 +23,12 @@ Byte MapperCNROM::readPRG(Address addr)
         return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-void MapperCNROM::writePRG(Address addr, Byte value)
+void MapperCNROM::writePRG(Address addr, uint8_t value)
 {
     m_selectCHR = value & 0x3;
 }
 
-const Byte* MapperCNROM::getPagePtr(Address addr)
+const uint8_t* MapperCNROM::getPagePtr(Address addr)
 {
     if (!m_oneBank)
         return &m_cartridge.getROM()[addr - 0x8000];
@@ -36,12 +36,12 @@ const Byte* MapperCNROM::getPagePtr(Address addr)
         return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-Byte MapperCNROM::readCHR(Address addr)
+uint8_t MapperCNROM::readCHR(Address addr)
 {
     return m_cartridge.getVROM()[addr | (m_selectCHR << 13)];
 }
 
-void MapperCNROM::writeCHR(Address addr, Byte value)
+void MapperCNROM::writeCHR(Address addr, uint8_t value)
 {
     LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
 }

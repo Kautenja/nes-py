@@ -31,34 +31,34 @@ public:
     /// Set the interrupt callback for the CPU
     void setInterruptCallback(std::function<void(void)> cb);
 
-    void doDMA(const Byte* page_ptr);
+    void doDMA(const uint8_t* page_ptr);
 
     //Callbacks mapped to CPU address space
     //Addresses written to by the program
-    void control(Byte ctrl);
-    void setMask(Byte mask);
-    void setOAMAddress(Byte addr) { m_spriteDataAddress = addr; };
-    void setDataAddress(Byte addr);
-    void setScroll(Byte scroll);
-    void setData(PictureBus& m_bus, Byte data);
+    void control(uint8_t ctrl);
+    void setMask(uint8_t mask);
+    void setOAMAddress(uint8_t addr) { m_spriteDataAddress = addr; };
+    void setDataAddress(uint8_t addr);
+    void setScroll(uint8_t scroll);
+    void setData(PictureBus& m_bus, uint8_t data);
     //Read by the program
-    Byte getStatus();
-    Byte getData(PictureBus& m_bus);
-    Byte getOAMData() { return readOAM(m_spriteDataAddress); };
-    void setOAMData(Byte value) { writeOAM(m_spriteDataAddress++, value); };
+    uint8_t getStatus();
+    uint8_t getData(PictureBus& m_bus);
+    uint8_t getOAMData() { return readOAM(m_spriteDataAddress); };
+    void setOAMData(uint8_t value) { writeOAM(m_spriteDataAddress++, value); };
 
     /// Return a pointer to the screen buffer.
     std::uint32_t* get_screen_buffer() { return *screen_buffer; };
 
 private:
-    Byte readOAM(Byte addr) { return m_spriteMemory[addr]; };
-    void writeOAM(Byte addr, Byte value) { m_spriteMemory[addr] = value; };
+    uint8_t readOAM(uint8_t addr) { return m_spriteMemory[addr]; };
+    void writeOAM(uint8_t addr, uint8_t value) { m_spriteMemory[addr] = value; };
 
     std::function<void(void)> m_vblankCallback;
 
-    std::vector<Byte> m_spriteMemory;
+    std::vector<uint8_t> m_spriteMemory;
 
-    std::vector<Byte> m_scanlineSprites;
+    std::vector<uint8_t> m_scanlineSprites;
 
     enum State
     {
@@ -77,11 +77,11 @@ private:
     //Registers
     Address m_dataAddress;
     Address m_tempAddress;
-    Byte m_fineXScroll;
+    uint8_t m_fineXScroll;
     bool m_firstWrite;
-    Byte m_dataBuffer;
+    uint8_t m_dataBuffer;
 
-    Byte m_spriteDataAddress;
+    uint8_t m_spriteDataAddress;
 
     //Setup flags and variables
     bool m_longSprites;

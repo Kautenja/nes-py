@@ -48,15 +48,18 @@ void Emulator::loadRom() {
     if (!cartridge.loadFromFile(rom_path))
         return;
 
-    mapper = Mapper::createMapper(static_cast<Mapper::Type>(cartridge.getMapper()),
-                                    cartridge,
-                                    [&](){ picture_bus.updateMirroring(); });
+    mapper = Mapper::createMapper(
+        static_cast<Mapper::Type>(cartridge.getMapper()),
+        cartridge,
+        [&](){ picture_bus.updateMirroring(); }
+    );
+
     if (!mapper) {
         LOG(Error) << "Creating Mapper failed. Probably unsupported." << std::endl;
         return;
     }
 
-    if (!bus.setMapper(mapper.get()) || !picture_bus.setMapper(mapper.get()))
+    if (!bus.setMapper(mapper) || !picture_bus.setMapper(mapper))
         return;
 
     cpu.reset(bus);

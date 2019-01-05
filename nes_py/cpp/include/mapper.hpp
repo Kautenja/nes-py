@@ -40,7 +40,11 @@ public:
         return m_cartridge.hasExtendedRAM();
     }
 
-    static std::unique_ptr<Mapper> createMapper (Type mapper_t, Cartridge& cart, std::function<void(void)> mirroring_cb);
+    static Mapper* createMapper (
+        Type mapper_t,
+        Cartridge& cart,
+        std::function<void(void)> mirroring_cb
+    );
 
 protected:
     Cartridge& m_cartridge;

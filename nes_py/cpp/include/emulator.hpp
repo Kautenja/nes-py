@@ -37,7 +37,7 @@ private:
     Cartridge cartridge;
 
     /// a pointer to the mapper on the cartridge
-    std::unique_ptr<Mapper> mapper;
+    Mapper* mapper;
 
     /// the 2 controllers on the emulator
     Controller controller1, controller2;

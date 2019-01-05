@@ -29,7 +29,7 @@ public:
     void reset();
 
     /// Set the interrupt callback for the CPU
-    void setInterruptCallback(std::function<void(void)> cb);
+    void setInterruptCallback(std::function<void(void)> cb) { m_vblankCallback = cb; };
 
     void doDMA(const uint8_t* page_ptr);
 

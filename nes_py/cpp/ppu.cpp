@@ -15,10 +15,6 @@ void PPU::reset() {
     m_scanlineSprites.resize(0);
 }
 
-void PPU::setInterruptCallback(std::function<void(void)> cb) {
-    m_vblankCallback = cb;
-}
-
 void PPU::cycle(PictureBus& m_bus) {
     switch (m_pipelineState) {
         case PreRender:

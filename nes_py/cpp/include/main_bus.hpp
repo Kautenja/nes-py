@@ -1,14 +1,13 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef MAIN_BUS_H
+#define MAIN_BUS_H
 #include <vector>
 #include <map>
 #include <functional>
-#include <memory>
 #include "cartridge.hpp"
 #include "mapper.hpp"
 
-enum IORegisters
-{
+/// The IO registers on the main bus
+enum IORegisters {
     PPUCTRL = 0x2000,
     PPUMASK,
     PPUSTATUS,
@@ -22,23 +21,54 @@ enum IORegisters
     JOY2 = 0x4017,
 };
 
-class MainBus
-{
-public:
-    MainBus();
-    Byte read(Address addr);
-    void write(Address addr, Byte value);
-    bool setMapper(Mapper* mapper);
-    bool setWriteCallback(IORegisters reg, std::function<void(Byte)> callback);
-    bool setReadCallback(IORegisters reg, std::function<Byte(void)> callback);
-    const Byte* getPagePtr(Byte page);
+/// The main bus for data to travel along the NES hardware
+class MainBus {
 private:
-    std::vector<Byte> m_RAM;
-    std::vector<Byte> m_extRAM;
+    /// The RAM on the main bus
+    std::vector<uint8_t> m_RAM;
+    /// The extended RAM (if the mapper has extended RAM)
+    std::vector<uint8_t> m_extRAM;
+    /// a pointer to the mapper on the cartridge
     Mapper* m_mapper;
+    /// a map of IO registers to callback methods for writes
+    std::map<IORegisters, std::function<void(uint8_t)>> m_writeCallbacks;
+    /// a map of IO registers to callback methods for reads
+    std::map<IORegisters, std::function<uint8_t(void)>> m_readCallbacks;
 
-    std::map<IORegisters, std::function<void(Byte)>> m_writeCallbacks;
-    std::map<IORegisters, std::function<Byte(void)>> m_readCallbacks;
+public:
+    /// Initialize a new main bus.
+    MainBus() : m_RAM(0x800, 0), m_mapper(nullptr) { };
+
+    /// Read a byte from an address on the RAM.
+    ///
+    /// @param addr the 16-bit address of the byte to read in the RAM
+    ///
+    /// @return the byte located at the given address
+    ///
+    uint8_t read(Address addr);
+
+    /// Write a byte to an address in the RAM.
+    ///
+    /// @param addr the 16-bit address to write the byte to in RAM
+    /// @param value the byte to write to the given address
+    ///
+    void write(Address addr, uint8_t value);
+
+    /// Set the mapper pointer to a new value.
+    ///
+    /// @param mapper the new mapper pointer for the bus to use
+    ///
+    bool setMapper(Mapper* mapper);
+
+    /// Set a callback for when writes occur.
+    bool setWriteCallback(IORegisters reg, std::function<void(uint8_t)> callback);
+
+    /// Set a callback for when reads occur.
+    bool setReadCallback(IORegisters reg, std::function<uint8_t(void)> callback);
+
+    /// Return a pointer to the page in memory.
+    const uint8_t* getPagePtr(uint8_t page);
+
 };
 
-#endif // MEMORY_H
+#endif // MAIN_BUS_H

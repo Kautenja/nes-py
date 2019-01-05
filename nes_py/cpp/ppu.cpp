@@ -5,7 +5,12 @@ void PPU::reset() {
     m_longSprites = m_generateInterrupt = m_greyscaleMode = m_vblank = false;
     m_showBackground = m_showSprites = m_evenFrame = m_firstWrite = true;
     m_bgPage = m_sprPage = Low;
-    m_dataAddress = m_cycle = m_scanline = m_spriteDataAddress = m_fineXScroll = m_tempAddress = 0;
+    m_dataAddress = 0;
+    m_cycle = 0;
+    m_scanline = 0;
+    m_spriteDataAddress = 0;
+    m_fineXScroll = 0;
+    m_tempAddress = 0;
     //m_baseNameTable = 0x2000;
     m_dataAddrIncrement = 1;
     m_pipelineState = PreRender;
@@ -112,7 +117,7 @@ void PPU::cycle(PictureBus& m_bus) {
                         if ((attribute & 0x80) != 0) //IF flipping vertically
                             y_offset ^= (length - 1);
 
-                        Address addr = 0;
+                        uint16_t addr = 0;
 
                         if (!m_longSprites) {
                             addr = tile * 16 + y_offset;

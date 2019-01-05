@@ -33,11 +33,40 @@ public:
     ///
     Mapper* clone(Cartridge& cartridge) const;
 
-    void writePRG (uint16_t addr, uint8_t value);
+    /// Read a byte from the PRG RAM.
+    ///
+    /// @param addr the 16-bit address of the byte to read
+    /// @return the byte located at the given address in PRG RAM
+    ///
     uint8_t readPRG (uint16_t addr);
-    const uint8_t* getPagePtr(uint16_t addr);
+
+    /// Write a byte to an address in the PRG RAM.
+    ///
+    /// @param addr the 16-bit address to write to
+    /// @param value the byte to write to the given address
+    ///
+    void writePRG (uint16_t addr, uint8_t value);
+
+    /// Read a byte from the CHR RAM.
+    ///
+    /// @param addr the 16-bit address of the byte to read
+    /// @return the byte located at the given address in CHR RAM
+    ///
     uint8_t readCHR (uint16_t addr);
+
+    /// Write a byte to an address in the CHR RAM.
+    ///
+    /// @param addr the 16-bit address to write to
+    /// @param value the byte to write to the given address
+    ///
     void writeCHR (uint16_t addr, uint8_t value);
+
+    /// Return the page pointer for the given address.
+    ///
+    /// @param addr the address of the page pointer to get
+    /// @return the page pointer at the given address
+    ///
+    const uint8_t* getPagePtr(uint16_t addr);
 
 };
 

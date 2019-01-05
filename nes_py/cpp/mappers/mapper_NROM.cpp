@@ -38,13 +38,6 @@ void MapperNROM::writePRG(uint16_t addr, uint8_t value) {
     LOG(InfoVerbose) << "ROM memory write attempt at " << +addr << " to set " << +value << std::endl;
 }
 
-const uint8_t* MapperNROM::getPagePtr(uint16_t addr) {
-    if (!m_oneBank)
-        return &m_cartridge.getROM()[addr - 0x8000];
-    else //mirrored
-        return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
-}
-
 uint8_t MapperNROM::readCHR(uint16_t addr) {
     if (m_usesCharacterRAM)
         return m_characterRAM[addr];
@@ -57,4 +50,11 @@ void MapperNROM::writeCHR(uint16_t addr, uint8_t value) {
         m_characterRAM[addr] = value;
     else
         LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
+}
+
+const uint8_t* MapperNROM::getPagePtr(uint16_t addr) {
+    if (!m_oneBank)
+        return &m_cartridge.getROM()[addr - 0x8000];
+    else //mirrored
+        return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }

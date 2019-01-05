@@ -3,7 +3,7 @@
 
 Emulator::Emulator(std::string rom_path) : cpu(), ppu(), rom_path(rom_path) {
     // raise an error if IO callback setup fails
-    if(
+    if (
         !bus.setReadCallback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
         !bus.setReadCallback(PPUDATA, [&](void) {return ppu.getData(picture_bus);}) ||
         !bus.setReadCallback(JOY1, [&](void) {return controller1.read();}) ||
@@ -13,7 +13,7 @@ Emulator::Emulator(std::string rom_path) : cpu(), ppu(), rom_path(rom_path) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
     }
     // raise an error if IO callback setup fails
-    if(
+    if (
         !bus.setWriteCallback(PPUCTRL, [&](Byte b) {ppu.control(b);}) ||
         !bus.setWriteCallback(PPUMASK, [&](Byte b) {ppu.setMask(b);}) ||
         !bus.setWriteCallback(OAMADDR, [&](Byte b) {ppu.setOAMAddress(b);}) ||
@@ -43,7 +43,7 @@ Emulator::Emulator(Emulator* emulator) {
     // bus.setMapper(mapper);
     // picture_bus.setMapper(mapper);
     // raise an error if IO callback setup fails
-    if(
+    if (
         !bus.setReadCallback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
         !bus.setReadCallback(PPUDATA, [&](void) {return ppu.getData(picture_bus);}) ||
         !bus.setReadCallback(JOY1, [&](void) {return controller1.read();}) ||
@@ -53,7 +53,7 @@ Emulator::Emulator(Emulator* emulator) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
     }
     // raise an error if IO callback setup fails
-    if(
+    if (
         !bus.setWriteCallback(PPUCTRL, [&](Byte b) {ppu.control(b);}) ||
         !bus.setWriteCallback(PPUMASK, [&](Byte b) {ppu.setMask(b);}) ||
         !bus.setWriteCallback(OAMADDR, [&](Byte b) {ppu.setOAMAddress(b);}) ||
@@ -71,34 +71,39 @@ Emulator::Emulator(Emulator* emulator) {
 }
 
 void Emulator::reset() {
+    // load the ROM from disk and return if the operation fails
     if (!cartridge.loadFromFile(rom_path))
         return;
-
+    // create the mapper based on the mapper ID in the iNES header of the ROM
     mapper = Mapper::createMapper(
         static_cast<Mapper::Type>(cartridge.getMapper()),
         cartridge,
         [&](){ picture_bus.updateMirroring(); }
     );
-
+    // if the mapper is a nullptr, the mapper ID is not supported at this time
     if (!mapper) {
         LOG(Error) << "Creating Mapper failed. Probably unsupported." << std::endl;
         return;
     }
-
+    // if setting the mapper on the buses fails, return
     if (!bus.setMapper(mapper) || !picture_bus.setMapper(mapper))
         return;
-
+    // reset the CPU and PPU
     cpu.reset(bus);
     ppu.reset();
 }
 
 void Emulator::DMA(Byte page) {
+    // skip the DMA cycles on the CPU
     cpu.skipDMACycles();
+    // get the pointer to the next page from the bus
     auto page_ptr = bus.getPagePtr(page);
+    // do the DMA page change on the PPU
     ppu.doDMA(page_ptr);
 }
 
 void Emulator::step(unsigned char action) {
+    // write the controller state to player 1
     controller1.write_buttons(action);
     // approximate a frame
     for (int i = 0; i < 29781; i++) {

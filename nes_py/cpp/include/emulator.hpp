@@ -1,9 +1,13 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
+#include <string>
+#include <stdint.h>
+#include "cartridge.hpp"
 #include "controller.hpp"
 #include "cpu.hpp"
 #include "ppu.hpp"
 #include "main_bus.hpp"
+#include "mapper.hpp"
 #include "picture_bus.hpp"
 
 /// The width of the NES screen in pixels

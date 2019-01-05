@@ -1,8 +1,6 @@
 #include "ppu.hpp"
 #include "log.hpp"
 
-PPU::PPU() : m_spriteMemory(64 * 4) { }
-
 void PPU::reset() {
     m_longSprites = m_generateInterrupt = m_greyscaleMode = m_vblank = false;
     m_showBackground = m_showSprites = m_evenFrame = m_firstWrite = true;

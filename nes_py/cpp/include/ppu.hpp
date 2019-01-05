@@ -17,7 +17,7 @@ const int AttributeOffset = 0x3C0;
 class PPU {
 public:
     /// Initialize a new PPU
-    PPU();
+    PPU() : m_spriteMemory(64 * 4) { };
 
     /// Perform a single cycle on the PPU
     void cycle(PictureBus& bus);

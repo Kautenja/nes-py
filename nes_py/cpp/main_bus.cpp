@@ -83,7 +83,7 @@ void MainBus::write(Address addr, uint8_t value) {
     }
 }
 
-const uint8_t* MainBus::getPagePtr(uint8_t page) {
+const uint8_t* MainBus::get_page_pointer(uint8_t page) {
     Address addr = page << 8;
     if (addr < 0x2000)
         return &m_RAM[addr & 0x7ff];
@@ -112,7 +112,7 @@ bool MainBus::set_mapper(Mapper* mapper) {
     return true;
 }
 
-bool MainBus::setWriteCallback(IORegisters reg, std::function<void(uint8_t)> callback) {
+bool MainBus::set_write_callback(IORegisters reg, std::function<void(uint8_t)> callback) {
     if (!callback) {
         LOG(Error) << "callback argument is nullptr" << std::endl;
         return false;
@@ -120,7 +120,7 @@ bool MainBus::setWriteCallback(IORegisters reg, std::function<void(uint8_t)> cal
     return m_writeCallbacks.emplace(reg, callback).second;
 }
 
-bool MainBus::setReadCallback(IORegisters reg, std::function<uint8_t(void)> callback) {
+bool MainBus::set_read_callback(IORegisters reg, std::function<uint8_t(void)> callback) {
     if (!callback) {
         LOG(Error) << "callback argument is nullptr" << std::endl;
         return false;

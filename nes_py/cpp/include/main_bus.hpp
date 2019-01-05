@@ -61,13 +61,13 @@ public:
     bool set_mapper(Mapper* mapper);
 
     /// Set a callback for when writes occur.
-    bool setWriteCallback(IORegisters reg, std::function<void(uint8_t)> callback);
+    bool set_write_callback(IORegisters reg, std::function<void(uint8_t)> callback);
 
     /// Set a callback for when reads occur.
-    bool setReadCallback(IORegisters reg, std::function<uint8_t(void)> callback);
+    bool set_read_callback(IORegisters reg, std::function<uint8_t(void)> callback);
 
     /// Return a pointer to the page in memory.
-    const uint8_t* getPagePtr(uint8_t page);
+    const uint8_t* get_page_pointer(uint8_t page);
 
 };
 

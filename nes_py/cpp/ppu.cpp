@@ -206,10 +206,8 @@ void PPU::cycle(PictureBus& m_bus) {
                     auto diff = (m_scanline - m_spriteMemory[i * 4]);
                     if (0 <= diff && diff < range) {
                         m_scanlineSprites.push_back(i);
-                        ++j;
-                        if (j >= 8) {
+                        if (++j >= 8)
                             break;
-                        }
                     }
                 }
 

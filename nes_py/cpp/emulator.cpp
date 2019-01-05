@@ -70,7 +70,7 @@ Emulator::Emulator(Emulator* emulator) {
     ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
 }
 
-void Emulator::loadRom() {
+void Emulator::reset() {
     if (!cartridge.loadFromFile(rom_path))
         return;
 
@@ -98,14 +98,6 @@ void Emulator::DMA(Byte page) {
     ppu.doDMA(page_ptr);
 }
 
-uint32_t* Emulator::get_screen_buffer() {
-    return ppu.get_screen_buffer();
-}
-
-void Emulator::reset() {
-    loadRom();
-}
-
 void Emulator::step(unsigned char action) {
     controller1.write_buttons(action);
     // approximate a frame
@@ -113,12 +105,4 @@ void Emulator::step(unsigned char action) {
         ppu.step(picture_bus);
         cpu.step(bus);
     }
-}
-
-uint8_t Emulator::read_memory(uint16_t address) {
-    return bus.read(address);
-}
-
-void Emulator::write_memory(uint16_t address, uint8_t value) {
-    bus.write(address, value);
 }

@@ -1,13 +1,10 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
-#include <chrono>
+#include "controller.hpp"
 #include "cpu.hpp"
 #include "ppu.hpp"
 #include "main_bus.hpp"
 #include "picture_bus.hpp"
-#include "controller.hpp"
-
-using TimePoint = std::chrono::high_resolution_clock::time_point;
 
 /// The width of the NES screen in pixels
 const int NESVideoWidth = ScanlineVisibleDots;
@@ -42,10 +39,7 @@ private:
     /// the 2 controllers on the emulator
     Controller controller1, controller2;
 
-    /// Load the ROM into the NES
-    void loadRom();
-
-    /// Skip DMA cycle and perform a DMA copy
+    /// Skip DMA cycle and perform a DMA copy.
     void DMA(Byte page);
 
 public:
@@ -65,9 +59,24 @@ public:
     ///
     /// @return a 32-bit pointer to the screen buffer's first address
     ///
-    uint32_t* get_screen_buffer();
+    uint32_t* get_screen_buffer() { return ppu.get_screen_buffer(); };
 
-    /// Reset the emulator to the initial state.
+    /// Read a byte from a 16-bit memory address
+    ///
+    /// @param address the address to read from memory
+    ///
+    /// @return the byte located at the given memory address
+    ///
+    uint8_t read_memory(uint16_t address) { return bus.read(address); };
+
+    /// Write a byte to a 16-bit memory address
+    ///
+    /// @param address the address to write to in memory
+    /// @param value the byte to write to the memory address
+    ///
+    void write_memory(uint16_t address, uint8_t value) { bus.write(address, value); };
+
+    /// Load the ROM into the NES.
     void reset();
 
     /// Perform a discrete "step" of the NES by rendering 1 frame.
@@ -86,21 +95,6 @@ public:
     /// 0: A
     ///
     void step(unsigned char action);
-
-    /// Read a byte from a 16-bit memory address
-    ///
-    /// @param address the address to read from memory
-    ///
-    /// @return the byte located at the given memory address
-    ///
-    uint8_t read_memory(uint16_t address);
-
-    /// Write a byte to a 16-bit memory address
-    ///
-    /// @param address the address to write to in memory
-    /// @param value the byte to write to the memory address
-    ///
-    void write_memory(uint16_t address, uint8_t value);
 
 };
 

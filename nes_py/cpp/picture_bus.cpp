@@ -1,20 +1,12 @@
 #include "picture_bus.hpp"
 #include "log.hpp"
 
-PictureBus::PictureBus() :
-    m_RAM(0x800),
-    m_palette(0x20),
-    m_mapper(nullptr)
-{}
-
-Byte PictureBus::read(Address addr)
-{
-    if (addr < 0x2000)
-    {
+uint8_t PictureBus::read(Address addr) {
+    if (addr < 0x2000) {
         return m_mapper->readCHR(addr);
     }
-    else if (addr < 0x3eff) //Name tables upto 0x3000, then mirrored upto 3eff
-    {
+    //Name tables upto 0x3000, then mirrored upto 3eff
+    else if (addr < 0x3eff) {
         auto index = addr & 0x3ff;
         if (addr < 0x2400)      //NT0
             return m_RAM[NameTable0 + index];
@@ -25,26 +17,18 @@ Byte PictureBus::read(Address addr)
         else                    //NT3
             return m_RAM[NameTable3 + index];
     }
-    else if (addr < 0x3fff)
-    {
+    else if (addr < 0x3fff) {
         return m_palette[addr & 0x1f];
     }
     return 0;
 }
 
-Byte PictureBus::readPalette(Byte paletteAddr)
-{
-    return m_palette[paletteAddr];
-}
-
-void PictureBus::write(Address addr, Byte value)
-{
-    if (addr < 0x2000)
-    {
+void PictureBus::write(Address addr, uint8_t value) {
+    if (addr < 0x2000) {
         m_mapper->writeCHR(addr, value);
     }
-    else if (addr < 0x3eff) //Name tables upto 0x3000, then mirrored upto 3eff
-    {
+    //Name tables upto 0x3000, then mirrored upto 3eff
+    else if (addr < 0x3eff)  {
         auto index = addr & 0x3ff;
         if (addr < 0x2400)      //NT0
             m_RAM[NameTable0 + index] = value;
@@ -55,8 +39,7 @@ void PictureBus::write(Address addr, Byte value)
         else                    //NT3
             m_RAM[NameTable3 + index] = value;
     }
-    else if (addr < 0x3fff)
-    {
+    else if (addr < 0x3fff) {
         if (addr == 0x3f10)
             m_palette[0] = value;
         else
@@ -64,10 +47,8 @@ void PictureBus::write(Address addr, Byte value)
    }
 }
 
-void PictureBus::updateMirroring()
-{
-    switch (m_mapper->getNameTableMirroring())
-    {
+void PictureBus::updateMirroring() {
+    switch (m_mapper->getNameTableMirroring()) {
         case Horizontal:
             NameTable0 = NameTable1 = 0;
             NameTable2 = NameTable3 = 0x400;
@@ -92,10 +73,8 @@ void PictureBus::updateMirroring()
     }
 }
 
-bool PictureBus::setMapper(Mapper *mapper)
-{
-    if (!mapper)
-    {
+bool PictureBus::setMapper(Mapper *mapper) {
+    if (!mapper) {
         LOG(Error) << "Mapper argument is nullptr" << std::endl;
         return false;
     }

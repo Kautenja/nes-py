@@ -8,7 +8,7 @@ python:
   - '3.6'
 os:
   - linux
-  - osx
+  # - osx
   # - windows
 script:
   - make

@@ -27,14 +27,14 @@ public:
     ///
     /// @return the byte located at the given address
     ///
-    uint8_t read(Address address);
+    uint8_t read(uint16_t address);
 
     /// Write a byte to an address in the VRAM.
     ///
     /// @param address the 16-bit address to write the byte to in VRAM
     /// @param value the byte to write to the given address
     ///
-    void write(Address address, uint8_t value);
+    void write(uint16_t address, uint8_t value);
 
     /// Set the mapper pointer to a new value.
     ///

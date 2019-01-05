@@ -22,12 +22,12 @@ public:
     };
 
     Mapper(Cartridge& cart, Type t) : m_cartridge(cart), m_type(t) {};
-    virtual void writePRG (Address addr, uint8_t value) = 0;
-    virtual uint8_t readPRG (Address addr) = 0;
-    virtual const uint8_t* getPagePtr (Address addr) = 0; //for DMAs
+    virtual void writePRG (uint16_t addr, uint8_t value) = 0;
+    virtual uint8_t readPRG (uint16_t addr) = 0;
+    virtual const uint8_t* getPagePtr (uint16_t addr) = 0; //for DMAs
 
-    virtual uint8_t readCHR (Address addr) = 0;
-    virtual void writeCHR (Address addr, uint8_t value) = 0;
+    virtual uint8_t readCHR (uint16_t addr) = 0;
+    virtual void writeCHR (uint16_t addr, uint8_t value) = 0;
 
     virtual NameTableMirroring getNameTableMirroring() {
         return static_cast<NameTableMirroring>(m_cartridge.getNameTableMirroring());

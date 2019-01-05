@@ -14,19 +14,19 @@ private:
     bool executeType1(MainBus &m_bus, uint8_t opcode);
     bool executeType2(MainBus &m_bus, uint8_t opcode);
 
-    Address readAddress(MainBus &m_bus, Address addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
+    uint16_t readAddress(MainBus &m_bus, uint16_t addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
     void pushStack(MainBus &m_bus, uint8_t value) {  m_bus.write(0x100 | r_SP--, value); };
     uint8_t pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
 
     //If a and b are in different pages, increases the m_SkipCycles by inc
-    void setPageCrossed(Address a, Address b, int inc = 1);
+    void setPageCrossed(uint16_t a, uint16_t b, int inc = 1);
     void setZN(uint8_t value) { f_Z = !value; f_N = value & 0x80; };
 
     int m_skipCycles;
     int m_cycles;
 
     //Registers
-    Address r_PC;
+    uint16_t r_PC;
     uint8_t r_SP;
     uint8_t r_A;
     uint8_t r_X;
@@ -57,10 +57,10 @@ public:
 
     void step(MainBus &m_bus);
     void reset(MainBus &m_bus);
-    void reset(Address start_addr);
+    void reset(uint16_t start_addr);
     void log();
 
-    Address getPC() { return r_PC; }
+    uint16_t getPC() { return r_PC; }
     void skipDMACycles();
 
 };

@@ -4,8 +4,7 @@
 #include <string>
 #include <cstdint>
 
-using Address = std::uint16_t;
-
+/// A cartridge holding game ROM and a special hardware mapper emulation
 class Cartridge {
 
 private:

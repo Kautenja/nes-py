@@ -7,16 +7,16 @@ class MapperUxROM : public Mapper {
 private:
     bool m_usesCharacterRAM;
     const uint8_t* m_lastBankPtr;
-    Address m_selectPRG;
+    uint16_t m_selectPRG;
     std::vector<uint8_t> m_characterRAM;
 
 public:
     MapperUxROM(Cartridge& cart);
-    void writePRG (Address addr, uint8_t value);
-    uint8_t readPRG (Address addr);
-    const uint8_t* getPagePtr(Address addr);
-    uint8_t readCHR (Address addr);
-    void writeCHR (Address addr, uint8_t value);
+    void writePRG (uint16_t addr, uint8_t value);
+    uint8_t readPRG (uint16_t addr);
+    const uint8_t* getPagePtr(uint16_t addr);
+    uint8_t readCHR (uint16_t addr);
+    void writeCHR (uint16_t addr, uint8_t value);
 
 };
 

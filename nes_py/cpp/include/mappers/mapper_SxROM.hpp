@@ -24,11 +24,11 @@ private:
 
 public:
     MapperSxROM(Cartridge& cart, std::function<void(void)> mirroring_cb);
-    void writePRG (Address addr, uint8_t value);
-    uint8_t readPRG (Address addr);
-    const uint8_t* getPagePtr(Address addr);
-    uint8_t readCHR (Address addr);
-    void writeCHR (Address addr, uint8_t value);
+    void writePRG (uint16_t addr, uint8_t value);
+    uint8_t readPRG (uint16_t addr);
+    const uint8_t* getPagePtr(uint16_t addr);
+    uint8_t readCHR (uint16_t addr);
+    void writeCHR (uint16_t addr, uint8_t value);
     NameTableMirroring getNameTableMirroring() { return m_mirroing; };
 
 };

@@ -75,8 +75,8 @@ private:
     bool m_sprZeroHit;
 
     //Registers
-    Address m_dataAddress;
-    Address m_tempAddress;
+    uint16_t m_dataAddress;
+    uint16_t m_tempAddress;
     uint8_t m_fineXScroll;
     bool m_firstWrite;
     uint8_t m_dataBuffer;
@@ -100,12 +100,12 @@ private:
     } m_bgPage,
       m_sprPage;
 
-    Address m_dataAddrIncrement;
+    uint16_t m_dataAddrIncrement;
 
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
     /// the number of visible scan line dots
-    std::uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots] = {{0}};
+    uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots] = {{0}};
 
 };
 

@@ -2,7 +2,7 @@
 #include <cstring>
 #include "log.hpp"
 
-uint8_t MainBus::read(Address addr) {
+uint8_t MainBus::read(uint16_t addr) {
     if (addr < 0x2000)
         return m_RAM[addr & 0x7ff];
     else if (addr < 0x4020) {
@@ -43,7 +43,7 @@ uint8_t MainBus::read(Address addr) {
     return 0;
 }
 
-void MainBus::write(Address addr, uint8_t value) {
+void MainBus::write(uint16_t addr, uint8_t value) {
     if (addr < 0x2000)
         m_RAM[addr & 0x7ff] = value;
     else if (addr < 0x4020) {
@@ -84,7 +84,7 @@ void MainBus::write(Address addr, uint8_t value) {
 }
 
 const uint8_t* MainBus::get_page_pointer(uint8_t page) {
-    Address addr = page << 8;
+    uint16_t addr = page << 8;
     if (addr < 0x2000)
         return &m_RAM[addr & 0x7ff];
     else if (addr < 0x4020)

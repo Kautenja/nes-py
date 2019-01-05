@@ -45,14 +45,14 @@ public:
     ///
     /// @return the byte located at the given address
     ///
-    uint8_t read(Address addr);
+    uint8_t read(uint16_t addr);
 
     /// Write a byte to an address in the RAM.
     ///
     /// @param addr the 16-bit address to write the byte to in RAM
     /// @param value the byte to write to the given address
     ///
-    void write(Address addr, uint8_t value);
+    void write(uint16_t addr, uint8_t value);
 
     /// Set the mapper pointer to a new value.
     ///

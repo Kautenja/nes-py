@@ -5,7 +5,7 @@
 
 void CPU::reset(MainBus &m_bus) { reset(readAddress(m_bus, ResetVector)); }
 
-void CPU::reset(Address start_addr) {
+void CPU::reset(uint16_t start_addr) {
     m_skipCycles = m_cycles = 0;
     r_A = r_X = r_Y = 0;
     f_I = true;
@@ -49,7 +49,7 @@ void CPU::interrupt(MainBus &m_bus, InterruptType type) {
     m_skipCycles += 7;
 }
 
-void CPU::setPageCrossed(Address a, Address b, int inc) {
+void CPU::setPageCrossed(uint16_t a, uint16_t b, int inc) {
     //Page is determined by the high byte
     if ((a & 0xff00) != (b & 0xff00))
         m_skipCycles += inc;
@@ -140,11 +140,11 @@ bool CPU::executeImplied(MainBus &m_bus, uint8_t opcode) {
             r_PC = readAddress(m_bus, r_PC);
             break;
         case JMPI: {
-                Address location = readAddress(m_bus, r_PC);
+                uint16_t location = readAddress(m_bus, r_PC);
                 //6502 has a bug such that the when the vector of anindirect address begins at the last byte of a page,
                 //the second byte is fetched from the beginning of that page rather than the beginning of the next
                 //Recreating here:
-                Address Page = location & 0xff00;
+                uint16_t Page = location & 0xff00;
                 r_PC = m_bus.read(location) |
                        m_bus.read(Page | ((location + 1) & 0xff)) << 8;
             }
@@ -271,7 +271,7 @@ bool CPU::executeBranch(MainBus &m_bus, uint8_t opcode) {
         if (branch) {
             int8_t offset = m_bus.read(r_PC++);
             ++m_skipCycles;
-            auto newPC = static_cast<Address>(r_PC + offset);
+            auto newPC = static_cast<uint16_t>(r_PC + offset);
             setPageCrossed(r_PC, newPC, 2);
             r_PC = newPC;
         }
@@ -284,7 +284,7 @@ bool CPU::executeBranch(MainBus &m_bus, uint8_t opcode) {
 
 bool CPU::executeType1(MainBus &m_bus, uint8_t opcode) {
     if ((opcode & InstructionModeMask) == 0x1) {
-        Address location = 0; //Location of the operand, could be in RAM
+        uint16_t location = 0; //Location of the operand, could be in RAM
         auto op = static_cast<Operation1>((opcode & OperationMask) >> OperationShift);
         switch (static_cast<AddrMode1>((opcode & AddrModeMask) >> AddrModeShift)) {
             case IndexedIndirectX: {
@@ -394,7 +394,7 @@ bool CPU::executeType1(MainBus &m_bus, uint8_t opcode) {
 
 bool CPU::executeType2(MainBus &m_bus, uint8_t opcode) {
     if ((opcode & InstructionModeMask) == 2) {
-        Address location = 0;
+        uint16_t location = 0;
         auto op = static_cast<Operation2>((opcode & OperationMask) >> OperationShift);
         auto addr_mode =
                 static_cast<AddrMode2>((opcode & AddrModeMask) >> AddrModeShift);
@@ -507,7 +507,7 @@ bool CPU::executeType2(MainBus &m_bus, uint8_t opcode) {
 
 bool CPU::executeType0(MainBus &m_bus, uint8_t opcode) {
     if ((opcode & InstructionModeMask) == 0x0) {
-        Address location = 0;
+        uint16_t location = 0;
         switch (static_cast<AddrMode2>((opcode & AddrModeMask) >> AddrModeShift)) {
             case Immediate_:
                 location = r_PC++;

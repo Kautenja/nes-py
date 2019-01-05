@@ -6,19 +6,15 @@ Controller::Controller() {
     joypad_bits = 0;
 }
 
-void Controller::write_buttons(uint8_t buttons) {
-    joypad_buttons = buttons;
-}
-
-void Controller::strobe(Byte b) {
+void Controller::strobe(uint8_t b) {
     is_strobe = (b & 1);
     if (!is_strobe) {
         joypad_bits = joypad_buttons;
     }
 }
 
-Byte Controller::read() {
-    Byte ret;
+uint8_t Controller::read() {
+    uint8_t ret;
     if (is_strobe)
         ret = (joypad_buttons & 1);
     else {

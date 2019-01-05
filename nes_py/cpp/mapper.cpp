@@ -4,30 +4,21 @@
 #include "mappers/mapper_UxROM.hpp"
 #include "mappers/mapper_CNROM.hpp"
 
-NameTableMirroring Mapper::getNameTableMirroring()
-{
-    return static_cast<NameTableMirroring>(m_cartridge.getNameTableMirroring());
-}
-
-std::unique_ptr<Mapper> Mapper::createMapper(Mapper::Type mapper_t, Cartridge& cart, std::function<void(void)> mirroring_cb)
-{
-    std::unique_ptr<Mapper> ret(nullptr);
-    switch (mapper_t)
-    {
+Mapper* Mapper::createMapper(
+    Mapper::Type mapper_t,
+    Cartridge& cart,
+    std::function<void(void)> mirroring_cb
+) {
+    switch (mapper_t) {
         case NROM:
-            ret.reset(new MapperNROM(cart));
-            break;
+            return new MapperNROM(cart);
         case SxROM:
-            ret.reset(new MapperSxROM(cart, mirroring_cb));
-            break;
+            return new MapperSxROM(cart, mirroring_cb);
         case UxROM:
-            ret.reset(new MapperUxROM(cart));
-            break;
+            return new MapperUxROM(cart);
         case CNROM:
-            ret.reset(new MapperCNROM(cart));
-            break;
+            return new MapperCNROM(cart);
         default:
-            break;
+            return nullptr;
     }
-    return ret;
 }

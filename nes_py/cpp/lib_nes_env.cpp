@@ -1,7 +1,4 @@
-/// File: python_api.py
-/// Description: The API definition for ctypes in Python.
-///
-#include <cstdint>
+#include <stdint.h>
 #include <cstring>
 #include "emulator.hpp"
 
@@ -68,14 +65,9 @@ extern "C" {
         delete emulator;
     }
 
-    /// Backup the game state in the emulator
-    external void Backup(Emulator* emulator) {
-        emulator->backup();
-    }
-
-    /// Restore a game state in the emulator
-    external void Restore(Emulator* emulator) {
-        emulator->restore();
+    /// Create a deep copy (i.e., a clone) of the given emulator
+    external Emulator* Clone(Emulator* emulator) {
+        return new Emulator(emulator);
     }
 
 }

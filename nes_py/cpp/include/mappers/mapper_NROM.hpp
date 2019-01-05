@@ -7,15 +7,15 @@ class MapperNROM : public Mapper {
 private:
     bool m_oneBank;
     bool m_usesCharacterRAM;
-    std::vector<Byte> m_characterRAM;
+    std::vector<uint8_t> m_characterRAM;
 
 public:
     MapperNROM(Cartridge& cart);
-    void writePRG (Address addr, Byte value);
-    Byte readPRG (Address addr);
-    const Byte* getPagePtr(Address addr);
-    Byte readCHR (Address addr);
-    void writeCHR (Address addr, Byte value);
+    void writePRG (Address addr, uint8_t value);
+    uint8_t readPRG (Address addr);
+    const uint8_t* getPagePtr(Address addr);
+    uint8_t readCHR (Address addr);
+    void writeCHR (Address addr, uint8_t value);
 
 };
 

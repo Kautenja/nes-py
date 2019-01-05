@@ -50,12 +50,9 @@ _LIB.Step.restype = None
 # setup the argument and return types for Close
 _LIB.Close.argtypes = [ctypes.c_void_p]
 _LIB.Close.restype = None
-# setup the argument and return types for Backup
-_LIB.Backup.argtypes = [ctypes.c_void_p]
-_LIB.Backup.restype = None
-# setup the argument and return types for Restore
-_LIB.Restore.argtypes = [ctypes.c_void_p]
-_LIB.Restore.restype = None
+# setup the argument and return types for Clone
+_LIB.Clone.argtypes = [ctypes.c_void_p]
+_LIB.Clone.restype = ctypes.c_void_p
 
 
 # height in pixels of the NES screen
@@ -148,8 +145,8 @@ class NESEnv(gym.Env):
         self._env = _LIB.Initialize(self._rom_path)
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
-        # setup a flag to determine whether the environment has a backup stored
-        self._has_backup = False
+        # setup a placeholder for a pointer to a backup state
+        self._backup_env = None
         # setup the NumPy screen from the C++ vector
         self.screen = None
         self.done = True
@@ -216,16 +213,15 @@ class NESEnv(gym.Env):
 
     def _backup(self):
         """Backup the NES state in the emulator."""
-        _LIB.Backup(self._env)
-        self._has_backup = True
+        self._backup_env = _LIB.Clone(self._env)
 
     def _del_backup(self):
         """Delete the backup for the environment."""
-        self._has_backup = False
+        self._backup_env = None
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
-        _LIB.Restore(self._env)
+        self._env = self._backup_env
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -244,10 +240,10 @@ class NESEnv(gym.Env):
         # call the before reset callback
         self._will_reset()
         # reset the emulator
-        if not self._has_backup:
-            _LIB.Reset(self._env)
-        else:
+        if self._backup_env is not None:
             self._restore()
+        else:
+            _LIB.Reset(self._env)
         # call the after reset callback
         self._did_reset()
         # set the done flag to false

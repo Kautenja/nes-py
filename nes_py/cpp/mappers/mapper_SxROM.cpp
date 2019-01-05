@@ -35,7 +35,7 @@ MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb
     m_secondBankPRG = &cart.getROM()[cart.getROM().size() - 0x4000/*0x2000 * 0x0e*/]; //last bank
 }
 
-Byte MapperSxROM::readPRG(Address addr)
+uint8_t MapperSxROM::readPRG(Address addr)
 {
     if (addr < 0xc000)
         return *(m_firstBankPRG + (addr & 0x3fff));
@@ -43,12 +43,7 @@ Byte MapperSxROM::readPRG(Address addr)
         return *(m_secondBankPRG + (addr & 0x3fff));
 }
 
-NameTableMirroring MapperSxROM::getNameTableMirroring()
-{
-    return m_mirroing;
-}
-
-void MapperSxROM::writePRG(Address addr, Byte value)
+void MapperSxROM::writePRG(Address addr, uint8_t value)
 {
     if (!(value & 0x80)) //if reset bit is NOT set
     {
@@ -143,7 +138,7 @@ void MapperSxROM::calculatePRGPointers()
     }
 }
 
-const Byte* MapperSxROM::getPagePtr(Address addr)
+const uint8_t* MapperSxROM::getPagePtr(Address addr)
 {
     if (addr < 0xc000)
         return (m_firstBankPRG + (addr & 0x3fff));
@@ -151,7 +146,7 @@ const Byte* MapperSxROM::getPagePtr(Address addr)
         return (m_secondBankPRG + (addr & 0x3fff));
 }
 
-Byte MapperSxROM::readCHR(Address addr)
+uint8_t MapperSxROM::readCHR(Address addr)
 {
     if (m_usesCharacterRAM)
         return m_characterRAM[addr];
@@ -161,7 +156,7 @@ Byte MapperSxROM::readCHR(Address addr)
         return *(m_secondBankCHR + (addr & 0xfff));
 }
 
-void MapperSxROM::writeCHR(Address addr, Byte value)
+void MapperSxROM::writeCHR(Address addr, uint8_t value)
 {
     if (m_usesCharacterRAM)
         m_characterRAM[addr] = value;

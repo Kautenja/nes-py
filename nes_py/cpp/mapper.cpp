@@ -12,12 +12,12 @@ Mapper* Mapper::createMapper(
     switch (mapper_t) {
         case NROM:
             return new MapperNROM(cart);
-        case SxROM:
-            return new MapperSxROM(cart, mirroring_cb);
-        case UxROM:
-            return new MapperUxROM(cart);
-        case CNROM:
-            return new MapperCNROM(cart);
+        // case SxROM:
+        //     return new MapperSxROM(cart, mirroring_cb);
+        // case UxROM:
+        //     return new MapperUxROM(cart);
+        // case CNROM:
+        //     return new MapperCNROM(cart);
         default:
             return nullptr;
     }

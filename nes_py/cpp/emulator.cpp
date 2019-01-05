@@ -39,9 +39,9 @@ Emulator::Emulator(Emulator* emulator) {
     bus = emulator->bus;
     picture_bus = emulator->picture_bus;
     cartridge = emulator->cartridge;
-    // mapper = emulator->mapper;
-    // bus.set_mapper(mapper);
-    // picture_bus.set_mapper(mapper);
+    mapper = emulator->mapper->clone(cartridge);
+    bus.set_mapper(mapper);
+    picture_bus.set_mapper(mapper);
     // raise an error if IO callback setup fails
     if (
         !bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||

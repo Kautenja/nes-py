@@ -208,6 +208,8 @@ class NESEnv(gym.Env):
     def _restore(self):
         """Restore the backup state into the NES emulator."""
         self._env = self._backup_env
+        self._setup_screen()
+        self._setup_ram()
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""

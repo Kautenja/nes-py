@@ -62,7 +62,7 @@ public:
     ///
     /// @param path the path to the ROM for the emulator to run
     ///
-    Emulator(std::string path) : rom_path(path), cpu(), ppu() { setup_buses(); };
+    Emulator(std::string path);
 
     /// Create a new emulator as a copy of another emulator state
     ///

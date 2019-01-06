@@ -1,6 +1,20 @@
 #include "emulator.hpp"
 #include "log.hpp"
 
+Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
+    setup_buses();
+    // load the ROM from disk and return if the operation fails
+    if (!cartridge.loadFromFile(rom_path))
+        return;
+    // create the mapper based on the mapper ID in the iNES header of the ROM
+    mapper = Mapper::create(
+        cartridge,
+        [&](){ picture_bus.update_mirroring(); }
+    );
+    bus.assign_mapper(mapper);
+    picture_bus.assign_mapper(mapper);
+}
+
 Emulator::Emulator(const Emulator &emulator) {
     rom_path = emulator.rom_path;
     controller1 = emulator.controller1;
@@ -46,22 +60,6 @@ void Emulator::setup_buses() {
 }
 
 void Emulator::reset() {
-    // load the ROM from disk and return if the operation fails
-    if (!cartridge.loadFromFile(rom_path))
-        return;
-    // create the mapper based on the mapper ID in the iNES header of the ROM
-    mapper = Mapper::create(
-        cartridge,
-        [&](){ picture_bus.update_mirroring(); }
-    );
-    // if the mapper is a nullptr, the mapper ID is not supported at this time
-    if (!mapper) {
-        LOG(Error) << "Creating Mapper failed. Probably unsupported." << std::endl;
-        return;
-    }
-    // if setting the mapper on the buses fails, return
-    if (!bus.assign_mapper(mapper) || !picture_bus.assign_mapper(mapper))
-        return;
     // reset the CPU and PPU
     cpu.reset(bus);
     ppu.reset();
@@ -70,10 +68,8 @@ void Emulator::reset() {
 void Emulator::DMA(uint8_t page) {
     // skip the DMA cycles on the CPU
     cpu.skipDMACycles();
-    // get the pointer to the next page from the bus
-    auto page_pointer = bus.get_page_pointer(page);
     // do the DMA page change on the PPU
-    ppu.doDMA(page_pointer);
+    ppu.doDMA(bus.get_page_pointer(page));
 }
 
 void Emulator::step(unsigned char action) {

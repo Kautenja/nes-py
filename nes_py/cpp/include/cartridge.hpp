@@ -34,7 +34,7 @@ public:
     Cartridge() : m_nameTableMirroring(0), m_mapperNumber(0), m_extendedRAM(false) { };
 
     /// Load a ROM file into the cartridge and build the corresponding mapper.
-    bool loadFromFile(std::string path);
+    void loadFromFile(std::string path);
 
     /// Return the ROM data.
     const std::vector<uint8_t>& getROM() { return m_PRG_ROM; };

@@ -35,16 +35,12 @@ Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
     }
     // set the interrupt callback for the PPU
     ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
-    // load the ROM from disk and return if the operation fails
-    if (!cartridge.loadFromFile(rom_path))
-        return;
+    // load the ROM from disk, expect that the Python code has validated it
+    cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM
-    mapper = Mapper::create(
-        cartridge,
-        [&](){ picture_bus.update_mirroring(); }
-    );
-    bus.assign_mapper(mapper);
-    picture_bus.assign_mapper(mapper);
+    mapper = Mapper::create(cartridge, [&](){ picture_bus.update_mirroring(); });
+    bus.set_mapper(mapper);
+    picture_bus.set_mapper(mapper);
 }
 
 void Emulator::DMA(uint8_t page) {

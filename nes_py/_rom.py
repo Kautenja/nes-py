@@ -26,19 +26,19 @@ class ROM(object):
         """
         # make sure the rom path is a string
         if not isinstance(rom_path, str):
-            raise TypeError('rom_path must be of type: str')
+            raise TypeError('rom_path must be of type: str.')
         # make sure the rom path exists
         if not os.path.exists(rom_path):
-            msg = 'rom_path points to non-existent file {}'.format(rom_path)
+            msg = 'rom_path points to non-existent file: {}.'.format(rom_path)
             raise ValueError(msg)
         # read the binary data in the .nes ROM file
         with open(rom_path, 'rb') as nes_file:
             self.raw_data = nes_file.read()
         # ensure the first 4 bytes are 0x4E45531A (NES<EOF>)
         if self._magic != self._MAGIC:
-            raise ValueError('ROM missing magic number in header')
+            raise ValueError('ROM missing magic number in header.')
         if self._zero_fill != 0:
-            raise ValueError("ROM header zero fill bytes are not zero")
+            raise ValueError("ROM header zero fill bytes are not zero.")
 
     #
     # MARK: Header

@@ -33,8 +33,6 @@ class ROM(object):
             msg = 'rom_path points to non-existent file: {}.'.format(rom_path)
             raise ValueError(msg)
         # read the binary data in the .nes ROM file
-        with open(rom_path, 'rb') as nes_file:
-            self.raw_data = nes_file.read()
         self.raw_data = np.fromfile(rom_path, dtype='uint8')
         # ensure the first 4 bytes are 0x4E45531A (NES<EOF>)
         if not np.array_equal(self._magic, self._MAGIC):

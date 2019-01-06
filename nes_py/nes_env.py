@@ -99,17 +99,12 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Discrete(256)
 
-    def __init__(self, rom_path,
-        frames_per_step=1,
-        max_episode_steps=float('inf')
-    ):
+    def __init__(self, rom_path):
         """
         Create a new NES environment.
 
         Args:
             rom_path (str): the path to the ROM for the environment
-            frames_per_step (int): the number of frames between steps
-            max_episode_steps (int): number of steps before an episode ends
 
         Returns:
             None
@@ -121,29 +116,14 @@ class NESEnv(gym.Env):
         # ensure that rom_path points to an existing .nes file
         if not '.nes' in rom_path or not os.path.isfile(rom_path):
             raise ValueError('rom_path should point to a ".nes" file')
+        self._rom_path = rom_path
+
+        # TODO: extract to separate file that checks other things in the header
         # make sure the magic characters are in the iNES file
         with open(rom_path, 'rb') as nes_file:
             magic = nes_file.read(4)
         if magic != MAGIC:
             raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
-        self._rom_path = rom_path
-
-        # check the frame skip variable
-        if not isinstance(frames_per_step, int):
-            raise TypeError('frames_per_step must be of type: int')
-        if frames_per_step <= 0:
-            raise ValueError('frames_per_step must be > 0')
-        self._frames_per_step = frames_per_step
-        # adjust the FPS of the environment by the given frames_per_step value
-        self.metadata['video.frames_per_second'] /= frames_per_step
-
-        # check the max episode steps
-        if not isinstance(max_episode_steps, (int, float)):
-            raise TypeError('max_episode_steps must be of type: int, float')
-        if max_episode_steps <= 0:
-            raise ValueError('max_episode_steps must be > 0')
-        self._max_episode_steps = max_episode_steps
-        self._steps = 0
 
         # initialize the C++ object for running the environment
         self._env = _LIB.Initialize(self._rom_path)
@@ -151,11 +131,12 @@ class NESEnv(gym.Env):
         self.viewer = None
         # setup a placeholder for a pointer to a backup state
         self._has_backup = False
-        # setup the NumPy screen from the C++ vector
-        self.screen = None
-        self.ram = None
+        # setup a done flag
         self.done = True
+        # setup the NumPy buffers for the screen and RAM
+        self.screen = None
         self._setup_screen()
+        self.ram = None
         self._setup_ram()
 
     def _setup_screen(self):
@@ -185,7 +166,6 @@ class NESEnv(gym.Env):
         buffer_ = ctypes.cast(address, ctypes.POINTER(RAM_VECTOR)).contents
         # create a NumPy array from the buffer
         self.ram = np.frombuffer(buffer_, dtype='uint8')
-        # TODO: handle endian-ness of machine?
 
     def _frame_advance(self, action):
         """
@@ -221,8 +201,6 @@ class NESEnv(gym.Env):
             state (np.ndarray): next frame as a result of the given action
 
         """
-        # reset the steps counter
-        self._steps = 0
         # call the before reset callback
         self._will_reset()
         # reset the emulator
@@ -256,32 +234,19 @@ class NESEnv(gym.Env):
             - info (dict): contains auxiliary diagnostic information
 
         """
+        # if the environment is done, raise an error
         if self.done:
             raise ValueError('cannot step in a done environment! call `reset`')
-        # setup the reward, done, and info for this step
-        reward = 0
-        self.done = False
-        info = {}
-        # iterate over the frames to skip
-        for _ in range(self._frames_per_step):
-            # pass the action to the emulator as an unsigned byte
-            _LIB.Step(self._env, action)
-            # get the reward for this step
-            reward += self._get_reward()
-            # get the done flag for this step
-            self.done = self.done or self._get_done()
-            # get the info for this step
-            info = self._get_info()
-            # if done terminate the collection early
-            if self.done:
-                break
+        # pass the action to the emulator as an unsigned byte
+        _LIB.Step(self._env, action)
+        # get the reward for this step
+        reward = self._get_reward()
+        # get the done flag for this step
+        self.done = self._get_done()
+        # get the info for this step
+        info = self._get_info()
         # call the after step callback
         self._did_step(self.done)
-        # increment the steps counter
-        self._steps += 1
-        # set the done flag to true if the steps are past the max
-        if self._steps >= self._max_episode_steps:
-            self.done = True
         # bound the reward in [min, max]
         if reward < self.reward_range[0]:
             reward = self.reward_range[0]

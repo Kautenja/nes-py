@@ -2,14 +2,14 @@
 import os
 
 
-def rom_file_abs_path(file_name: str) -> str:
+def rom_file_abs_path(file_name):
     """
     Return the absolute path to a ROM in the games directory.
 
     Args:
-        file_name: the name of the ROM in the games directory to fetch
+        file_name (str): the name of the ROM in the games directory to fetch
 
-    Returns:
+    Returns (str):
         the absolute path to the given ROM filename in the games directory
 
     """

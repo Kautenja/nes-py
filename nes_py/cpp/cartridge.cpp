@@ -11,79 +11,28 @@
 #include <string>
 
 bool Cartridge::loadFromFile(std::string path) {
+    // create a stream to load the ROM file
     std::ifstream romFile (path, std::ios_base::binary | std::ios_base::in);
-    if (!romFile) {
-        LOG(Error) << "Could not open ROM file from path: " << path << std::endl;
-        return false;
-    }
-
+    // create a byte vector for the iNES header
     std::vector<uint8_t> header;
-    LOG(Info) << "Reading ROM from path: " << path << std::endl;
-
-    //Header
     header.resize(0x10);
-    if (!romFile.read(reinterpret_cast<char*>(&header[0]), 0x10)) {
-        LOG(Error) << "Reading iNES header failed." << std::endl;
-        return false;
-    }
-    if (std::string{&header[0], &header[4]} != "NES\x1A") {
-        LOG(Error) << "Not a valid iNES image. Magic number: "
-                  << std::hex << header[0] << " "
-                  << header[1] << " " << header[2] << " " << int(header[3]) << std::endl
-                  << "Valid magic number : N E S 1a" << std::endl;
-        return false;
-    }
-
-    LOG(Info) << "Reading header, it dictates: \n";
-
-    uint8_t banks = header[4];
-    LOG(Info) << "16KB PRG-ROM Banks: " << +banks << std::endl;
-    if (!banks) {
-        LOG(Error) << "ROM has no PRG-ROM banks. Loading ROM failed." << std::endl;
-        return false;
-    }
-
-    uint8_t vbanks = header[5];
-    LOG(Info) << "8KB CHR-ROM Banks: " << +vbanks << std::endl;
+    romFile.read(reinterpret_cast<char*>(&header[0]), 0x10);
 
     m_nameTableMirroring = header[6] & 0xB;
-    LOG(Info) << "Name Table Mirroring: " << +m_nameTableMirroring << std::endl;
-
     m_mapperNumber = ((header[6] >> 4) & 0xf) | (header[7] & 0xf0);
-    LOG(Info) << "Mapper #: " << +m_mapperNumber << std::endl;
-
     m_extendedRAM = header[6] & 0x2;
-    LOG(Info) << "Extended (CPU) RAM: " << std::boolalpha << m_extendedRAM << std::endl;
-
-    if (header[6] & 0x4) {
-        LOG(Error) << "Trainer is not supported." << std::endl;
-        return false;
-    }
-
-    if ((header[0xA] & 0x3) == 0x2 || (header[0xA] & 0x1)) {
-        LOG(Error) << "PAL ROM not supported." << std::endl;
-        return false;
-    }
-    else
-        LOG(Info) << "ROM is NTSC compatible.\n";
 
     //PRG-ROM 16KB banks
+    uint8_t banks = header[4];
     m_PRG_ROM.resize(0x4000 * banks);
-    if (!romFile.read(reinterpret_cast<char*>(&m_PRG_ROM[0]), 0x4000 * banks)) {
-        LOG(Error) << "Reading PRG-ROM from image file failed." << std::endl;
-        return false;
-    }
+    romFile.read(reinterpret_cast<char*>(&m_PRG_ROM[0]), 0x4000 * banks);
 
     //CHR-ROM 8KB banks
+    uint8_t vbanks = header[5];
     if (vbanks) {
         m_CHR_ROM.resize(0x2000 * vbanks);
-        if (!romFile.read(reinterpret_cast<char*>(&m_CHR_ROM[0]), 0x2000 * vbanks)) {
-            LOG(Error) << "Reading CHR-ROM from image file failed." << std::endl;
-            return false;
-        }
+        romFile.read(reinterpret_cast<char*>(&m_CHR_ROM[0]), 0x2000 * vbanks);
     }
-    else
-        LOG(Info) << "Cartridge with CHR-RAM." << std::endl;
 
     return true;
 }

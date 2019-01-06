@@ -8,6 +8,7 @@ import gym
 from gym.spaces import Box
 from gym.spaces import Discrete
 import numpy as np
+from ._rom import ROM
 
 
 # the path to the directory this file is in
@@ -110,21 +111,30 @@ class NESEnv(gym.Env):
             None
 
         """
-        # ensure that rom_path is a string
-        if not isinstance(rom_path, str):
-            raise TypeError('rom_path should be of type: str')
-        # ensure that rom_path points to an existing .nes file
-        if not '.nes' in rom_path or not os.path.isfile(rom_path):
-            raise ValueError('rom_path should point to a ".nes" file')
+        # create a ROM file from the ROM path
+        rom = ROM(rom_path)
+        # check that there is PRG ROM
+        if rom.prg_rom_size == 0:
+            raise ValueError('ROM has no PRG-ROM banks.')
+        # ensure that there is no trainer
+        if rom.has_trainer:
+            raise ValueError('ROM has trainer. trainer is not supported.')
+        try:
+            _ = rom.prg_rom
+        except IndexError:
+            raise ValueError('failed to read PRG-ROM on ROM.')
+        try:
+            _ = rom.chr_rom
+        except IndexError:
+            raise ValueError('failed to read CHR-ROM on ROM.')
+        # check the TV system
+        if rom.is_pal:
+            raise ValueError('ROM is PAL. PAK is not supported.')
+        # check that the mapper is implemented
+        elif rom.mapper not in {0, 1, 2, 3}:
+            raise ValueError('ROM has an unsupported mapper: {}'.format(rom.mapper))
+        # store the ROM path
         self._rom_path = rom_path
-
-        # TODO: extract to separate file that checks other things in the header
-        # make sure the magic characters are in the iNES file
-        with open(rom_path, 'rb') as nes_file:
-            magic = nes_file.read(4)
-        if magic != MAGIC:
-            raise ValueError('{} is not a valid ".nes" file'.format(rom_path))
-
         # initialize the C++ object for running the environment
         self._env = _LIB.Initialize(self._rom_path)
         # setup a placeholder for a 'human' render mode viewer

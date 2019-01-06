@@ -119,20 +119,17 @@ class NESEnv(gym.Env):
         # ensure that there is no trainer
         if rom.has_trainer:
             raise ValueError('ROM has trainer. trainer is not supported.')
-        try:
-            _ = rom.prg_rom
-        except IndexError:
-            raise ValueError('failed to read PRG-ROM on ROM.')
-        try:
-            _ = rom.chr_rom
-        except IndexError:
-            raise ValueError('failed to read CHR-ROM on ROM.')
+        # try to read the PRG ROM and raise a value error if it fails
+        _ = rom.prg_rom
+        # try to read the CHR ROM and raise a value error if it fails
+        _ = rom.chr_rom
         # check the TV system
         if rom.is_pal:
-            raise ValueError('ROM is PAL. PAK is not supported.')
+            raise ValueError('ROM is PAL. PAL is not supported.')
         # check that the mapper is implemented
         elif rom.mapper not in {0, 1, 2, 3}:
-            raise ValueError('ROM has an unsupported mapper: {}'.format(rom.mapper))
+            msg = 'ROM has an unsupported mapper number {}.'
+            raise ValueError(msg.format(rom.mapper))
         # store the ROM path
         self._rom_path = rom_path
         # initialize the C++ object for running the environment

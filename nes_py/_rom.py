@@ -200,7 +200,10 @@ class ROM(object):
     @property
     def prg_rom(self):
         """Return the PRG ROM of the ROM file."""
-        return self.raw_data[self.prg_rom_start:self.prg_rom_stop]
+        try:
+            return self.raw_data[self.prg_rom_start:self.prg_rom_stop]
+        except IndexError:
+            raise ValueError('failed to read PRG-ROM on ROM.')
 
     @property
     def chr_rom_start(self):
@@ -215,7 +218,10 @@ class ROM(object):
     @property
     def chr_rom(self):
         """Return the CHR ROM of the ROM file."""
-        return self.raw_data[self.chr_rom_start:self.chr_rom_stop]
+        try:
+            return self.raw_data[self.chr_rom_start:self.chr_rom_stop]
+        except IndexError:
+            raise ValueError('failed to read CHR-ROM on ROM.')
 
 
 # explicitly define the outward facing API of this module

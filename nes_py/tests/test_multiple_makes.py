@@ -1,8 +1,8 @@
 """Test that the multiprocessing package works with the env."""
-import os
 from multiprocessing import Process
 from threading import Thread
 from unittest import TestCase
+from .rom_file_abs_path import rom_file_abs_path
 from ..nes_env import NESEnv
 
 
@@ -18,23 +18,24 @@ def play(steps):
 
     """
     # create an NES environment with Super Mario Bros.
-    path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
+    path = rom_file_abs_path('super-mario-bros-1.nes')
     env = NESEnv(path)
     # step the environment for some arbitrary number of steps
     done = True
-    for step in range(steps):
+    for _ in range(steps):
         if done:
-            state = env.reset()
+            _ = env.reset()
         action = env.action_space.sample()
-        state, reward, done, info = env.step(action)
+        _, _, done, _ = env.step(action)
     # close the environment
     env.close()
 
 
 class ShouldMakeMultipleEnvironemntsParallel(object):
+    """An abstract test case to make environments in parallel."""
 
     # the class to the parallel initializer (Thread, Process, etc.)
-    parallel_initializer = None
+    parallel_initializer = lambda target, args: None
 
     # the number of parallel executions
     num_execs = 4
@@ -43,7 +44,6 @@ class ShouldMakeMultipleEnvironemntsParallel(object):
     steps = 10
 
     def test(self):
-        from ..nes_env import NESEnv
         procs = [None] * self.num_execs
         args = (self.steps, )
         # spawn the parallel instances
@@ -56,14 +56,17 @@ class ShouldMakeMultipleEnvironemntsParallel(object):
 
 
 class ProcessTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
+    """Test that processes (true multi-threading) work."""
     parallel_initializer = Process
 
 
 class ThreadTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
+    """Test that threads (internal parallelism) work"""
     parallel_initializer = Thread
 
 
 class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
+    """Test making 4 environments in a single code stream."""
 
     # the number of environments to spawn
     num_envs = 4
@@ -72,14 +75,13 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
     steps = 10
 
     def test(self):
-        from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
+        path = rom_file_abs_path('super-mario-bros-1.nes')
         envs = [NESEnv(path) for _ in range(self.num_envs)]
         dones = [True] * self.num_envs
 
-        for step in range(self.steps):
+        for _ in range(self.steps):
             for idx in range(self.num_envs):
                 if dones[idx]:
-                    state = envs[idx].reset()
+                    _ = envs[idx].reset()
                 action = envs[idx].action_space.sample()
-                state, reward, done, info = envs[idx].step(action)
+                _, _, _, _ = envs[idx].step(action)

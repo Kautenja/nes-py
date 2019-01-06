@@ -1,5 +1,6 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
+from .rom_file_abs_path import rom_file_abs_path
 
 
 class ShouldImportNESEnv(TestCase):
@@ -18,9 +19,8 @@ class ShouldRaiseTypeErrorOnInvalidROMPathType(TestCase):
 
 class ShouldRaiseValueErrorOnMissingNonexistentROMFile(TestCase):
     def test(self):
-        import os
         from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/missing.nes')
+        path = rom_file_abs_path('missing.nes')
         self.assertRaises(ValueError, NESEnv, path)
 
 
@@ -32,46 +32,36 @@ class ShouldRaiseValueErrorOnNonexistentFile(TestCase):
 
 class ShouldRaiseValueErrorOnNoniNES_ROMPath(TestCase):
     def test(self):
-        import os
         from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/blank')
-        self.assertRaises(ValueError, NESEnv, path)
+        self.assertRaises(ValueError, NESEnv, rom_file_abs_path('blank'))
 
 
 class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):
     def test(self):
-        import os
         from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/empty.nes')
-        self.assertRaises(ValueError, NESEnv, path)
+        self.assertRaises(ValueError, NESEnv, rom_file_abs_path('empty.nes'))
 
 
 class ShouldRaiseErrorOnStepBeforeReset(TestCase):
     def test(self):
-        import os
         from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
-        env = NESEnv(path)
+        env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
         self.assertRaises(ValueError, env.step, 0)
 
 
 class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
-        import os
         from ..nes_env import NESEnv
         import gym
-        path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
-        env = NESEnv(path)
+        env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
         self.assertIsInstance(env, gym.Env)
         env.close()
 
 
 def create_smb1_instance():
     """Return a new SMB1 instance."""
-    import os
     from ..nes_env import NESEnv
-    path = os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
-    return NESEnv(path)
+    return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
 
 
 class ShouldReadAndWriteMemory(TestCase):

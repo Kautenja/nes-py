@@ -1,6 +1,6 @@
+#include "emulator.hpp"
 #include <stdint.h>
 #include <cstring>
-#include "emulator.hpp"
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)

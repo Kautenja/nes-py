@@ -72,9 +72,7 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool assign_mapper(Mapper* mapper);
-
-    void set_mapper(Mapper *mapper) { m_mapper = mapper; };
+    bool set_mapper(Mapper* mapper);
 
     /// Set a callback for when writes occur.
     bool set_write_callback(IORegisters reg, std::function<void(uint8_t)> callback);

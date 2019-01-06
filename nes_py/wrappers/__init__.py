@@ -1,8 +1,8 @@
 """Wrappers for altering the functionality of the game."""
-import gym
 from .binary_to_discrete_space_env import BinarySpaceToDiscreteSpaceEnv
 from .clip_reward_env import ClipRewardEnv
 from .downsample_env import DownsampleEnv
+from .frame_skip_env import FrameSkipEnv
 from .frame_stack_env import FrameStackEnv
 from .normalize_reward_env import NormalizeRewardEnv
 from .penalize_death_env import PenalizeDeathEnv
@@ -10,6 +10,7 @@ from .reward_cache_env import RewardCacheEnv
 
 
 def wrap(env,
+    frame_skip=4,
     cache_rewards=True,
     image_size=(84, 84),
     death_penalty=-15,
@@ -22,6 +23,7 @@ def wrap(env,
 
     Args:
         env (gym.Env): the environment to wrap
+        frame_skip (int): the number of frames to skip between observations
         cache_rewards (bool): True to use a reward cache for raw rewards
         image_size (tuple): the size to down-sample images to
         death_penatly (float): the penalty for losing a life in a game
@@ -33,6 +35,9 @@ def wrap(env,
         a gym environment configured for this experiment
 
     """
+    # wrap the environment with a frame skipper
+    if frame_skip:
+        env = FrameSkipEnv(env, frame_skip)
     # wrap the environment with a reward cacher
     if cache_rewards:
         env = RewardCacheEnv(env)
@@ -60,6 +65,7 @@ __all__ = [
     BinarySpaceToDiscreteSpaceEnv.__name__,
     ClipRewardEnv.__name__,
     DownsampleEnv.__name__,
+    FrameSkipEnv.__name__,
     FrameStackEnv.__name__,
     NormalizeRewardEnv.__name__,
     PenalizeDeathEnv.__name__,

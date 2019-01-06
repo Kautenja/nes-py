@@ -48,9 +48,7 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool assign_mapper(Mapper *mapper);
-
-    void set_mapper(Mapper *mapper) { m_mapper = mapper; };
+    bool set_mapper(Mapper *mapper);
 
     /// Read a color index from the palette.
     ///

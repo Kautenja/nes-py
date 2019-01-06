@@ -1,24 +1,6 @@
 """The setup script for installing and distributing the nes-py package."""
 from glob import glob
 from setuptools import setup, find_packages, Extension
-from setuptools.command.build_ext import build_ext
-
-
-class BuildExt(build_ext):
-    """
-    A build extension to omit the '-Wstrict-prototypes' flag.
-
-    Reference:
-        https://stackoverflow.com/questions/8106258/cc1plus-warning-command-line-option-wstrict-prototypes-is-valid-for-ada-c-o
-    """
-
-    def build_extensions(self):
-        """Build the extensions."""
-        try:
-            self.compiler.compiler_so.remove("-Wstrict-prototypes")
-        except (AttributeError, ValueError):
-            pass
-        build_ext.build_extensions(self)
 
 
 # read the contents from the README file
@@ -54,7 +36,7 @@ LIB_NES_ENV = Extension(LIB_NAME,
 
 setup(
     name='nes_py',
-    version='4.1.2',
+    version='5.0.0',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README,
     long_description_content_type='text/markdown',
@@ -92,8 +74,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'nes_py = nes_py._app.cli:main',
+            'nes_py = nes_py.app.cli:main',
         ],
     },
-    cmdclass={'build_ext': BuildExt},
 )

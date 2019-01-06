@@ -150,7 +150,7 @@ class NESEnv(gym.Env):
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
         # setup a placeholder for a pointer to a backup state
-        self._backup_env = None
+        self._has_backup = False
         # setup the NumPy screen from the C++ vector
         self.screen = None
         self.ram = None
@@ -203,6 +203,7 @@ class NESEnv(gym.Env):
     def _backup(self):
         """Backup the NES state in the emulator."""
         _LIB.Backup(self._env)
+        self._has_backup = True
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
@@ -225,7 +226,7 @@ class NESEnv(gym.Env):
         # call the before reset callback
         self._will_reset()
         # reset the emulator
-        if self._backup_env is not None:
+        if self._has_backup:
             self._restore()
         else:
             _LIB.Reset(self._env)

@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         picture_bus.hpp
+//  Description:  This class houses picture bus data from the PPU
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef PICTUREBUS_H
 #define PICTUREBUS_H
+
 #include <vector>
 #include "cartridge.hpp"
 #include "mapper.hpp"
@@ -40,7 +48,9 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool set_mapper(Mapper *mapper);
+    bool assign_mapper(Mapper *mapper);
+
+    void set_mapper(Mapper *mapper) { m_mapper = mapper; };
 
     /// Read a color index from the palette.
     ///

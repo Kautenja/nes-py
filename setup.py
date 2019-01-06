@@ -1,5 +1,4 @@
 """The setup script for installing and distributing the nes-py package."""
-import os
 from glob import glob
 from setuptools import setup, find_packages, Extension
 from setuptools.command.build_ext import build_ext
@@ -39,14 +38,12 @@ SOURCES = glob('nes_py/cpp/*.cpp') + glob('nes_py/cpp/mappers/*.cpp')
 # headers with sdist
 INCLUDE_DIRS = ['nes_py/cpp/include']
 # Build arguments to pass to the compiler
-EXTRA_COMPILE_ARGS = ['-O2']
-# add additional arguments for Unix-based systems only
-if os.name != 'nt':
-    EXTRA_COMPILE_ARGS += [
-        '-std=c++1y',
-        '-march=native',
-        '-pipe',
-    ]
+EXTRA_COMPILE_ARGS = [
+    '-std=c++1y',
+    '-march=native',
+    '-pipe',
+    '-O2',
+]
 # The official extension using the name, source, headers, and build args
 LIB_NES_ENV = Extension(LIB_NAME,
     sources=SOURCES,
@@ -57,7 +54,7 @@ LIB_NES_ENV = Extension(LIB_NAME,
 
 setup(
     name='nes_py',
-    version='4.0.1',
+    version='4.1.1',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README,
     long_description_content_type='text/markdown',
@@ -80,7 +77,7 @@ setup(
     url='https://github.com/Kautenja/nes-py',
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
-    license='Proprietary',
+    license='MIT',
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[LIB_NES_ENV],
     zip_safe=False,

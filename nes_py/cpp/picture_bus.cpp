@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         picture_bus.cpp
+//  Description:  This class houses picture bus data from the PPU
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "picture_bus.hpp"
 #include "log.hpp"
 
@@ -92,7 +99,7 @@ void PictureBus::update_mirroring() {
     }
 }
 
-bool PictureBus::set_mapper(Mapper *mapper) {
+bool PictureBus::assign_mapper(Mapper *mapper) {
     // if the mapper is a null pointer, raise an error
     if (!mapper) {
         LOG(Error) << "Mapper argument is nullptr" << std::endl;

@@ -126,29 +126,29 @@ class ShouldStepEnv(TestCase):
         env.close()
 
 
-# class ShouldStepEnvBackupRestore(TestCase):
-#     def test(self):
-#         import numpy as np
-#         done = True
-#         env = create_smb1_instance()
+class ShouldStepEnvBackupRestore(TestCase):
+    def test(self):
+        import numpy as np
+        done = True
+        env = create_smb1_instance()
 
-#         for _ in range(250):
-#             if done:
-#                 state = env.reset()
-#                 done = False
-#             state, _, done, _ = env.step(0)
+        for _ in range(250):
+            if done:
+                state = env.reset()
+                done = False
+            state, _, done, _ = env.step(0)
 
-#         backup = state.copy()
+        backup = state.copy()
 
-#         env._backup()
+        env._backup()
 
-#         for _ in range(250):
-#             if done:
-#                 state = env.reset()
-#                 done = False
-#             state, _, done, _ = env.step(0)
+        for _ in range(250):
+            if done:
+                state = env.reset()
+                done = False
+            state, _, done, _ = env.step(0)
 
-#         self.assertFalse(np.array_equal(backup, state))
-#         env._restore()
-#         self.assertTrue(np.array_equal(backup, env.screen))
-#         env.close()
+        self.assertFalse(np.array_equal(backup, state))
+        env._restore()
+        self.assertTrue(np.array_equal(backup, env.screen))
+        env.close()

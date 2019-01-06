@@ -1,5 +1,16 @@
+//  Program:      nes-py
+//  File:         mapper_CNROM.cpp
+//  Description:  An implementation of the CNROM mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "mappers/mapper_CNROM.hpp"
 #include "log.hpp"
+
+MapperCNROM::MapperCNROM(Cartridge& cart) : Mapper(cart), m_selectCHR(0) {
+    m_oneBank = cart.getROM().size() == 0x4000;
+};
 
 uint8_t MapperCNROM::readPRG(uint16_t addr) {
     if (!m_oneBank)

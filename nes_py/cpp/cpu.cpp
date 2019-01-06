@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         cpu.cpp
+//  Description:  This class houses the logic and data for the NES CPU
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "cpu.hpp"
 #include "cpu_opcodes.hpp"
 #include "log.hpp"

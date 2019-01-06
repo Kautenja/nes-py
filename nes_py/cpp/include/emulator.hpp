@@ -1,7 +1,13 @@
+//  Program:      nes-py
+//  File:         emulator.hpp
+//  Description:  This class houses the logic and data for an NES emulator
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef EMULATOR_H
 #define EMULATOR_H
-#include <string>
-#include <stdint.h>
+
 #include "cartridge.hpp"
 #include "controller.hpp"
 #include "cpu.hpp"
@@ -9,11 +15,15 @@
 #include "main_bus.hpp"
 #include "mapper.hpp"
 #include "picture_bus.hpp"
+#include <stdint.h>
+#include <string>
 
 /// The width of the NES screen in pixels
-const int NESVideoWidth = ScanlineVisibleDots;
+const int NES_VIDEO_WIDTH = ScanlineVisibleDots;
 /// The height of the NES screen in pixels
-const int NESVideoHeight = VisibleScanlines;
+const int NES_VIDEO_HEIGHT = VisibleScanlines;
+/// The number of cycles in approximately 1 frame
+const int STEPS_PER_FRAME = 29781;
 
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
@@ -21,27 +31,30 @@ class Emulator {
 private:
     /// the path to the ROM for this environment
     std::string rom_path;
+    /// the virtual cartridge with ROM and mapper data
+    Cartridge cartridge;
+    /// a pointer to the mapper on the cartridge
+    Mapper* mapper;
+    /// the 2 controllers on the emulator
+    Controller controller1, controller2;
 
     /// the main data bus of the emulator
     MainBus bus;
-
     /// the picture bus from the PPU of the emulator
     PictureBus picture_bus;
-
     /// The emulator's CPU
     CPU cpu;
-
     /// the emulators' PPU
     PPU ppu;
 
-    /// the virtual cartridge with ROM and mapper data
-    Cartridge cartridge;
-
-    /// a pointer to the mapper on the cartridge
-    Mapper* mapper;
-
-    /// the 2 controllers on the emulator
-    Controller controller1, controller2;
+    /// the main data bus of the emulator
+    MainBus backup_bus;
+    /// the picture bus from the PPU of the emulator
+    PictureBus backup_picture_bus;
+    /// The emulator's CPU
+    CPU backup_cpu;
+    /// the emulators' PPU
+    PPU backup_ppu;
 
     /// Skip DMA cycle and perform a DMA copy.
     void DMA(uint8_t page);
@@ -49,15 +62,9 @@ private:
 public:
     /// Initialize a new emulator with a path to a ROM file.
     ///
-    /// @param rom_path the path to the ROM for the emulator to run
+    /// @param path the path to the ROM for the emulator to run
     ///
-    Emulator(std::string rom_path);
-
-    /// Create a new emulator as a copy of another emulator state
-    ///
-    /// @param emulator the emulator to copy the state from
-    ///
-    Emulator(Emulator* emulator);
+    Emulator(std::string path);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///
@@ -72,7 +79,7 @@ public:
     uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
-    void reset();
+    void reset() { cpu.reset(bus); ppu.reset(); };
 
     /// Perform a discrete "step" of the NES by rendering 1 frame.
     ///
@@ -90,6 +97,12 @@ public:
     /// 0: A
     ///
     void step(unsigned char action);
+
+    /// Create a backup state on the emulator
+    void backup();
+
+    /// Restore the backup state on the emulator
+    void restore();
 
 };
 

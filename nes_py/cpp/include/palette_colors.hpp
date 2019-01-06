@@ -1,3 +1,13 @@
+//  Program:      nes-py
+//  File:         palette_colors.hpp
+//  Description:  This file describes the color palette for RGB conversion
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
+#ifndef PALETTE_COLORS_H
+#define PALETTE_COLORS_H
+
 #include <cstdint>
 
 // Colors in xRGB
@@ -12,3 +22,5 @@ const uint32_t colors[] = {
     0xFCFCFC, 0xA4E4FC, 0xB8B8F8, 0xD8B8F8, 0xF8B8F8, 0xF8A4C0, 0xF0D0B0, 0xFCE0A8,
     0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000, 0x000000
 };
+
+#endif // PALETTE_COLORS_H

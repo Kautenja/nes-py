@@ -1,6 +1,13 @@
+//  Program:      nes-py
+//  File:         main_bus.cpp
+//  Description:  This class houses the main bus data for the NES
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "main_bus.hpp"
-#include <cstring>
 #include "log.hpp"
+#include <cstring>
 
 uint8_t MainBus::read(uint16_t addr) {
     if (addr < 0x2000)
@@ -98,7 +105,7 @@ const uint8_t* MainBus::get_page_pointer(uint8_t page) {
     return nullptr;
 }
 
-bool MainBus::set_mapper(Mapper* mapper) {
+bool MainBus::assign_mapper(Mapper* mapper) {
     m_mapper = mapper;
 
     if (!mapper) {

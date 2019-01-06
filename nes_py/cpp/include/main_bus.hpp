@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         main_bus.hpp
+//  Description:  This class houses the main bus data for the NES
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef MAIN_BUS_H
 #define MAIN_BUS_H
+
 #include <vector>
 #include <map>
 #include <functional>
@@ -64,7 +72,9 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool set_mapper(Mapper* mapper);
+    bool assign_mapper(Mapper* mapper);
+
+    void set_mapper(Mapper *mapper) { m_mapper = mapper; };
 
     /// Set a callback for when writes occur.
     bool set_write_callback(IORegisters reg, std::function<void(uint8_t)> callback);

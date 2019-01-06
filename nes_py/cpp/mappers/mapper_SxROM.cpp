@@ -1,8 +1,15 @@
+//  Program:      nes-py
+//  File:         mapper_SxROM.cpp
+//  Description:  An implementation of the SxROM mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "mappers/mapper_SxROM.hpp"
 #include "log.hpp"
 
 MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb) :
-    Mapper(cart, Mapper::SxROM),
+    Mapper(cart),
     m_mirroringCallback(mirroring_cb),
     m_mirroing(Horizontal),
     m_modeCHR(0),

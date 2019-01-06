@@ -18,7 +18,7 @@ class FrameSkipEnv(gym.Wrapper):
 
         """
         super(FrameSkipEnv, self).__init__(env)
-        self._skip = skip
+        self.skip = skip
 
     def step(self, action):
         """
@@ -40,7 +40,7 @@ class FrameSkipEnv(gym.Wrapper):
         # set the done flag to false
         done = False
         # iterate over the number of frames to skip
-        for _ in range(self._skip):
+        for _ in range(self.skip):
             # get the next state using the given action
             state, reward, done, info = self.env.step(action)
             # accumulate the total reward

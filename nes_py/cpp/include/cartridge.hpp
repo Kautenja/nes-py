@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         cartridge.hpp
+//  Description:  This class houses the logic and data for an NES cartridge
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
+
 #include <vector>
 #include <string>
 #include <cstdint>

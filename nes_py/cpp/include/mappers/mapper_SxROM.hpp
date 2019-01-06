@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         mapper_SxROM.hpp
+//  Description:  An implementation of the SxROM mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef MAPPERSXROM_H
 #define MAPPERSXROM_H
+
 #include "mapper.hpp"
 
 class MapperSxROM : public Mapper {

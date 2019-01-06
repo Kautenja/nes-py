@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         picture_bus.hpp
+//  Description:  This class houses picture bus data from the PPU
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef PICTUREBUS_H
 #define PICTUREBUS_H
+
 #include <vector>
 #include "cartridge.hpp"
 #include "mapper.hpp"

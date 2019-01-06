@@ -1,7 +1,13 @@
+//  Program:      nes-py
+//  File:         emulator.hpp
+//  Description:  This class houses the logic and data for an NES emulator
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef EMULATOR_H
 #define EMULATOR_H
-#include <string>
-#include <stdint.h>
+
 #include "cartridge.hpp"
 #include "controller.hpp"
 #include "cpu.hpp"
@@ -9,11 +15,13 @@
 #include "main_bus.hpp"
 #include "mapper.hpp"
 #include "picture_bus.hpp"
+#include <stdint.h>
+#include <string>
 
 /// The width of the NES screen in pixels
-const int NESVideoWidth = ScanlineVisibleDots;
+const int NES_VIDEO_WIDTH = ScanlineVisibleDots;
 /// The height of the NES screen in pixels
-const int NESVideoHeight = VisibleScanlines;
+const int NES_VIDEO_HEIGHT = VisibleScanlines;
 /// The number of cycles in approximately 1 frame
 const int STEPS_PER_FRAME = 29781;
 

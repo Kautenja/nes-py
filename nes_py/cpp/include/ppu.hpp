@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         ppu.hpp
+//  Description:  This class houses the logic and data for the PPU of an NES
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef PPU_H
 #define PPU_H
+
 #include <functional>
 #include <array>
 #include "picture_bus.hpp"

@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         main_bus.hpp
+//  Description:  This class houses the main bus data for the NES
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef MAIN_BUS_H
 #define MAIN_BUS_H
+
 #include <vector>
 #include <map>
 #include <functional>

@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         lib_nes_env.cpp
+//  Description:  file describes the outward facing ctypes API for Python
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "emulator.hpp"
 #include <stdint.h>
 #include <cstring>
@@ -17,10 +24,10 @@
 // definitions of functions for the Python interface to access
 extern "C" {
     /// Return the width of the NES.
-    EXP unsigned GetNESWidth() { return NESVideoWidth; }
+    EXP unsigned GetNESWidth() { return NES_VIDEO_WIDTH; }
 
     /// Return the height of the NES.
-    EXP unsigned GetNESHeight() { return NESVideoHeight; }
+    EXP unsigned GetNESHeight() { return NES_VIDEO_HEIGHT; }
 
     /// Initialize a new emulator and return a pointer to it
     EXP Emulator* Initialize(wchar_t* path) {

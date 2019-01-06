@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         cpu_opcodes.hpp
+//  Description:  This file defines relevant CPU opcodes
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef CPUOPCODES_H_INCLUDED
 #define CPUOPCODES_H_INCLUDED
 

@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         mapper_NROM.hpp
+//  Description:  An implementation of the NROM mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef MAPPERNROM_H
 #define MAPPERNROM_H
+
 #include "mapper.hpp"
 
 class MapperNROM : public Mapper {

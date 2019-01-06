@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         controller.hpp
+//  Description:  This class houses the logic and data for an NES controller
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
+
 #include <stdint.h>
 #include <vector>
 

@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         mapper.hpp
+//  Description:  This class provides an abstraction of an NES cartridge mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef MAPPER_H
 #define MAPPER_H
+
 #include "cartridge.hpp"
 #include <memory>
 #include <functional>

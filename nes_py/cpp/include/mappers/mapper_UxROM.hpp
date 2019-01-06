@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         mapper_UxROM.hpp
+//  Description:  An implementation of the UxROM mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef MAPPERUXROM_H
 #define MAPPERUXROM_H
+
 #include "mapper.hpp"
 
 class MapperUxROM : public Mapper {

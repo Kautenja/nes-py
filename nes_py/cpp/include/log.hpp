@@ -1,5 +1,13 @@
+//  Program:      nes-py
+//  File:         log.hpp
+//  Description:  Logging utilities for the project
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #ifndef LOG_H
 #define LOG_H
+
 #include <iostream>
 #include <string>
 #include <fstream>

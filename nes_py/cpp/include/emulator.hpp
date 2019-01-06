@@ -37,11 +37,24 @@ private:
     /// the picture bus from the PPU of the emulator
     PictureBus picture_bus;
 
+    /// the main data bus of the emulator
+    MainBus backup_bus;
+
+    /// the picture bus from the PPU of the emulator
+    PictureBus backup_picture_bus;
+
     /// The emulator's CPU
     CPU cpu;
 
     /// the emulators' PPU
     PPU ppu;
+
+
+    /// The emulator's CPU
+    CPU backup_cpu;
+
+    /// the emulators' PPU
+    PPU backup_ppu;
 
     /// the virtual cartridge with ROM and mapper data
     Cartridge cartridge;
@@ -52,8 +65,6 @@ private:
     /// the 2 controllers on the emulator
     Controller controller1, controller2;
 
-    void setup_buses();
-
     /// Skip DMA cycle and perform a DMA copy.
     void DMA(uint8_t page);
 
@@ -63,12 +74,6 @@ public:
     /// @param path the path to the ROM for the emulator to run
     ///
     Emulator(std::string path);
-
-    /// Create a new emulator as a copy of another emulator state
-    ///
-    /// @param emulator the emulator to copy the state from
-    ///
-    Emulator(const Emulator &emulator);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///
@@ -101,6 +106,12 @@ public:
     /// 0: A
     ///
     void step(unsigned char action);
+
+    /// Create a backup state on the emulator
+    void backup();
+
+    /// Restore the backup state on the emulator
+    void restore();
 
 };
 

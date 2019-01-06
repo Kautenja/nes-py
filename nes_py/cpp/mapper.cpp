@@ -8,12 +8,12 @@ Mapper* Mapper::create(Cartridge& cart, std::function<void(void)> mirroring_cb) 
     switch (static_cast<Mapper::Type>(cart.getMapper())) {
         case NROM:
             return new MapperNROM(cart);
-        // case SxROM:
-        //     return new MapperSxROM(cart, mirroring_cb);
-        // case UxROM:
-        //     return new MapperUxROM(cart);
-        // case CNROM:
-        //     return new MapperCNROM(cart);
+        case SxROM:
+            return new MapperSxROM(cart, mirroring_cb);
+        case UxROM:
+            return new MapperUxROM(cart);
+        case CNROM:
+            return new MapperCNROM(cart);
         default:
             return nullptr;
     }

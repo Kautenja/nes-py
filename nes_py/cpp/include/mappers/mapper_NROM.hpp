@@ -13,25 +13,11 @@ private:
     std::vector<uint8_t> m_characterRAM;
 
 public:
-
     /// Create a new mapper with a cartridge.
     ///
     /// @param cart a reference to a cartridge for the mapper to access
     ///
     MapperNROM(Cartridge& cart);
-
-    /// Create a new mapper as a copy of another mapper
-    ///
-    /// @param other the other mapper to clone data from
-    /// @param cart the new cartridge to associate with
-    ///
-    MapperNROM(const MapperNROM& other, Cartridge& cart);
-
-    /// Create a clone of this mapper.
-    ///
-    /// @param cartridge the cartridge to create a clone of the mapper with
-    ///
-    Mapper* clone(Cartridge& cartridge) const;
 
     /// Read a byte from the PRG RAM.
     ///

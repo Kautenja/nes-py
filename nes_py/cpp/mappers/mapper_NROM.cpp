@@ -1,7 +1,7 @@
 #include "mappers/mapper_NROM.hpp"
 #include "log.hpp"
 
-MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart, Mapper::NROM) {
+MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart) {
     if (cart.getROM().size() == 0x4000) // 1 bank
         m_oneBank = true;
     else // 2 banks
@@ -14,16 +14,6 @@ MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart, Mapper::NROM) {
     }
     else
         m_usesCharacterRAM = false;
-}
-
-MapperNROM::MapperNROM(const MapperNROM& other, Cartridge& cart) :
-    Mapper(cart, Mapper::NROM),
-    m_oneBank(other.m_oneBank),
-    m_usesCharacterRAM(other.m_usesCharacterRAM),
-    m_characterRAM(other.m_characterRAM) { }
-
-Mapper* MapperNROM::clone(Cartridge& cartridge) const {
-    return new MapperNROM(*this, cartridge);
 }
 
 uint8_t MapperNROM::readPRG(uint16_t addr) {

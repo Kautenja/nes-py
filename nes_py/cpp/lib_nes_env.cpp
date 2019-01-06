@@ -43,11 +43,14 @@ extern "C" {
     /// Perform a discrete step in the emulator (i.e., 1 frame)
     EXP void Step(Emulator* emu, unsigned char action) { emu->step(action); }
 
-    /// Close the emulator, i.e., purge it from memory
-    EXP void Close(Emulator* emu) { delete emu; }
+    /// Create a deep copy (i.e., a clone) of the given emulator
+    EXP void Backup(Emulator* emu) { emu->backup(); }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP Emulator* Clone(Emulator* emu) { return new Emulator(*emu); }
+    EXP void Restore(Emulator* emu) { emu->restore(); }
+
+    /// Close the emulator, i.e., purge it from memory
+    EXP void Close(Emulator* emu) { delete emu; }
 
 }
 

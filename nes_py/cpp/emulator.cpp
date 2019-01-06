@@ -2,35 +2,6 @@
 #include "log.hpp"
 
 Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
-    setup_buses();
-    // load the ROM from disk and return if the operation fails
-    if (!cartridge.loadFromFile(rom_path))
-        return;
-    // create the mapper based on the mapper ID in the iNES header of the ROM
-    mapper = Mapper::create(
-        cartridge,
-        [&](){ picture_bus.update_mirroring(); }
-    );
-    bus.assign_mapper(mapper);
-    picture_bus.assign_mapper(mapper);
-}
-
-Emulator::Emulator(const Emulator &emulator) {
-    rom_path = emulator.rom_path;
-    controller1 = emulator.controller1;
-    controller2 = emulator.controller2;
-    cpu = emulator.cpu;
-    ppu = emulator.ppu;
-    bus = emulator.bus;
-    picture_bus = emulator.picture_bus;
-    cartridge = emulator.cartridge;
-    mapper = emulator.mapper->clone(cartridge);
-    bus.set_mapper(mapper);
-    picture_bus.set_mapper(mapper);
-    setup_buses();
-}
-
-void Emulator::setup_buses() {
     // raise an error if IO callback setup fails
     if (
         !bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
@@ -57,12 +28,16 @@ void Emulator::setup_buses() {
     }
     // set the interrupt callback for the PPU
     ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
-}
-
-void Emulator::reset() {
-    // reset the CPU and PPU
-    cpu.reset(bus);
-    ppu.reset();
+    // load the ROM from disk and return if the operation fails
+    if (!cartridge.loadFromFile(rom_path))
+        return;
+    // create the mapper based on the mapper ID in the iNES header of the ROM
+    mapper = Mapper::create(
+        cartridge,
+        [&](){ picture_bus.update_mirroring(); }
+    );
+    bus.assign_mapper(mapper);
+    picture_bus.assign_mapper(mapper);
 }
 
 void Emulator::DMA(uint8_t page) {
@@ -70,6 +45,12 @@ void Emulator::DMA(uint8_t page) {
     cpu.skipDMACycles();
     // do the DMA page change on the PPU
     ppu.doDMA(bus.get_page_pointer(page));
+}
+
+void Emulator::reset() {
+    // reset the CPU and PPU
+    cpu.reset(bus);
+    ppu.reset();
 }
 
 void Emulator::step(unsigned char action) {
@@ -80,4 +61,18 @@ void Emulator::step(unsigned char action) {
         ppu.step(picture_bus);
         cpu.step(bus);
     }
+}
+
+void Emulator::backup() {
+    backup_bus = bus;
+    backup_picture_bus = picture_bus;
+    backup_cpu = cpu;
+    backup_ppu = ppu;
+}
+
+void Emulator::restore() {
+    bus = backup_bus;
+    picture_bus = backup_picture_bus;
+    cpu = backup_cpu;
+    ppu = backup_ppu;
 }

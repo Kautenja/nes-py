@@ -19,29 +19,19 @@ public:
     /// an enumeration of mapper IDs
     enum Type {
         NROM  = 0,
-        // SxROM = 1,
-        // UxROM = 2,
-        // CNROM = 3,
+        SxROM = 1,
+        UxROM = 2,
+        CNROM = 3,
     };
 
     /// Create a new mapper with a cartridge and given type.
     ///
     /// @param cart a reference to a cartridge for the mapper to access
-    /// @param t the type of the cartridge subclass
     ///
-    Mapper(Cartridge& cart, Type t) : m_cartridge(cart), m_type(t) {};
-
-    /// Delete this mapper's data
-    virtual ~Mapper() { };
+    Mapper(Cartridge& cart) : m_cartridge(cart) { };
 
     /// Create a mapper based on given type, a game cartridge
     static Mapper* create (Cartridge& cart, std::function<void(void)> mirroring_cb);
-
-    /// Create a clone of this mapper.
-    ///
-    /// @param cartridge the cartridge to create a clone of the mapper with
-    ///
-    virtual Mapper* clone(Cartridge& cartridge) const = 0;
 
     /// Read a byte from the PRG RAM.
     ///
@@ -89,9 +79,6 @@ public:
 protected:
     /// The cartridge this mapper associates with
     Cartridge& m_cartridge;
-    // TODO: remove this
-    /// The subclass type of the mapper based on the cartridge mapper ID
-    Type m_type;
 
 };
 

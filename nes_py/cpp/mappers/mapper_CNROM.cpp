@@ -1,22 +1,26 @@
-// #include "mappers/mapper_CNROM.hpp"
-// #include "log.hpp"
+#include "mappers/mapper_CNROM.hpp"
+#include "log.hpp"
 
-// uint8_t MapperCNROM::readPRG(uint16_t addr) {
-//     if (!m_oneBank)
-//         return m_cartridge.getROM()[addr - 0x8000];
-//     // mirrored
-//     else
-//         return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
-// }
+MapperCNROM::MapperCNROM(Cartridge& cart) : Mapper(cart), m_selectCHR(0) {
+    m_oneBank = cart.getROM().size() == 0x4000;
+};
 
-// const uint8_t* MapperCNROM::getPagePtr(uint16_t addr) {
-//     if (!m_oneBank)
-//         return &m_cartridge.getROM()[addr - 0x8000];
-//     // mirrored
-//     else
-//         return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
-// }
+uint8_t MapperCNROM::readPRG(uint16_t addr) {
+    if (!m_oneBank)
+        return m_cartridge.getROM()[addr - 0x8000];
+    // mirrored
+    else
+        return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
+}
 
-// void MapperCNROM::writeCHR(uint16_t addr, uint8_t value) {
-//     LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
-// }
+const uint8_t* MapperCNROM::getPagePtr(uint16_t addr) {
+    if (!m_oneBank)
+        return &m_cartridge.getROM()[addr - 0x8000];
+    // mirrored
+    else
+        return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
+}
+
+void MapperCNROM::writeCHR(uint16_t addr, uint8_t value) {
+    LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
+}

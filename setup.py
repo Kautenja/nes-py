@@ -74,7 +74,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'nes_py = nes_py._app.cli:main',
+            'nes_py = nes_py.app.cli:main',
         ],
     },
 )

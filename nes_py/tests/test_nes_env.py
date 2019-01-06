@@ -50,7 +50,7 @@ class ShouldRaiseErrorOnStepBeforeReset(TestCase):
     def test(self):
         import os
         from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+        path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
         env = NESEnv(path)
         self.assertRaises(ValueError, env.step, 0)
 
@@ -60,7 +60,7 @@ class ShouldCreateInstanceOfNESEnv(TestCase):
         import os
         from ..nes_env import NESEnv
         import gym
-        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+        path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
         env = NESEnv(path)
         self.assertIsInstance(env, gym.Env)
         env.close()
@@ -70,7 +70,7 @@ def create_smb1_instance():
     """Return a new SMB1 instance."""
     import os
     from ..nes_env import NESEnv
-    path = os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+    path = os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
     return NESEnv(path)
 
 

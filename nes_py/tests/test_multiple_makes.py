@@ -18,7 +18,7 @@ def play(steps):
 
     """
     # create an NES environment with Super Mario Bros.
-    path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+    path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
     env = NESEnv(path)
     # step the environment for some arbitrary number of steps
     done = True
@@ -73,7 +73,7 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
 
     def test(self):
         from ..nes_env import NESEnv
-        path =  os.path.join(os.path.dirname(__file__), 'games/smb1.nes')
+        path =  os.path.join(os.path.dirname(__file__), 'games/super-mario-bros-1.nes')
         envs = [NESEnv(path) for _ in range(self.num_envs)]
         dones = [True] * self.num_envs
 

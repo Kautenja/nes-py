@@ -1,7 +1,6 @@
 """A method to play gym environments using human IO inputs."""
 import gym
 import pygame
-from .visualize.realtime_plot import RealtimePlot
 
 
 def display_arr(screen, arr, video_size, transpose):
@@ -29,7 +28,7 @@ def display_arr(screen, arr, video_size, transpose):
     screen.blit(pyg_img, (0, 0))
 
 
-def play(env, transpose=True, fps=30, callback=None, plot_reward=False, nop_=0):
+def play(env, transpose=True, fps=30, callback=None, nop_=0):
     """Play the game using the keyboard as a human.
 
     Args:
@@ -44,7 +43,6 @@ def play(env, transpose=True, fps=30, callback=None, plot_reward=False, nop_=0):
             - reward: reward from the action taken
             - done: a flag to determine if the episode is over
             - info: extra information from the environment
-        plot_reward (bool): whether to plot the reward output in realtime
         nop_ (any): the object to use as a null op action for the environment
 
     Returns:
@@ -87,12 +85,6 @@ def play(env, transpose=True, fps=30, callback=None, plot_reward=False, nop_=0):
         pygame.display.set_caption('nes-py')
     # start a clock for limiting the frame rate to the given FPS
     clock = pygame.time.Clock()
-    # create a plot for outputting reward from the environment
-    if plot_reward:
-        plot = RealtimePlot()
-    # if plot reward is off, just set it to a dummy lambda
-    else:
-        plot = lambda x: None
     # start the main game loop
     while running:
         # reset if the environment is done
@@ -105,8 +97,6 @@ def play(env, transpose=True, fps=30, callback=None, plot_reward=False, nop_=0):
             action = keys_to_action.get(tuple(sorted(pressed_keys)), nop_)
             prev_obs = obs
             obs, rew, env_done, info = env.step(action)
-            # pass the reward to the plot method
-            plot(rew)
             # pass the output data to the callback method
             if callback is not None:
                 callback(prev_obs, obs, action, rew, env_done, info)

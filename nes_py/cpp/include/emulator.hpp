@@ -14,56 +14,39 @@
 const int NESVideoWidth = ScanlineVisibleDots;
 /// The height of the NES screen in pixels
 const int NESVideoHeight = VisibleScanlines;
+/// The number of cycles in approximately 1 frame
+const int STEPS_PER_FRAME = 29781;
 
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
 
 private:
-
-    /// an enumeration of mapper IDs
-    enum Type {
-        NROM  = 0,
-        // SxROM = 1,
-        // UxROM = 2,
-        // CNROM = 3,
-    };
-
     /// the path to the ROM for this environment
     std::string rom_path;
+    /// the virtual cartridge with ROM and mapper data
+    Cartridge cartridge;
+    /// a pointer to the mapper on the cartridge
+    Mapper* mapper;
+    /// the 2 controllers on the emulator
+    Controller controller1, controller2;
 
     /// the main data bus of the emulator
     MainBus bus;
-
     /// the picture bus from the PPU of the emulator
     PictureBus picture_bus;
-
-    /// the main data bus of the emulator
-    MainBus backup_bus;
-
-    /// the picture bus from the PPU of the emulator
-    PictureBus backup_picture_bus;
-
     /// The emulator's CPU
     CPU cpu;
-
     /// the emulators' PPU
     PPU ppu;
 
-
+    /// the main data bus of the emulator
+    MainBus backup_bus;
+    /// the picture bus from the PPU of the emulator
+    PictureBus backup_picture_bus;
     /// The emulator's CPU
     CPU backup_cpu;
-
     /// the emulators' PPU
     PPU backup_ppu;
-
-    /// the virtual cartridge with ROM and mapper data
-    Cartridge cartridge;
-
-    /// a pointer to the mapper on the cartridge
-    Mapper* mapper;
-
-    /// the 2 controllers on the emulator
-    Controller controller1, controller2;
 
     /// Skip DMA cycle and perform a DMA copy.
     void DMA(uint8_t page);
@@ -88,7 +71,7 @@ public:
     uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
-    void reset();
+    void reset() { cpu.reset(bus); ppu.reset(); };
 
     /// Perform a discrete "step" of the NES by rendering 1 frame.
     ///

@@ -47,17 +47,11 @@ void Emulator::DMA(uint8_t page) {
     ppu.doDMA(bus.get_page_pointer(page));
 }
 
-void Emulator::reset() {
-    // reset the CPU and PPU
-    cpu.reset(bus);
-    ppu.reset();
-}
-
 void Emulator::step(unsigned char action) {
     // write the controller state to player 1
     controller1.write_buttons(action);
     // approximate a frame
-    for (int i = 0; i < 29781; i++) {
+    for (int i = 0; i < STEPS_PER_FRAME; i++) {
         ppu.step(picture_bus);
         cpu.step(bus);
     }

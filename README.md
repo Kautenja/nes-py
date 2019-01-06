@@ -43,7 +43,7 @@ sudo apt-get install clang
 
 ## Windows
 
-You'll need to install the Visual-Studio 14.0 tools for Windows installation.
+You'll need to install the Visual-Studio 17.0 tools for Windows installation.
 The [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
 package provides these tools for free.
 

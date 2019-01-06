@@ -11,7 +11,7 @@ class ROM(object):
 
     # the magic bytes expected at the first four bytes of the header.
     # It spells "NES<END>"
-    _MAGIC = bytes([0x4E, 0x45, 0x53, 0x1A])
+    _MAGIC = bytearray([0x4E, 0x45, 0x53, 0x1A])
 
     def __init__(self, rom_path):
         """

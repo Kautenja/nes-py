@@ -28,21 +28,13 @@ def display_arr(screen, arr, video_size, transpose):
     screen.blit(pyg_img, (0, 0))
 
 
-def play(env, transpose=True, fps=30, callback=None, nop_=0):
+def play(env, transpose=True, fps=30, nop_=0):
     """Play the game using the keyboard as a human.
 
     Args:
         env (gym.Env): the environment to use for playing
         transpose (bool): whether to transpose frame before viewing them
         fps (int): number of steps of the environment to execute every second
-        callback (Callable): a callback to execute after every step.
-            It takes the following inputs:
-            - state: observation before performing action
-            - next_state: observation after performing action
-            - action: action that fired
-            - reward: reward from the action taken
-            - done: a flag to determine if the episode is over
-            - info: extra information from the environment
         nop_ (any): the object to use as a null op action for the environment
 
     Returns:
@@ -95,11 +87,7 @@ def play(env, transpose=True, fps=30, callback=None, nop_=0):
         else:
             # unwrap the action based on pressed relevant keys
             action = keys_to_action.get(tuple(sorted(pressed_keys)), nop_)
-            prev_obs = obs
             obs, rew, env_done, info = env.step(action)
-            # pass the output data to the callback method
-            if callback is not None:
-                callback(prev_obs, obs, action, rew, env_done, info)
         # make sure the observation exists
         if obs is not None:
             # if the observation is just height and width (B&W)
@@ -147,5 +135,25 @@ def play(env, transpose=True, fps=30, callback=None, nop_=0):
     pygame.quit()
 
 
+def play_human(env):
+    """
+    Play the environment using keyboard as a human.
+
+    Args:
+        env (gym.Env): the initialized gym environment to play
+
+    Returns:
+        None
+
+    """
+    # play the game and catch a potential keyboard interrupt
+    try:
+        play(env, fps=env.metadata['video.frames_per_second'])
+    except KeyboardInterrupt:
+        pass
+    # reset and close the environment
+    env.close()
+
+
 # explicitly define the outward facing API of the module
-__all__ = [play.__name__]
+__all__ = [play_human.__name__]

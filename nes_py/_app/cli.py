@@ -1,14 +1,8 @@
 """Command line interface to nes-py NES emulator."""
 import argparse
-from .play import play_human, play_random
+from .play_human import play_human
+from .play_random import play_random
 from ..nes_env import NESEnv
-
-
-# The play modes for the system
-_PLAY_MODES = {
-    'human': play_human,
-    'random': play_random
-}
 
 
 def _get_args():
@@ -27,7 +21,12 @@ def _get_args():
         choices=['human', 'random'],
         help='The execution mode for the emulation.',
     )
-
+    # add the argument for the number of steps to take in random mode
+    parser.add_argument('--steps', '-s',
+        type=int,
+        default=500,
+        help='The number of random steps to take.',
+    )
     return parser.parse_args()
 
 
@@ -38,7 +37,10 @@ def main():
     # create the environment
     env = NESEnv(args.rom)
     # play the environment with the given mode
-    _PLAY_MODES[args.mode](env)
+    if args.mode == 'human':
+        play_human(env)
+    else:
+        play_random(env, args.steps)
 
 
 # explicitly define the outward facing API of this module

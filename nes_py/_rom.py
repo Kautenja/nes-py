@@ -4,6 +4,7 @@ Notes:
     - http://wiki.nesdev.com/w/index.php/INES
 """
 import os
+import numpy as np
 
 
 class ROM(object):
@@ -11,7 +12,7 @@ class ROM(object):
 
     # the magic bytes expected at the first four bytes of the header.
     # It spells "NES<END>"
-    _MAGIC = bytearray([0x4E, 0x45, 0x53, 0x1A])
+    _MAGIC = np.array([0x4E, 0x45, 0x53, 0x1A])
 
     def __init__(self, rom_path):
         """
@@ -34,8 +35,9 @@ class ROM(object):
         # read the binary data in the .nes ROM file
         with open(rom_path, 'rb') as nes_file:
             self.raw_data = nes_file.read()
+        self.raw_data = np.fromfile(rom_path, dtype='uint8')
         # ensure the first 4 bytes are 0x4E45531A (NES<EOF>)
-        if self._magic != self._MAGIC:
+        if not np.array_equal(self._magic, self._MAGIC):
             raise ValueError('ROM missing magic number in header.')
         if self._zero_fill != 0:
             raise ValueError("ROM header zero fill bytes are not zero.")
@@ -104,7 +106,7 @@ class ROM(object):
     @property
     def _zero_fill(self):
         """Return the zero fill bytes at the end of the header."""
-        return int.from_bytes(self.header[11:], byteorder='big')
+        return self.header[11:].sum()
 
     #
     # MARK: Header Flags

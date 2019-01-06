@@ -203,10 +203,12 @@ class NESEnv(gym.Env):
 
     def _del_backup(self):
         """Delete the backup for the environment."""
+        _LIB.Close(self._backup_env)
         self._backup_env = None
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
+        # self._env = _LIB.Clone(self._backup_env)
         self._env = self._backup_env
         self._setup_screen()
         self._setup_ram()

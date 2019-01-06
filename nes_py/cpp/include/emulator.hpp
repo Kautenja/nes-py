@@ -52,15 +52,17 @@ private:
     /// the 2 controllers on the emulator
     Controller controller1, controller2;
 
+    void setup_buses();
+
     /// Skip DMA cycle and perform a DMA copy.
     void DMA(uint8_t page);
 
 public:
     /// Initialize a new emulator with a path to a ROM file.
     ///
-    /// @param rom_path the path to the ROM for the emulator to run
+    /// @param path the path to the ROM for the emulator to run
     ///
-    Emulator(std::string rom_path);
+    Emulator(std::string path) : rom_path(path), cpu(), ppu() { setup_buses(); };
 
     /// Create a new emulator as a copy of another emulator state
     ///

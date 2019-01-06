@@ -92,7 +92,7 @@ void PictureBus::update_mirroring() {
     }
 }
 
-bool PictureBus::set_mapper(Mapper *mapper) {
+bool PictureBus::assign_mapper(Mapper *mapper) {
     // if the mapper is a null pointer, raise an error
     if (!mapper) {
         LOG(Error) << "Mapper argument is nullptr" << std::endl;

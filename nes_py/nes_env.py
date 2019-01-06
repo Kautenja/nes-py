@@ -172,7 +172,7 @@ class NESEnv(gym.Env):
         Advance a frame in the emulator with an action.
 
         Args:
-            action: the action to press on the joy-pad
+            action (byte): the action to press on the joy-pad
 
         Returns:
             None
@@ -272,7 +272,7 @@ class NESEnv(gym.Env):
         Handle any RAM hacking after a step occurs.
 
         Args:
-            done: whether the done flag is set to true
+            done (bool): whether the done flag is set to true
 
         Returns:
             None

@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         mapper.cpp
+//  Description:  This class provides an abstraction of an NES cartridge mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "mapper.hpp"
 #include "mappers/mapper_NROM.hpp"
 #include "mappers/mapper_SxROM.hpp"

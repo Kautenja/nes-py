@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         emulator.cpp
+//  Description:  This class houses the logic and data for an NES emulator
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "emulator.hpp"
 #include "log.hpp"
 

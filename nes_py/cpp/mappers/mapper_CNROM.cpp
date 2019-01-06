@@ -1,3 +1,10 @@
+//  Program:      nes-py
+//  File:         mapper_CNROM.cpp
+//  Description:  An implementation of the CNROM mapper
+//
+//  Copyright (c) 2019 Christian Kauten. All rights reserved.
+//
+
 #include "mappers/mapper_CNROM.hpp"
 #include "log.hpp"
 

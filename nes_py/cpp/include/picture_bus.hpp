@@ -8,20 +8,21 @@
 #ifndef PICTUREBUS_H
 #define PICTUREBUS_H
 
-#include "cartridge.hpp"
+#include "common.hpp"
 #include "mapper.hpp"
 #include <vector>
+#include <stdlib.h>
 
 /// The bus for graphical data to travel along
 class PictureBus {
 
 private:
     /// the VRAM on the picture bus
-    std::vector<uint8_t> m_RAM;
+    std::vector<NES_Byte> m_RAM;
     /// indexes where they start in RAM vector
     std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
     /// the palette for decoding RGB tuples
-    std::vector<uint8_t> m_palette;
+    std::vector<NES_Byte> m_palette;
     /// a pointer to the mapper on the cartridge
     Mapper* m_mapper;
 
@@ -35,14 +36,14 @@ public:
     ///
     /// @return the byte located at the given address
     ///
-    uint8_t read(uint16_t address);
+    NES_Byte read(NES_Address address);
 
     /// Write a byte to an address in the VRAM.
     ///
     /// @param address the 16-bit address to write the byte to in VRAM
     /// @param value the byte to write to the given address
     ///
-    void write(uint16_t address, uint8_t value);
+    void write(NES_Address address, NES_Byte value);
 
     /// Set the mapper pointer to a new value.
     ///
@@ -56,7 +57,7 @@ public:
     ///
     /// @return the index of the RGB tuple in the color array
     ///
-    uint8_t read_palette(uint8_t address) { return m_palette[address]; };
+    NES_Byte read_palette(NES_Byte address) { return m_palette[address]; };
 
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();

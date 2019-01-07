@@ -8,7 +8,7 @@
 #include "picture_bus.hpp"
 #include "log.hpp"
 
-uint8_t PictureBus::read(uint16_t address) {
+NES_Byte PictureBus::read(uint16_t address) {
     if (address < 0x2000) {
         return m_mapper->readCHR(address);
     }
@@ -34,7 +34,7 @@ uint8_t PictureBus::read(uint16_t address) {
     return 0;
 }
 
-void PictureBus::write(uint16_t address, uint8_t value) {
+void PictureBus::write(uint16_t address, NES_Byte value) {
     if (address < 0x2000) {
         m_mapper->writeCHR(address, value);
     }

@@ -15,7 +15,6 @@
 #include "main_bus.hpp"
 #include "mapper.hpp"
 #include "picture_bus.hpp"
-#include <stdint.h>
 #include <string>
 
 /// The width of the NES screen in pixels

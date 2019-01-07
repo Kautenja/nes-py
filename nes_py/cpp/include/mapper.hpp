@@ -9,7 +9,6 @@
 #define MAPPER_H
 
 #include "cartridge.hpp"
-#include <memory>
 #include <functional>
 
 /// Mirroring modes supported by the NES

@@ -8,9 +8,9 @@
 #ifndef PICTUREBUS_H
 #define PICTUREBUS_H
 
-#include <vector>
 #include "cartridge.hpp"
 #include "mapper.hpp"
+#include <vector>
 
 /// The bus for graphical data to travel along
 class PictureBus {

@@ -35,7 +35,6 @@ public:
         Down,
         Left,
         Right,
-        TotalButtons,
     };
 
     /// Write buttons to the virtual controller

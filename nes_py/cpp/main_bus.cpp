@@ -8,7 +8,7 @@
 #include "main_bus.hpp"
 #include "log.hpp"
 
-uint8_t MainBus::read(uint16_t addr) {
+NES_Byte MainBus::read(NES_Address addr) {
     if (addr < 0x2000)
         return m_RAM[addr & 0x7ff];
     else if (addr < 0x4020) {
@@ -49,7 +49,7 @@ uint8_t MainBus::read(uint16_t addr) {
     return 0;
 }
 
-void MainBus::write(uint16_t addr, uint8_t value) {
+void MainBus::write(NES_Address addr, NES_Byte value) {
     if (addr < 0x2000)
         m_RAM[addr & 0x7ff] = value;
     else if (addr < 0x4020) {
@@ -89,8 +89,8 @@ void MainBus::write(uint16_t addr, uint8_t value) {
     }
 }
 
-const uint8_t* MainBus::get_page_pointer(uint8_t page) {
-    uint16_t addr = page << 8;
+const NES_Byte* MainBus::get_page_pointer(NES_Byte page) {
+    NES_Address addr = page << 8;
     if (addr < 0x2000)
         return &m_RAM[addr & 0x7ff];
     else if (addr < 0x4020)
@@ -118,7 +118,7 @@ bool MainBus::set_mapper(Mapper* mapper) {
     return true;
 }
 
-bool MainBus::set_write_callback(IORegisters reg, std::function<void(uint8_t)> callback) {
+bool MainBus::set_write_callback(IORegisters reg, std::function<void(NES_Byte)> callback) {
     if (!callback) {
         LOG(Error) << "callback argument is nullptr" << std::endl;
         return false;
@@ -126,7 +126,7 @@ bool MainBus::set_write_callback(IORegisters reg, std::function<void(uint8_t)> c
     return m_writeCallbacks.emplace(reg, callback).second;
 }
 
-bool MainBus::set_read_callback(IORegisters reg, std::function<uint8_t(void)> callback) {
+bool MainBus::set_read_callback(IORegisters reg, std::function<NES_Byte(void)> callback) {
     if (!callback) {
         LOG(Error) << "callback argument is nullptr" << std::endl;
         return false;

@@ -14,15 +14,75 @@
 #include "main_bus.hpp"
 #include "palette_colors.hpp"
 
-const int ScanlineCycleLength = 341;
-const int ScanlineEndCycle = 340;
-const int VisibleScanlines = 240;
-const int ScanlineVisibleDots = 256;
-const int FrameEndScanline = 261;
+/// The number of cycles per scanline
+const int SCANLINE_CYCLE_LENGTH = 341;
+/// The last cycle of a scan line
+const int SCANLINE_END_CYCLE = 340;
+/// The number of visible scan lines (i.e., the height of the screen)
+const int VISIBLE_SCANLINES = 240;
+/// The number of visible dots per scan line (i.e., the width of the screen)
+const int SCANLINE_VISIBLE_DOTS = 256;
+/// The last memory frame of a scanline
+const int FRAME_END_SCANLINE = 261;
 
-const int AttributeOffset = 0x3C0;
-
+/// The picture processing unit for the NES
 class PPU {
+
+private:
+    uint8_t readOAM(uint8_t addr) { return m_spriteMemory[addr]; };
+    void writeOAM(uint8_t addr, uint8_t value) { m_spriteMemory[addr] = value; };
+
+    std::function<void(void)> m_vblankCallback;
+
+    std::vector<uint8_t> m_spriteMemory;
+
+    std::vector<uint8_t> m_scanlineSprites;
+
+    enum State {
+        PreRender,
+        Render,
+        PostRender,
+        VerticalBlank
+    } m_pipelineState;
+
+    int m_cycle;
+    int m_scanline;
+    bool m_evenFrame;
+
+    bool m_vblank;
+    bool m_sprZeroHit;
+
+    //Registers
+    uint16_t m_dataAddress;
+    uint16_t m_tempAddress;
+    uint8_t m_fineXScroll;
+    bool m_firstWrite;
+    uint8_t m_dataBuffer;
+
+    uint8_t m_spriteDataAddress;
+
+    //Setup flags and variables
+    bool m_longSprites;
+    bool m_generateInterrupt;
+
+    bool m_greyscaleMode;
+    bool m_showSprites;
+    bool m_showBackground;
+    bool m_hideEdgeSprites;
+    bool m_hideEdgeBackground;
+
+    enum CharacterPage {
+        Low,
+        High,
+    } m_bgPage, m_sprPage;
+
+    uint16_t m_dataAddrIncrement;
+
+    /// The internal screen data structure as a vector representation of a
+    /// matrix of height matching the visible scans lines and width matching
+    /// the number of visible scan line dots
+    uint32_t screen_buffer[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
+
 public:
     /// Initialize a new PPU
     PPU() : m_spriteMemory(64 * 4) { };
@@ -57,63 +117,6 @@ public:
 
     /// Return a pointer to the screen buffer.
     uint32_t* get_screen_buffer() { return *screen_buffer; };
-
-private:
-    uint8_t readOAM(uint8_t addr) { return m_spriteMemory[addr]; };
-    void writeOAM(uint8_t addr, uint8_t value) { m_spriteMemory[addr] = value; };
-
-    std::function<void(void)> m_vblankCallback;
-
-    std::vector<uint8_t> m_spriteMemory;
-
-    std::vector<uint8_t> m_scanlineSprites;
-
-    enum State
-    {
-        PreRender,
-        Render,
-        PostRender,
-        VerticalBlank
-    } m_pipelineState;
-    int m_cycle;
-    int m_scanline;
-    bool m_evenFrame;
-
-    bool m_vblank;
-    bool m_sprZeroHit;
-
-    //Registers
-    uint16_t m_dataAddress;
-    uint16_t m_tempAddress;
-    uint8_t m_fineXScroll;
-    bool m_firstWrite;
-    uint8_t m_dataBuffer;
-
-    uint8_t m_spriteDataAddress;
-
-    //Setup flags and variables
-    bool m_longSprites;
-    bool m_generateInterrupt;
-
-    bool m_greyscaleMode;
-    bool m_showSprites;
-    bool m_showBackground;
-    bool m_hideEdgeSprites;
-    bool m_hideEdgeBackground;
-
-    enum CharacterPage
-    {
-        Low,
-        High,
-    } m_bgPage,
-      m_sprPage;
-
-    uint16_t m_dataAddrIncrement;
-
-    /// The internal screen data structure as a vector representation of a
-    /// matrix of height matching the visible scans lines and width matching
-    /// the number of visible scan line dots
-    uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots];
 
 };
 

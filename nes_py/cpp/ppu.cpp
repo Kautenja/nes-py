@@ -7,6 +7,7 @@
 
 #include "ppu.hpp"
 #include "log.hpp"
+#include <cstring>
 
 void PPU::reset() {
     m_longSprites = m_generateInterrupt = m_greyscaleMode = m_vblank = false;

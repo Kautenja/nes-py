@@ -8,8 +8,6 @@
 #ifndef PPU_H
 #define PPU_H
 
-#include <functional>
-#include <array>
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
 #include "palette_colors.hpp"

@@ -8,6 +8,7 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include "common.hpp"
 #include "cartridge.hpp"
 #include "controller.hpp"
 #include "cpu.hpp"
@@ -56,7 +57,7 @@ private:
     PPU backup_ppu;
 
     /// Skip DMA cycle and perform a DMA copy.
-    void DMA(uint8_t page);
+    void DMA(NES_Byte page);
 
 public:
     /// Initialize a new emulator with a path to a ROM file.
@@ -75,7 +76,7 @@ public:
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
+    NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
     void reset() { cpu.reset(bus); ppu.reset(); };

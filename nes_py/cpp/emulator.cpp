@@ -21,15 +21,15 @@ Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
     }
     // raise an error if IO callback setup fails
     if (
-        !bus.set_write_callback(PPUCTRL, [&](uint8_t b) {ppu.control(b);}) ||
-        !bus.set_write_callback(PPUMASK, [&](uint8_t b) {ppu.setMask(b);}) ||
-        !bus.set_write_callback(OAMADDR, [&](uint8_t b) {ppu.setOAMAddress(b);}) ||
-        !bus.set_write_callback(PPUADDR, [&](uint8_t b) {ppu.setDataAddress(b);}) ||
-        !bus.set_write_callback(PPUSCROL, [&](uint8_t b) {ppu.setScroll(b);}) ||
-        !bus.set_write_callback(PPUDATA, [&](uint8_t b) {ppu.setData(picture_bus, b);}) ||
-        !bus.set_write_callback(OAMDMA, [&](uint8_t b) {DMA(b);}) ||
-        !bus.set_write_callback(JOY1, [&](uint8_t b) {controller1.strobe(b); controller2.strobe(b);}) ||
-        !bus.set_write_callback(OAMDATA, [&](uint8_t b) {ppu.setOAMData(b);})
+        !bus.set_write_callback(PPUCTRL, [&](NES_Byte b) {ppu.control(b);}) ||
+        !bus.set_write_callback(PPUMASK, [&](NES_Byte b) {ppu.setMask(b);}) ||
+        !bus.set_write_callback(OAMADDR, [&](NES_Byte b) {ppu.setOAMAddress(b);}) ||
+        !bus.set_write_callback(PPUADDR, [&](NES_Byte b) {ppu.setDataAddress(b);}) ||
+        !bus.set_write_callback(PPUSCROL, [&](NES_Byte b) {ppu.setScroll(b);}) ||
+        !bus.set_write_callback(PPUDATA, [&](NES_Byte b) {ppu.setData(picture_bus, b);}) ||
+        !bus.set_write_callback(OAMDMA, [&](NES_Byte b) {DMA(b);}) ||
+        !bus.set_write_callback(JOY1, [&](NES_Byte b) {controller1.strobe(b); controller2.strobe(b);}) ||
+        !bus.set_write_callback(OAMDATA, [&](NES_Byte b) {ppu.setOAMData(b);})
     ) {
         LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
     }
@@ -43,7 +43,7 @@ Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
     picture_bus.set_mapper(mapper);
 }
 
-void Emulator::DMA(uint8_t page) {
+void Emulator::DMA(NES_Byte page) {
     // skip the DMA cycles on the CPU
     cpu.skipDMACycles();
     // do the DMA page change on the PPU

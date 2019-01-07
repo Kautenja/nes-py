@@ -14,5 +14,7 @@
 using NES_Byte = uint8_t;
 /// A shortcut for a memory address (16-bit)
 using NES_Address = uint16_t;
+/// A shortcut for a single pixel in memory
+using NES_Pixelg = uint32_t;
 
 #endif // COMMON_HPP

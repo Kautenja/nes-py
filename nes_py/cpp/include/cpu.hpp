@@ -44,7 +44,7 @@ private:
     bool executeType2(MainBus &m_bus, NES_Byte opcode);
 
     NES_Address readAddress(MainBus &m_bus, NES_Address addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
-    void pushStack(MainBus &m_bus, NES_Byte value) {  m_bus.write(0x100 | r_SP--, value); };
+    void pushStack(MainBus &m_bus, NES_Byte value) { m_bus.write(0x100 | r_SP--, value); };
     NES_Byte pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
 
     //If a and b are in different pages, increases the m_SkipCycles by inc

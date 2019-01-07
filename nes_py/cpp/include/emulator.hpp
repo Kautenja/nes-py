@@ -29,8 +29,6 @@ const int STEPS_PER_FRAME = 29781;
 class Emulator {
 
 private:
-    /// the path to the ROM for this environment
-    std::string rom_path;
     /// the virtual cartridge with ROM and mapper data
     Cartridge cartridge;
     /// a pointer to the mapper on the cartridge
@@ -62,9 +60,9 @@ private:
 public:
     /// Initialize a new emulator with a path to a ROM file.
     ///
-    /// @param path the path to the ROM for the emulator to run
+    /// @param rom_path the path to the ROM for the emulator to run
     ///
-    Emulator(std::string path);
+    Emulator(std::string rom_path);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///

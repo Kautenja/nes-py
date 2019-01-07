@@ -8,7 +8,7 @@
 #include "emulator.hpp"
 #include "log.hpp"
 
-Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
+Emulator::Emulator(std::string rom_path) {
     // raise an error if IO callback setup fails
     if (
         !bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||

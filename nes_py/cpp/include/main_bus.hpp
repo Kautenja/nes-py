@@ -8,11 +8,9 @@
 #ifndef MAIN_BUS_H
 #define MAIN_BUS_H
 
+#include "mapper.hpp"
 #include <vector>
 #include <map>
-#include <functional>
-#include "cartridge.hpp"
-#include "mapper.hpp"
 
 /// The IO registers on the main bus
 enum IORegisters {

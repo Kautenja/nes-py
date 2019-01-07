@@ -20,8 +20,7 @@
     if (debug_disabled) {} \
     else std::cerr
 
-enum Level
-{
+enum Level {
     None,
     Error,
     Info,

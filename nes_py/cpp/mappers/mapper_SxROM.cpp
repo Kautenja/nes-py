@@ -39,14 +39,14 @@ MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb
     m_secondBankPRG = &cart.getROM()[cart.getROM().size() - 0x4000/*0x2000 * 0x0e*/]; //last bank
 }
 
-uint8_t MapperSxROM::readPRG(uint16_t addr) {
+NES_Byte MapperSxROM::readPRG(NES_Address addr) {
     if (addr < 0xc000)
         return *(m_firstBankPRG + (addr & 0x3fff));
     else
         return *(m_secondBankPRG + (addr & 0x3fff));
 }
 
-void MapperSxROM::writePRG(uint16_t addr, uint8_t value) {
+void MapperSxROM::writePRG(NES_Address addr, NES_Byte value) {
     //if reset bit is NOT set
     if (!(value & 0x80))  {
         m_tempRegister = (m_tempRegister >> 1) | ((value & 1) << 4);
@@ -126,14 +126,14 @@ void MapperSxROM::calculatePRGPointers() {
     }
 }
 
-const uint8_t* MapperSxROM::getPagePtr(uint16_t addr) {
+const NES_Byte* MapperSxROM::getPagePtr(NES_Address addr) {
     if (addr < 0xc000)
         return (m_firstBankPRG + (addr & 0x3fff));
     else
         return (m_secondBankPRG + (addr & 0x3fff));
 }
 
-uint8_t MapperSxROM::readCHR(uint16_t addr) {
+NES_Byte MapperSxROM::readCHR(NES_Address addr) {
     if (m_usesCharacterRAM)
         return m_characterRAM[addr];
     else if (addr < 0x1000)
@@ -142,7 +142,7 @@ uint8_t MapperSxROM::readCHR(uint16_t addr) {
         return *(m_secondBankCHR + (addr & 0xfff));
 }
 
-void MapperSxROM::writeCHR(uint16_t addr, uint8_t value) {
+void MapperSxROM::writeCHR(NES_Address addr, NES_Byte value) {
     if (m_usesCharacterRAM)
         m_characterRAM[addr] = value;
     else

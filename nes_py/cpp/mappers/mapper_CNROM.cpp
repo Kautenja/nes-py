@@ -12,7 +12,7 @@ MapperCNROM::MapperCNROM(Cartridge& cart) : Mapper(cart), m_selectCHR(0) {
     m_oneBank = cart.getROM().size() == 0x4000;
 };
 
-uint8_t MapperCNROM::readPRG(uint16_t addr) {
+NES_Byte MapperCNROM::readPRG(NES_Address addr) {
     if (!m_oneBank)
         return m_cartridge.getROM()[addr - 0x8000];
     // mirrored
@@ -20,7 +20,7 @@ uint8_t MapperCNROM::readPRG(uint16_t addr) {
         return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-const uint8_t* MapperCNROM::getPagePtr(uint16_t addr) {
+const NES_Byte* MapperCNROM::getPagePtr(NES_Address addr) {
     if (!m_oneBank)
         return &m_cartridge.getROM()[addr - 0x8000];
     // mirrored
@@ -28,6 +28,6 @@ const uint8_t* MapperCNROM::getPagePtr(uint16_t addr) {
         return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-void MapperCNROM::writeCHR(uint16_t addr, uint8_t value) {
+void MapperCNROM::writeCHR(NES_Address addr, NES_Byte value) {
     LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
 }

@@ -23,32 +23,32 @@ MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart) {
         m_usesCharacterRAM = false;
 }
 
-uint8_t MapperNROM::readPRG(uint16_t addr) {
+NES_Byte MapperNROM::readPRG(NES_Address addr) {
     if (!m_oneBank)
         return m_cartridge.getROM()[addr - 0x8000];
     else //mirrored
         return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
 }
 
-void MapperNROM::writePRG(uint16_t addr, uint8_t value) {
+void MapperNROM::writePRG(NES_Address addr, NES_Byte value) {
     LOG(InfoVerbose) << "ROM memory write attempt at " << +addr << " to set " << +value << std::endl;
 }
 
-uint8_t MapperNROM::readCHR(uint16_t addr) {
+NES_Byte MapperNROM::readCHR(NES_Address addr) {
     if (m_usesCharacterRAM)
         return m_characterRAM[addr];
     else
         return m_cartridge.getVROM()[addr];
 }
 
-void MapperNROM::writeCHR(uint16_t addr, uint8_t value) {
+void MapperNROM::writeCHR(NES_Address addr, NES_Byte value) {
     if (m_usesCharacterRAM)
         m_characterRAM[addr] = value;
     else
         LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
 }
 
-const uint8_t* MapperNROM::getPagePtr(uint16_t addr) {
+const NES_Byte* MapperNROM::getPagePtr(NES_Address addr) {
     if (!m_oneBank)
         return &m_cartridge.getROM()[addr - 0x8000];
     else //mirrored

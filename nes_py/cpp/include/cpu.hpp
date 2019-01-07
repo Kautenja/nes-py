@@ -18,14 +18,14 @@ private:
     int m_skipCycles;
     int m_cycles;
 
-    //Registers
-    NES_Address r_PC;
-    NES_Byte r_SP;
-    NES_Byte r_A;
-    NES_Byte r_X;
-    NES_Byte r_Y;
+    // Registers
+    NES_Address register_PC;
+    NES_Byte register_SP;
+    NES_Byte register_A;
+    NES_Byte register_X;
+    NES_Byte register_Y;
 
-    // CPU Statgis flags.
+    // CPU Status flags.
     // TODO: Is storing them in one byte better ?
     bool f_C;
     bool f_Z;
@@ -44,8 +44,8 @@ private:
     bool executeType2(MainBus &m_bus, NES_Byte opcode);
 
     NES_Address readAddress(MainBus &m_bus, NES_Address addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
-    void pushStack(MainBus &m_bus, NES_Byte value) { m_bus.write(0x100 | r_SP--, value); };
-    NES_Byte pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
+    void pushStack(MainBus &m_bus, NES_Byte value) { m_bus.write(0x100 | register_SP--, value); };
+    NES_Byte pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++register_SP); };
 
     //If a and b are in different pages, increases the m_SkipCycles by inc
     void setPageCrossed(NES_Address a, NES_Address b, int inc = 1);
@@ -91,7 +91,7 @@ public:
     void reset(MainBus &m_bus);
 
     /// Return the program counter of the CPU.
-    NES_Address getPC() { return r_PC; }
+    NES_Address getPC() { return register_PC; }
 
     /// Skip DMA cycles.
     ///

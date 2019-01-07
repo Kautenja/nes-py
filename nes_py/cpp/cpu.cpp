@@ -19,7 +19,7 @@ void CPU::reset(uint16_t start_addr) {
     r_SP = 0xfd; //documented startup state
 }
 
-void CPU::reset(MainBus &m_bus) { reset(readAddress(m_bus, ResetVector)); }
+void CPU::reset(MainBus &m_bus) { reset(readAddress(m_bus, RESET_VECTOR)); }
 
 void CPU::interrupt(MainBus &m_bus, InterruptType type) {
     if (f_I && type != NMI && type != BRK_)
@@ -46,10 +46,10 @@ void CPU::interrupt(MainBus &m_bus, InterruptType type) {
     switch (type) {
         case IRQ:
         case BRK_:
-            r_PC = readAddress(m_bus, IRQVector);
+            r_PC = readAddress(m_bus, IRQ_VECTOR);
             break;
         case NMI:
-            r_PC = readAddress(m_bus, NMIVector);
+            r_PC = readAddress(m_bus, NMI_VECTOR);
             break;
     }
 
@@ -243,13 +243,13 @@ bool CPU::executeImplied(MainBus &m_bus, uint8_t opcode) {
 }
 
 bool CPU::executeBranch(MainBus &m_bus, uint8_t opcode) {
-    if ((opcode & BranchInstructionMask) == BranchInstructionMaskResult) {
+    if ((opcode & BRANCH_INSTRUCTION_MASK) == BRANCH_INSTRUCTION_MASK_RESULT) {
         //branch is initialized to the condition required (for the flag specified later)
-        bool branch = opcode & BranchConditionMask;
+        bool branch = opcode & BRANCH_CONDITION_MASK;
 
         //set branch to true if the given condition is met by the given flag
         //We use xnor here, it is true if either both operands are true or false
-        switch (opcode >> BranchOnFlagShift) {
+        switch (opcode >> BRANCH_ON_FLAG_SHIFT) {
             case Negative:
                 branch = !(branch ^ f_N);
                 break;
@@ -281,10 +281,10 @@ bool CPU::executeBranch(MainBus &m_bus, uint8_t opcode) {
 }
 
 bool CPU::executeType1(MainBus &m_bus, uint8_t opcode) {
-    if ((opcode & InstructionModeMask) == 0x1) {
+    if ((opcode & INSTRUCTION_MODE_MASK) == 0x1) {
         uint16_t location = 0; //Location of the operand, could be in RAM
-        auto op = static_cast<Operation1>((opcode & OperationMask) >> OperationShift);
-        switch (static_cast<AddrMode1>((opcode & AddrModeMask) >> AddrModeShift)) {
+        auto op = static_cast<Operation1>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
+        switch (static_cast<AddrMode1>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT)) {
             case IndexedIndirectX: {
                     uint8_t zero_addr = r_X + m_bus.read(r_PC++);
                     //Addresses wrap in zero page mode, thus pass through a mask
@@ -391,11 +391,11 @@ bool CPU::executeType1(MainBus &m_bus, uint8_t opcode) {
 }
 
 bool CPU::executeType2(MainBus &m_bus, uint8_t opcode) {
-    if ((opcode & InstructionModeMask) == 2) {
+    if ((opcode & INSTRUCTION_MODE_MASK) == 2) {
         uint16_t location = 0;
-        auto op = static_cast<Operation2>((opcode & OperationMask) >> OperationShift);
+        auto op = static_cast<Operation2>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
         auto addr_mode =
-                static_cast<AddrMode2>((opcode & AddrModeMask) >> AddrModeShift);
+                static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT);
         switch (addr_mode) {
             case Immediate_:
                 location = r_PC++;
@@ -504,9 +504,9 @@ bool CPU::executeType2(MainBus &m_bus, uint8_t opcode) {
 }
 
 bool CPU::executeType0(MainBus &m_bus, uint8_t opcode) {
-    if ((opcode & InstructionModeMask) == 0x0) {
+    if ((opcode & INSTRUCTION_MODE_MASK) == 0x0) {
         uint16_t location = 0;
-        switch (static_cast<AddrMode2>((opcode & AddrModeMask) >> AddrModeShift)) {
+        switch (static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT)) {
             case Immediate_:
                 location = r_PC++;
                 break;
@@ -531,7 +531,7 @@ bool CPU::executeType0(MainBus &m_bus, uint8_t opcode) {
                 return false;
         }
         std::uint16_t operand = 0;
-        switch (static_cast<Operation0>((opcode & OperationMask) >> OperationShift)) {
+        switch (static_cast<Operation0>((opcode & OPERATION_MASK) >> OPERATION_SHIFT)) {
             case BIT:
                 operand = m_bus.read(location);
                 f_Z = !(r_A & operand);

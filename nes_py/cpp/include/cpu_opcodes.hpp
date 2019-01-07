@@ -8,22 +8,22 @@
 #ifndef CPUOPCODES_H_INCLUDED
 #define CPUOPCODES_H_INCLUDED
 
-const auto InstructionModeMask = 0x3;
+const auto INSTRUCTION_MODE_MASK = 0x3;
 
-const auto OperationMask = 0xe0;
-const auto OperationShift = 5;
+const auto OPERATION_MASK = 0xe0;
+const auto OPERATION_SHIFT = 5;
 
-const auto AddrModeMask = 0x1c;
-const auto AddrModeShift = 2;
+const auto ADRESS_MODE_MASK = 0x1c;
+const auto ADDRESS_MODE_SHIFT = 2;
 
-const auto BranchInstructionMask = 0x1f;
-const auto BranchInstructionMaskResult = 0x10;
-const auto BranchConditionMask = 0x20;
-const auto BranchOnFlagShift = 6;
+const auto BRANCH_INSTRUCTION_MASK = 0x1f;
+const auto BRANCH_INSTRUCTION_MASK_RESULT = 0x10;
+const auto BRANCH_CONDITION_MASK = 0x20;
+const auto BRANCH_ON_FLAG_SHIFT = 6;
 
-const auto NMIVector = 0xfffa;
-const auto ResetVector = 0xfffc;
-const auto IRQVector = 0xfffe;
+const auto NMI_VECTOR = 0xfffa;
+const auto RESET_VECTOR = 0xfffc;
+const auto IRQ_VECTOR = 0xfffe;
 
 enum BranchOnFlag {
     Negative,

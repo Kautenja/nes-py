@@ -23,34 +23,43 @@ MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart) {
         m_usesCharacterRAM = false;
 }
 
-NES_Byte MapperNROM::readPRG(NES_Address addr) {
+NES_Byte MapperNROM::readPRG(NES_Address address) {
     if (!m_oneBank)
-        return m_cartridge.getROM()[addr - 0x8000];
+        return m_cartridge.getROM()[address - 0x8000];
     else //mirrored
-        return m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
+        return m_cartridge.getROM()[(address - 0x8000) & 0x3fff];
 }
 
-void MapperNROM::writePRG(NES_Address addr, NES_Byte value) {
-    LOG(InfoVerbose) << "ROM memory write attempt at " << +addr << " to set " << +value << std::endl;
+void MapperNROM::writePRG(NES_Address address, NES_Byte value) {
+    LOG(InfoVerbose) <<
+        "ROM memory write attempt at " <<
+        +address <<
+        " to set " <<
+        +value <<
+        std::endl;
 }
 
-NES_Byte MapperNROM::readCHR(NES_Address addr) {
+NES_Byte MapperNROM::readCHR(NES_Address address) {
     if (m_usesCharacterRAM)
-        return m_characterRAM[addr];
+        return m_characterRAM[address];
     else
-        return m_cartridge.getVROM()[addr];
+        return m_cartridge.getVROM()[address];
 }
 
-void MapperNROM::writeCHR(NES_Address addr, NES_Byte value) {
+void MapperNROM::writeCHR(NES_Address address, NES_Byte value) {
     if (m_usesCharacterRAM)
-        m_characterRAM[addr] = value;
+        m_characterRAM[address] = value;
     else
-        LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
+        LOG(Info) <<
+            "Read-only CHR memory write attempt at " <<
+            std::hex <<
+            address <<
+            std::endl;
 }
 
-const NES_Byte* MapperNROM::getPagePtr(NES_Address addr) {
+const NES_Byte* MapperNROM::getPagePtr(NES_Address address) {
     if (!m_oneBank)
-        return &m_cartridge.getROM()[addr - 0x8000];
+        return &m_cartridge.getROM()[address - 0x8000];
     else //mirrored
-        return &m_cartridge.getROM()[(addr - 0x8000) & 0x3fff];
+        return &m_cartridge.getROM()[(address - 0x8000) & 0x3fff];
 }

@@ -63,29 +63,29 @@ void PPU::cycle(PictureBus& m_bus) {
                     if (!m_hideEdgeBackground || x >= 8) {
                         // fetch tile
                         // mask off fine y
-                        auto addr = 0x2000 | (m_dataAddress & 0x0FFF);
-                        //auto addr = 0x2000 + x / 8 + (y / 8) * (SCANLINE_VISIBLE_DOTS / 8);
-                        NES_Byte tile = m_bus.read(addr);
+                        auto address = 0x2000 | (m_dataAddress & 0x0FFF);
+                        //auto address = 0x2000 + x / 8 + (y / 8) * (SCANLINE_VISIBLE_DOTS / 8);
+                        NES_Byte tile = m_bus.read(address);
 
                         //fetch pattern
                         //Each pattern occupies 16 bytes, so multiply by 16
                         //Add fine y
-                        addr = (tile * 16) + ((m_dataAddress >> 12/*y % 8*/) & 0x7);
+                        address = (tile * 16) + ((m_dataAddress >> 12/*y % 8*/) & 0x7);
                         //set whether the pattern is in the high or low page
-                        addr |= m_bgPage << 12;
+                        address |= m_bgPage << 12;
                         //Get the corresponding bit determined by (8 - x_fine) from the right
                         //bit 0 of palette entry
-                        bgColor = (m_bus.read(addr) >> (7 ^ x_fine)) & 1;
+                        bgColor = (m_bus.read(address) >> (7 ^ x_fine)) & 1;
                         //bit 1
-                        bgColor |= ((m_bus.read(addr + 8) >> (7 ^ x_fine)) & 1) << 1;
+                        bgColor |= ((m_bus.read(address + 8) >> (7 ^ x_fine)) & 1) << 1;
 
                         //flag used to calculate final pixel with the sprite pixel
                         bgOpaque = bgColor;
 
                         //fetch attribute and calculate higher two bits of palette
-                        addr = 0x23C0 | (m_dataAddress & 0x0C00) | ((m_dataAddress >> 4) & 0x38)
+                        address = 0x23C0 | (m_dataAddress & 0x0C00) | ((m_dataAddress >> 4) & 0x38)
                                     | ((m_dataAddress >> 2) & 0x07);
-                        auto attribute = m_bus.read(addr);
+                        auto attribute = m_bus.read(address);
                         int shift = ((m_dataAddress >> 4) & 4) | (m_dataAddress & 2);
                         //Extract and set the upper two bits for the color
                         bgColor |= ((attribute >> shift) & 0x3) << 2;
@@ -125,22 +125,22 @@ void PPU::cycle(PictureBus& m_bus) {
                         if ((attribute & 0x80) != 0) //IF flipping vertically
                             y_offset ^= (length - 1);
 
-                        NES_Address addr = 0;
+                        NES_Address address = 0;
 
                         if (!m_longSprites) {
-                            addr = tile * 16 + y_offset;
-                            if (m_sprPage == High) addr += 0x1000;
+                            address = tile * 16 + y_offset;
+                            if (m_sprPage == High) address += 0x1000;
                         }
                         // 8 x 16 sprites
                         else {
                             //bit-3 is one if it is the bottom tile of the sprite, multiply by two to get the next pattern
                             y_offset = (y_offset & 7) | ((y_offset & 8) << 1);
-                            addr = (tile >> 1) * 32 + y_offset;
-                            addr |= (tile & 1) << 12; //Bank 0x1000 if bit-0 is high
+                            address = (tile >> 1) * 32 + y_offset;
+                            address |= (tile & 1) << 12; //Bank 0x1000 if bit-0 is high
                         }
 
-                        sprColor |= (m_bus.read(addr) >> (x_shift)) & 1; //bit 0 of palette entry
-                        sprColor |= ((m_bus.read(addr + 8) >> (x_shift)) & 1) << 1; //bit 1
+                        sprColor |= (m_bus.read(address) >> (x_shift)) & 1; //bit 0 of palette entry
+                        sprColor |= ((m_bus.read(address + 8) >> (x_shift)) & 1) << 1; //bit 1
 
                         if (!(sprOpaque = sprColor)) {
                             sprColor = 0;
@@ -299,18 +299,18 @@ NES_Byte PPU::getStatus() {
     return status;
 }
 
-void PPU::setDataAddress(NES_Byte addr) {
-    //m_dataAddress = ((m_dataAddress << 8) & 0xff00) | addr;
+void PPU::setDataAddress(NES_Byte address) {
+    //m_dataAddress = ((m_dataAddress << 8) & 0xff00) | address;
     if (m_firstWrite) {
         //Unset the upper byte
         m_tempAddress &= ~0xff00;
-        m_tempAddress |= (addr & 0x3f) << 8;
+        m_tempAddress |= (address & 0x3f) << 8;
         m_firstWrite = false;
     }
     else {
         //Unset the lower byte;
         m_tempAddress &= ~0xff;
-        m_tempAddress |= addr;
+        m_tempAddress |= address;
         m_dataAddress = m_tempAddress;
         m_firstWrite = true;
     }

@@ -9,12 +9,12 @@
 #include "cpu_opcodes.hpp"
 #include "log.hpp"
 
-void CPU::reset(NES_Address start_addr) {
+void CPU::reset(NES_Address start_address) {
     m_skipCycles = m_cycles = 0;
     register_A = register_X = register_Y = 0;
     f_I = true;
     f_C = f_D = f_N = f_V = f_Z = false;
-    register_PC = start_addr;
+    register_PC = start_address;
     register_SP = 0xfd; //documented startup state
 }
 
@@ -285,9 +285,9 @@ bool CPU::executeType1(MainBus &m_bus, NES_Byte opcode) {
         auto op = static_cast<Operation1>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
         switch (static_cast<AddrMode1>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT)) {
             case IndexedIndirectX: {
-                    NES_Byte zero_addr = register_X + m_bus.read(register_PC++);
+                    NES_Byte zero_address = register_X + m_bus.read(register_PC++);
                     //Addresses wrap in zero page mode, thus pass through a mask
-                    location = m_bus.read(zero_addr & 0xff) | m_bus.read((zero_addr + 1) & 0xff) << 8;
+                    location = m_bus.read(zero_address & 0xff) | m_bus.read((zero_address + 1) & 0xff) << 8;
                 }
                 break;
             case ZeroPage:
@@ -301,8 +301,8 @@ bool CPU::executeType1(MainBus &m_bus, NES_Byte opcode) {
                 register_PC += 2;
                 break;
             case IndirectY: {
-                    NES_Byte zero_addr = m_bus.read(register_PC++);
-                    location = m_bus.read(zero_addr & 0xff) | m_bus.read((zero_addr + 1) & 0xff) << 8;
+                    NES_Byte zero_address = m_bus.read(register_PC++);
+                    location = m_bus.read(zero_address & 0xff) | m_bus.read((zero_address + 1) & 0xff) << 8;
                     if (op != STA)
                         setPageCrossed(location, location + register_Y);
                     location += register_Y;
@@ -393,9 +393,9 @@ bool CPU::executeType2(MainBus &m_bus, NES_Byte opcode) {
     if ((opcode & INSTRUCTION_MODE_MASK) == 2) {
         NES_Address location = 0;
         auto op = static_cast<Operation2>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
-        auto addr_mode =
+        auto address_mode =
                 static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT);
-        switch (addr_mode) {
+        switch (address_mode) {
             case Immediate_:
                 location = register_PC++;
                 break;
@@ -439,7 +439,7 @@ bool CPU::executeType2(MainBus &m_bus, NES_Byte opcode) {
         switch (op) {
             case ASL:
             case ROL:
-                if (addr_mode == Accumulator) {
+                if (address_mode == Accumulator) {
                     auto prev_C = f_C;
                     f_C = register_A & 0x80;
                     register_A <<= 1;
@@ -458,7 +458,7 @@ bool CPU::executeType2(MainBus &m_bus, NES_Byte opcode) {
                 break;
             case LSR:
             case ROR:
-                if (addr_mode == Accumulator) {
+                if (address_mode == Accumulator) {
                     auto prev_C = f_C;
                     f_C = register_A & 1;
                     register_A >>= 1;

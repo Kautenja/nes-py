@@ -43,7 +43,7 @@ private:
     bool executeType1(MainBus &m_bus, NES_Byte opcode);
     bool executeType2(MainBus &m_bus, NES_Byte opcode);
 
-    NES_Address readAddress(MainBus &m_bus, NES_Address addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
+    NES_Address readAddress(MainBus &m_bus, NES_Address address) { return m_bus.read(address) | m_bus.read(address + 1) << 8; };
     void pushStack(MainBus &m_bus, NES_Byte value) { m_bus.write(0x100 | register_SP--, value); };
     NES_Byte pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++register_SP); };
 
@@ -80,9 +80,9 @@ public:
 
     /// Reset the emulator using the given starting address.
     ///
-    /// @param start_addr the starting address for the program counter
+    /// @param start_address the starting address for the program counter
     ///
-    void reset(NES_Address start_addr);
+    void reset(NES_Address start_address);
 
     /// Reset using the given main bus to lookup a starting address.
     ///

@@ -30,38 +30,38 @@ public:
 
     /// Read a byte from the PRG RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    NES_Byte readPRG (NES_Address addr);
+    NES_Byte readPRG (NES_Address address);
 
     /// Write a byte to an address in the PRG RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (NES_Address addr, NES_Byte value);
+    void writePRG (NES_Address address, NES_Byte value);
 
     /// Read a byte from the CHR RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    NES_Byte readCHR (NES_Address addr);
+    NES_Byte readCHR (NES_Address address);
 
     /// Write a byte to an address in the CHR RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writeCHR (NES_Address addr, NES_Byte value);
+    void writeCHR (NES_Address address, NES_Byte value);
 
     /// Return the page pointer for the given address.
     ///
-    /// @param addr the address of the page pointer to get
+    /// @param address the address of the page pointer to get
     /// @return the page pointer at the given address
     ///
-    const NES_Byte* getPagePtr(NES_Address addr);
+    const NES_Byte* getPagePtr(NES_Address address);
 
 };
 

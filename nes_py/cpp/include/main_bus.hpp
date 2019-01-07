@@ -55,18 +55,18 @@ public:
 
     /// Read a byte from an address on the RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read in the RAM
+    /// @param address the 16-bit address of the byte to read in the RAM
     ///
     /// @return the byte located at the given address
     ///
-    NES_Byte read(NES_Address addr);
+    NES_Byte read(NES_Address address);
 
     /// Write a byte to an address in the RAM.
     ///
-    /// @param addr the 16-bit address to write the byte to in RAM
+    /// @param address the 16-bit address to write the byte to in RAM
     /// @param value the byte to write to the given address
     ///
-    void write(NES_Address addr, NES_Byte value);
+    void write(NES_Address address, NES_Byte value);
 
     /// Set the mapper pointer to a new value.
     ///

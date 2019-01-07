@@ -28,8 +28,8 @@ const int FRAME_END_SCANLINE = 261;
 class PPU {
 
 private:
-    NES_Byte readOAM(NES_Byte addr) { return m_spriteMemory[addr]; };
-    void writeOAM(NES_Byte addr, NES_Byte value) { m_spriteMemory[addr] = value; };
+    NES_Byte readOAM(NES_Byte address) { return m_spriteMemory[address]; };
+    void writeOAM(NES_Byte address, NES_Byte value) { m_spriteMemory[address] = value; };
 
     std::function<void(void)> m_vblankCallback;
 
@@ -104,8 +104,8 @@ public:
     //Addresses written to by the program
     void control(NES_Byte ctrl);
     void setMask(NES_Byte mask);
-    void setOAMAddress(NES_Byte addr) { m_spriteDataAddress = addr; };
-    void setDataAddress(NES_Byte addr);
+    void setOAMAddress(NES_Byte address) { m_spriteDataAddress = address; };
+    void setDataAddress(NES_Byte address);
     void setScroll(NES_Byte scroll);
     void setData(PictureBus& m_bus, NES_Byte data);
     //Read by the program

@@ -22,30 +22,30 @@ MapperUxROM::MapperUxROM(Cartridge &cart) :
     m_lastBankPtr = &cart.getROM()[cart.getROM().size() - 0x4000]; //last - 16KB
 }
 
-NES_Byte MapperUxROM::readPRG(NES_Address addr) {
-    if (addr < 0xc000)
-        return m_cartridge.getROM()[((addr - 0x8000) & 0x3fff) | (m_selectPRG << 14)];
+NES_Byte MapperUxROM::readPRG(NES_Address address) {
+    if (address < 0xc000)
+        return m_cartridge.getROM()[((address - 0x8000) & 0x3fff) | (m_selectPRG << 14)];
     else
-        return *(m_lastBankPtr + (addr & 0x3fff));
+        return *(m_lastBankPtr + (address & 0x3fff));
 }
 
-const NES_Byte* MapperUxROM::getPagePtr(NES_Address addr) {
-    if (addr < 0xc000)
-        return &m_cartridge.getROM()[((addr - 0x8000) & 0x3fff) | (m_selectPRG << 14)];
+const NES_Byte* MapperUxROM::getPagePtr(NES_Address address) {
+    if (address < 0xc000)
+        return &m_cartridge.getROM()[((address - 0x8000) & 0x3fff) | (m_selectPRG << 14)];
     else
-        return m_lastBankPtr + (addr & 0x3fff);
+        return m_lastBankPtr + (address & 0x3fff);
 }
 
-NES_Byte MapperUxROM::readCHR(NES_Address addr) {
+NES_Byte MapperUxROM::readCHR(NES_Address address) {
     if (m_usesCharacterRAM)
-        return m_characterRAM[addr];
+        return m_characterRAM[address];
     else
-        return m_cartridge.getVROM()[addr];
+        return m_cartridge.getVROM()[address];
 }
 
-void MapperUxROM::writeCHR(NES_Address addr, NES_Byte value) {
+void MapperUxROM::writeCHR(NES_Address address, NES_Byte value) {
     if (m_usesCharacterRAM)
-        m_characterRAM[addr] = value;
+        m_characterRAM[address] = value;
     else
-        LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << addr << std::endl;
+        LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << address << std::endl;
 }

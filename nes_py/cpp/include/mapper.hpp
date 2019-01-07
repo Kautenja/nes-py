@@ -26,7 +26,7 @@ class Mapper {
 
 protected:
     /// The cartridge this mapper associates with
-    Cartridge& m_cartridge;
+    Cartridge& cartridge;
 
 public:
     /// an enumeration of mapper IDs
@@ -39,12 +39,17 @@ public:
 
     /// Create a new mapper with a cartridge and given type.
     ///
-    /// @param cart a reference to a cartridge for the mapper to access
+    /// @param game a reference to a cartridge for the mapper to access
     ///
-    Mapper(Cartridge& cart) : m_cartridge(cart) { };
+    Mapper(Cartridge& game) : cartridge(game) { };
 
-    /// Create a mapper based on given type, a game cartridge
-    static Mapper* create (Cartridge& cart, std::function<void(void)> mirroring_cb);
+    /// Create a mapper based on given type, a game cartridge.
+    ///
+    /// @param game a reference to a cartridge for the mapper to access
+    /// @param mirroring_cb the callback to signify a change in mirroring mode
+    /// @return a pointer to a mapper class based on the given game
+    ///
+    static Mapper* create (Cartridge& game, std::function<void(void)> mirroring_cb);
 
     /// Read a byte from the PRG RAM.
     ///
@@ -83,11 +88,11 @@ public:
 
     /// Return the name table mirroring mode of this mapper.
     virtual NameTableMirroring getNameTableMirroring() {
-        return static_cast<NameTableMirroring>(m_cartridge.getNameTableMirroring());
+        return static_cast<NameTableMirroring>(cartridge.getNameTableMirroring());
     };
 
     /// Return true if this mapper has extended RAM, false otherwise.
-    bool hasExtendedRAM() { return m_cartridge.hasExtendedRAM(); };
+    bool hasExtendedRAM() { return cartridge.hasExtendedRAM(); };
 
 };
 

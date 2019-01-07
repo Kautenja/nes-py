@@ -10,42 +10,47 @@
 
 MapperUxROM::MapperUxROM(Cartridge &cart) :
     Mapper(cart),
-    m_selectPRG(0) {
+    select_prg(0) {
     if (cart.getVROM().size() == 0) {
-        m_usesCharacterRAM = true;
-        m_characterRAM.resize(0x2000);
+        has_character_ram = true;
+        character_ram.resize(0x2000);
         LOG(Info) << "Uses character RAM" << std::endl;
     }
     else
-        m_usesCharacterRAM = false;
+        has_character_ram = false;
 
-    m_lastBankPtr = &cart.getROM()[cart.getROM().size() - 0x4000]; //last - 16KB
+    // last - 16KB
+    last_bank_pointer = &cart.getROM()[cart.getROM().size() - 0x4000];
 }
 
 NES_Byte MapperUxROM::readPRG(NES_Address address) {
     if (address < 0xc000)
-        return m_cartridge.getROM()[((address - 0x8000) & 0x3fff) | (m_selectPRG << 14)];
+        return cartridge.getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
     else
-        return *(m_lastBankPtr + (address & 0x3fff));
+        return *(last_bank_pointer + (address & 0x3fff));
 }
 
 const NES_Byte* MapperUxROM::getPagePtr(NES_Address address) {
     if (address < 0xc000)
-        return &m_cartridge.getROM()[((address - 0x8000) & 0x3fff) | (m_selectPRG << 14)];
+        return &cartridge.getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
     else
-        return m_lastBankPtr + (address & 0x3fff);
+        return last_bank_pointer + (address & 0x3fff);
 }
 
 NES_Byte MapperUxROM::readCHR(NES_Address address) {
-    if (m_usesCharacterRAM)
-        return m_characterRAM[address];
+    if (has_character_ram)
+        return character_ram[address];
     else
-        return m_cartridge.getVROM()[address];
+        return cartridge.getVROM()[address];
 }
 
 void MapperUxROM::writeCHR(NES_Address address, NES_Byte value) {
-    if (m_usesCharacterRAM)
-        m_characterRAM[address] = value;
+    if (has_character_ram)
+        character_ram[address] = value;
     else
-        LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << address << std::endl;
+        LOG(Info) <<
+            "Read-only CHR memory write attempt at " <<
+            std::hex <<
+            address <<
+            std::endl;
 }

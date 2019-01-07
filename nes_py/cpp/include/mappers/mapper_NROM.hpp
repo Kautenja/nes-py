@@ -15,11 +15,11 @@ class MapperNROM : public Mapper {
 
 private:
     /// whether there are 1 or 2 banks
-    bool m_oneBank;
+    bool is_one_bank;
     /// whether this mapper uses character RAM
-    bool m_usesCharacterRAM;
+    bool has_character_ram;
     /// the character RAM on the mapper
-    std::vector<NES_Byte> m_characterRAM;
+    std::vector<NES_Byte> character_ram;
 
 public:
     /// Create a new mapper with a cartridge.

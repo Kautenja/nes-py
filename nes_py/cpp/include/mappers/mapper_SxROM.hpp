@@ -15,29 +15,35 @@ class MapperSxROM : public Mapper {
 
 private:
     /// The mirroring callback on the PPU
-    std::function<void(void)> m_mirroringCallback;
+    std::function<void(void)> mirroring_callback;
     /// the mirroring mode on the device
-    NameTableMirroring m_mirroing;
+    NameTableMirroring mirroing;
     /// whether the cartridge uses character RAM
-    bool m_usesCharacterRAM;
+    bool has_character_ram;
     /// the mode for CHR ROM
-    int m_modeCHR;
+    int mode_chr;
     /// the mode for PRG ROM
-    int m_modePRG;
+    int mode_prg;
     /// a temporary register
-    NES_Byte m_tempRegister;
+    NES_Byte temp_register;
     /// a write counter
-    int m_writeCounter;
-    /// TODO: what are these variables
-    NES_Byte m_regPRG;
-    NES_Byte m_regCHR0;
-    NES_Byte m_regCHR1;
-    const NES_Byte* m_firstBankPRG;
-    const NES_Byte* m_secondBankPRG;
-    const NES_Byte* m_firstBankCHR;
-    const NES_Byte* m_secondBankCHR;
+    int write_counter;
+    /// the PRG register
+    NES_Byte register_prg;
+    /// The first CHR register
+    NES_Byte register_chr0;
+    /// The second CHR register
+    NES_Byte register_chr1;
+    /// The first PRG bank
+    const NES_Byte* first_bank_prg;
+    /// The second PRG bank
+    const NES_Byte* second_bank_prg;
+    /// The first CHR bank
+    const NES_Byte* first_bank_chr;
+    /// The second CHR bank
+    const NES_Byte* second_bank_chr;
     /// The character RAM on the cartridge
-    std::vector<NES_Byte> m_characterRAM;
+    std::vector<NES_Byte> character_ram;
 
     /// TODO: what does this do
     void calculatePRGPointers();
@@ -46,6 +52,7 @@ public:
     /// Create a new mapper with a cartridge.
     ///
     /// @param cart a reference to a cartridge for the mapper to access
+    /// @param mirroring_cb the callback to change mirroring modes on the PPU
     ///
     MapperSxROM(Cartridge& cart, std::function<void(void)> mirroring_cb);
 
@@ -85,7 +92,7 @@ public:
     const NES_Byte* getPagePtr(NES_Address address);
 
     /// Return the name table mirroring mode of this mapper.
-    NameTableMirroring getNameTableMirroring() { return m_mirroing; };
+    NameTableMirroring getNameTableMirroring() { return mirroing; };
 
 };
 

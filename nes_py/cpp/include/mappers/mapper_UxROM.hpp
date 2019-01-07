@@ -15,13 +15,13 @@ class MapperUxROM : public Mapper {
 
 private:
     /// whether the cartridge use character RAM
-    bool m_usesCharacterRAM;
+    bool has_character_ram;
     /// the pointer to the last bank
-    const NES_Byte* m_lastBankPtr;
+    const NES_Byte* last_bank_pointer;
     /// TODO: what is this?
-    NES_Address m_selectPRG;
+    NES_Address select_prg;
     /// The character RAM on the mapper
-    std::vector<NES_Byte> m_characterRAM;
+    std::vector<NES_Byte> character_ram;
 
 public:
     /// Create a new mapper with a cartridge.
@@ -42,7 +42,7 @@ public:
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (NES_Address address, NES_Byte value) { m_selectPRG = value; };
+    void writePRG (NES_Address address, NES_Byte value) { select_prg = value; };
 
     /// Read a byte from the CHR RAM.
     ///

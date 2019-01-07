@@ -11,16 +11,16 @@
 #include "mappers/mapper_UxROM.hpp"
 #include "mappers/mapper_CNROM.hpp"
 
-Mapper* Mapper::create(Cartridge& cart, std::function<void(void)> mirroring_cb) {
-    switch (static_cast<Mapper::Type>(cart.getMapper())) {
+Mapper* Mapper::create(Cartridge& game, std::function<void(void)> mirroring_cb) {
+    switch (static_cast<Mapper::Type>(game.getMapper())) {
         case NROM:
-            return new MapperNROM(cart);
+            return new MapperNROM(game);
         case SxROM:
-            return new MapperSxROM(cart, mirroring_cb);
+            return new MapperSxROM(game, mirroring_cb);
         case UxROM:
-            return new MapperUxROM(cart);
+            return new MapperUxROM(game);
         case CNROM:
-            return new MapperCNROM(cart);
+            return new MapperCNROM(game);
         default:
             return nullptr;
     }

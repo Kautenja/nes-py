@@ -8,6 +8,7 @@
 #ifndef MAPPER_H
 #define MAPPER_H
 
+#include "common.hpp"
 #include "cartridge.hpp"
 #include <functional>
 
@@ -50,35 +51,35 @@ public:
     /// @param addr the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    virtual uint8_t readPRG (uint16_t addr) = 0;
+    virtual NES_Byte readPRG (NES_Address addr) = 0;
 
     /// Write a byte to an address in the PRG RAM.
     ///
     /// @param addr the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    virtual void writePRG (uint16_t addr, uint8_t value) = 0;
+    virtual void writePRG (NES_Address addr, NES_Byte value) = 0;
 
     /// Read a byte from the CHR RAM.
     ///
     /// @param addr the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    virtual uint8_t readCHR (uint16_t addr) = 0;
+    virtual NES_Byte readCHR (NES_Address addr) = 0;
 
     /// Write a byte to an address in the CHR RAM.
     ///
     /// @param addr the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    virtual void writeCHR (uint16_t addr, uint8_t value) = 0;
+    virtual void writeCHR (NES_Address addr, NES_Byte value) = 0;
 
     /// Return the page pointer for the given address.
     ///
     /// @param addr the address of the page pointer to get
     /// @return the page pointer at the given address
     ///
-    virtual const uint8_t* getPagePtr (uint16_t addr) = 0; //for DMAs
+    virtual const NES_Byte* getPagePtr (NES_Address addr) = 0;
 
     /// Return the name table mirroring mode of this mapper.
     virtual NameTableMirroring getNameTableMirroring() {

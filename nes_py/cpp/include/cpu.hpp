@@ -93,7 +93,11 @@ public:
     uint16_t getPC() { return r_PC; }
 
     /// Skip DMA cycles.
-    void skipDMACycles();
+    ///
+    /// 513 = 256 read + 256 write + 1 dummy read
+    /// &1 -> +1 if on odd cycle
+    ///
+    void skipDMACycles() { m_skipCycles += 513 + (m_cycles & 1); };
 
 };
 

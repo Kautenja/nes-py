@@ -62,11 +62,6 @@ void CPU::setPageCrossed(uint16_t a, uint16_t b, int inc) {
         m_skipCycles += inc;
 }
 
-void CPU::skipDMACycles() {
-    m_skipCycles += 513; //256 read + 256 write + 1 dummy read
-    m_skipCycles += (m_cycles & 1); //+1 if on odd cycle
-}
-
 void CPU::step(MainBus &m_bus) {
     ++m_cycles;
 
@@ -96,20 +91,16 @@ void CPU::step(MainBus &m_bus) {
     //           << std::endl;
 
     uint8_t opcode = m_bus.read(r_PC++);
-
     auto CycleLength = OperationCycles[opcode];
 
-    //Using short-circuit evaluation, call the other function only if the first failed
-    //ExecuteImplied must be called first and ExecuteBranch must be before ExecuteType0
+    // Using short-circuit evaluation, call the other function only if the
+    // first failed. ExecuteImplied must be called first and ExecuteBranch
+    // must be before ExecuteType0
     if (CycleLength && (executeImplied(m_bus, opcode) || executeBranch(m_bus, opcode) ||
-                    executeType1(m_bus, opcode) || executeType2(m_bus, opcode) || executeType0(m_bus, opcode))) {
+                    executeType1(m_bus, opcode) || executeType2(m_bus, opcode) || executeType0(m_bus, opcode)))
         m_skipCycles += CycleLength;
-        //m_cycles %= 340; //compatibility with Nintendulator log
-        //m_skipCycles = 0; //for TESTING
-    }
-    else {
+    else
         std::cout << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
-    }
 }
 
 bool CPU::executeImplied(MainBus &m_bus, uint8_t opcode) {

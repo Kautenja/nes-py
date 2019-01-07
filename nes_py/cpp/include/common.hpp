@@ -11,10 +11,10 @@
 #include <stdint.h>
 
 /// A shortcut for a byte
-using NES_Byte = uint8_t;
+using NES_Byte = std::uint8_t;
 /// A shortcut for a memory address (16-bit)
-using NES_Address = uint16_t;
+using NES_Address = std::uint16_t;
 /// A shortcut for a single pixel in memory
-using NES_Pixel = uint32_t;
+using NES_Pixel = std::uint32_t;
 
 #endif // COMMON_HPP

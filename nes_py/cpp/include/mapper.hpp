@@ -23,6 +23,11 @@ enum NameTableMirroring {
 
 /// An abstraction of a general hardware mapper for different NES cartridges
 class Mapper {
+
+protected:
+    /// The cartridge this mapper associates with
+    Cartridge& m_cartridge;
+
 public:
     /// an enumeration of mapper IDs
     enum Type {
@@ -83,10 +88,6 @@ public:
 
     /// Return true if this mapper has extended RAM, false otherwise.
     bool hasExtendedRAM() { return m_cartridge.hasExtendedRAM(); };
-
-protected:
-    /// The cartridge this mapper associates with
-    Cartridge& m_cartridge;
 
 };
 

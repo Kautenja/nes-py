@@ -14,6 +14,26 @@
 class CPU {
 
 private:
+    int m_skipCycles;
+    int m_cycles;
+
+    //Registers
+    uint16_t r_PC;
+    uint8_t r_SP;
+    uint8_t r_A;
+    uint8_t r_X;
+    uint8_t r_Y;
+
+    // CPU Status flags.
+    // TODO: Is storing them in one byte better ?
+    bool f_C;
+    bool f_Z;
+    bool f_I;
+    // bool f_B;
+    bool f_D;
+    bool f_V;
+    bool f_N;
+
     //Instructions are split into five sets to make decoding easier.
     //These functions return true if they succeed
     bool executeImplied(MainBus &m_bus, uint8_t opcode);
@@ -30,27 +50,8 @@ private:
     void setPageCrossed(uint16_t a, uint16_t b, int inc = 1);
     void setZN(uint8_t value) { f_Z = !value; f_N = value & 0x80; };
 
-    int m_skipCycles;
-    int m_cycles;
-
-    //Registers
-    uint16_t r_PC;
-    uint8_t r_SP;
-    uint8_t r_A;
-    uint8_t r_X;
-    uint8_t r_Y;
-
-    //Status flags.
-    //Is storing them in one byte better ?
-    bool f_C;
-    bool f_Z;
-    bool f_I;
-//            bool f_B;
-    bool f_D;
-    bool f_V;
-    bool f_N;
-
 public:
+    /// The interrupt types available to this CPU
     enum InterruptType {
         IRQ,
         NMI,
@@ -60,15 +61,38 @@ public:
     /// Initialize a new CPU.
     CPU() { };
 
-    //Assuming sequential execution, for asynchronously calling this with Execute, further work needed
+    /// Interrupt the CPU.
+    ///
+    /// @param m_bus the main bus of the machine
+    /// @param type the type of interrupt to issue
+    ///
+    /// TODO: Assuming sequential execution, for asynchronously calling this
+    ///       with Execute, further work needed
+    ///
     void interrupt(MainBus &m_bus, InterruptType type);
 
+    /// Perform a full CPU cycle using and storing data in the given bus.
+    ///
+    /// @param m_bus the bus to read and write data from / to
+    ///
     void step(MainBus &m_bus);
-    void reset(MainBus &m_bus);
-    void reset(uint16_t start_addr);
-    void log();
 
+    /// Reset the emulator using the given starting address.
+    ///
+    /// @param start_addr the starting address for the program counter
+    ///
+    void reset(uint16_t start_addr);
+
+    /// Reset using the given main bus to lookup a starting address.
+    ///
+    /// @param m_bus the main bus of the NES emulator
+    ///
+    void reset(MainBus &m_bus);
+
+    /// Return the program counter of the CPU.
     uint16_t getPC() { return r_PC; }
+
+    /// Skip DMA cycles.
     void skipDMACycles();
 
 };

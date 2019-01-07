@@ -10,8 +10,6 @@
 #include "log.hpp"
 #include <iomanip>
 
-void CPU::reset(MainBus &m_bus) { reset(readAddress(m_bus, ResetVector)); }
-
 void CPU::reset(uint16_t start_addr) {
     m_skipCycles = m_cycles = 0;
     r_A = r_X = r_Y = 0;
@@ -20,6 +18,8 @@ void CPU::reset(uint16_t start_addr) {
     r_PC = start_addr;
     r_SP = 0xfd; //documented startup state
 }
+
+void CPU::reset(MainBus &m_bus) { reset(readAddress(m_bus, ResetVector)); }
 
 void CPU::interrupt(MainBus &m_bus, InterruptType type) {
     if (f_I && type != NMI && type != BRK_)

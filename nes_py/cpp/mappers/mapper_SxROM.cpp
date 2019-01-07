@@ -22,16 +22,13 @@ MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb
     m_firstBankPRG(nullptr),
     m_secondBankPRG(nullptr),
     m_firstBankCHR(nullptr),
-    m_secondBankCHR(nullptr)
-{
-    if (cart.getVROM().size() == 0)
-    {
+    m_secondBankCHR(nullptr) {
+    if (cart.getVROM().size() == 0) {
         m_usesCharacterRAM = true;
         m_characterRAM.resize(0x2000);
         LOG(Info) << "Uses character RAM" << std::endl;
     }
-    else
-    {
+    else {
         LOG(Info) << "Using CHR-ROM" << std::endl;
         m_usesCharacterRAM = false;
         m_firstBankCHR = &cart.getVROM()[0];
@@ -42,27 +39,22 @@ MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb
     m_secondBankPRG = &cart.getROM()[cart.getROM().size() - 0x4000/*0x2000 * 0x0e*/]; //last bank
 }
 
-uint8_t MapperSxROM::readPRG(uint16_t addr)
-{
+uint8_t MapperSxROM::readPRG(uint16_t addr) {
     if (addr < 0xc000)
         return *(m_firstBankPRG + (addr & 0x3fff));
     else
         return *(m_secondBankPRG + (addr & 0x3fff));
 }
 
-void MapperSxROM::writePRG(uint16_t addr, uint8_t value)
-{
-    if (!(value & 0x80)) //if reset bit is NOT set
-    {
+void MapperSxROM::writePRG(uint16_t addr, uint8_t value) {
+    //if reset bit is NOT set
+    if (!(value & 0x80))  {
         m_tempRegister = (m_tempRegister >> 1) | ((value & 1) << 4);
         ++m_writeCounter;
 
-        if (m_writeCounter == 5)
-        {
-            if (addr <= 0x9fff)
-            {
-                switch (m_tempRegister & 0x3)
-                {
+        if (m_writeCounter == 5) {
+            if (addr <= 0x9fff) {
+                switch (m_tempRegister & 0x3) {
                     case 0:     m_mirroing = OneScreenLower;    break;
                     case 1:     m_mirroing = OneScreenHigher;   break;
                     case 2:     m_mirroing = Vertical;          break;
@@ -74,36 +66,30 @@ void MapperSxROM::writePRG(uint16_t addr, uint8_t value)
                 m_modePRG = (m_tempRegister & 0xc) >> 2;
                 calculatePRGPointers();
 
-                //Recalculate CHR pointers
-                if (m_modeCHR == 0) //one 8KB bank
-                {
+                // Recalculate CHR pointers
+                if (m_modeCHR == 0) { //one 8KB bank
                     m_firstBankCHR = &m_cartridge.getVROM()[0x1000 * (m_regCHR0 | 1)]; //ignore last bit
                     m_secondBankCHR = m_firstBankCHR + 0x1000;
                 }
-                else //two 4KB banks
-                {
+                else { // two 4KB banks
                     m_firstBankCHR = &m_cartridge.getVROM()[0x1000 * m_regCHR0];
                     m_secondBankCHR = &m_cartridge.getVROM()[0x1000 * m_regCHR1];
                 }
             }
-            else if (addr <= 0xbfff) //CHR Reg 0
-            {
+            else if (addr <= 0xbfff) { // CHR Reg 0
                 m_regCHR0 = m_tempRegister;
                 m_firstBankCHR = &m_cartridge.getVROM()[0x1000 * (m_tempRegister | (1 - m_modeCHR))]; //OR 1 if 8KB mode
                 if (m_modeCHR == 0)
                     m_secondBankCHR = m_firstBankCHR + 0x1000;
             }
-            else if (addr <= 0xdfff)
-            {
+            else if (addr <= 0xdfff) {
                 m_regCHR1 = m_tempRegister;
                 if(m_modeCHR == 1)
                     m_secondBankCHR = &m_cartridge.getVROM()[0x1000 * m_tempRegister];
             }
-            else
-            {
-                //TODO PRG-RAM
-                if ((m_tempRegister & 0x10) == 0x10)
-                {
+            else {
+                // TODO: PRG-RAM
+                if ((m_tempRegister & 0x10) == 0x10) {
                     LOG(Info) << "PRG-RAM activated" << std::endl;
                 }
 
@@ -116,8 +102,7 @@ void MapperSxROM::writePRG(uint16_t addr, uint8_t value)
             m_writeCounter = 0;
         }
     }
-    else //reset
-    {
+    else { // reset
         m_tempRegister = 0;
         m_writeCounter = 0;
         m_modePRG = 3;
@@ -125,36 +110,30 @@ void MapperSxROM::writePRG(uint16_t addr, uint8_t value)
     }
 }
 
-void MapperSxROM::calculatePRGPointers()
-{
-    if (m_modePRG <= 1) //32KB changeable
-    {
+void MapperSxROM::calculatePRGPointers() {
+    if (m_modePRG <= 1) { // 32KB changeable
         // equivalent to multiplying 0x8000 * (m_regPRG >> 1)
         m_firstBankPRG = &m_cartridge.getROM()[0x4000 * (m_regPRG & ~1)];
         m_secondBankPRG = m_firstBankPRG + 0x4000;   //add 16KB
     }
-    else if (m_modePRG == 2) //fix first switch second
-    {
+    else if (m_modePRG == 2) { // fix first switch second
         m_firstBankPRG = &m_cartridge.getROM()[0];
         m_secondBankPRG = m_firstBankPRG + 0x4000 * m_regPRG;
     }
-    else //switch first fix second
-    {
+    else { // switch first fix second
         m_firstBankPRG = &m_cartridge.getROM()[0x4000 * m_regPRG];
         m_secondBankPRG = &m_cartridge.getROM()[m_cartridge.getROM().size() - 0x4000/*0x2000 * 0x0e*/];
     }
 }
 
-const uint8_t* MapperSxROM::getPagePtr(uint16_t addr)
-{
+const uint8_t* MapperSxROM::getPagePtr(uint16_t addr) {
     if (addr < 0xc000)
         return (m_firstBankPRG + (addr & 0x3fff));
     else
         return (m_secondBankPRG + (addr & 0x3fff));
 }
 
-uint8_t MapperSxROM::readCHR(uint16_t addr)
-{
+uint8_t MapperSxROM::readCHR(uint16_t addr) {
     if (m_usesCharacterRAM)
         return m_characterRAM[addr];
     else if (addr < 0x1000)
@@ -163,8 +142,7 @@ uint8_t MapperSxROM::readCHR(uint16_t addr)
         return *(m_secondBankCHR + (addr & 0xfff));
 }
 
-void MapperSxROM::writeCHR(uint16_t addr, uint8_t value)
-{
+void MapperSxROM::writeCHR(uint16_t addr, uint8_t value) {
     if (m_usesCharacterRAM)
         m_characterRAM[addr] = value;
     else

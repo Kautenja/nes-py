@@ -41,7 +41,7 @@ public:
     /// @param addr the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (uint16_t addr, uint8_t value);
+    void writePRG (uint16_t addr, uint8_t value) { m_selectPRG = value; };
 
     /// Read a byte from the CHR RAM.
     ///

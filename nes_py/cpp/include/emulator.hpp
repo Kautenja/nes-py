@@ -70,7 +70,7 @@ public:
     ///
     /// @return a 32-bit pointer to the screen buffer's first address
     ///
-    uint32_t* get_screen_buffer() { return ppu.get_screen_buffer(); };
+    NES_Pixel* get_screen_buffer() { return ppu.get_screen_buffer(); };
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///

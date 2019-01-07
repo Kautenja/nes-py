@@ -10,6 +10,7 @@
 
 #include "common.hpp"
 #include <vector>
+#include <string>
 
 /// A cartridge holding game ROM and a special hardware mapper emulation
 class Cartridge {

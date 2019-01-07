@@ -14,6 +14,7 @@
 class Controller {
 
 private:
+
     /// whether strobe is on
     bool is_strobe;
     /// the emulation of the buttons on the controller
@@ -22,31 +23,20 @@ private:
     NES_Byte joypad_bits;
 
 public:
-    /// Initialize a new controller
+
+    /// Initialize a new controller.
     Controller() : is_strobe(true), joypad_buttons(0), joypad_bits(0) { };
 
-    /// The buttons on the controller
-    enum Buttons {
-        A,
-        B,
-        Select,
-        Start,
-        Up,
-        Down,
-        Left,
-        Right,
-    };
-
-    /// Write buttons to the virtual controller
+    /// Write buttons to the virtual controller.
     ///
     /// @param buttons the button bitmap to write to the controller
     ///
     void write_buttons(NES_Byte buttons) { joypad_buttons = buttons; };
 
-    /// Strobe the controller
+    /// Strobe the controller.
     void strobe(NES_Byte b);
 
-    /// Read the controller state
+    /// Read the controller state.
     ///
     /// @return a state from the controller
     ///

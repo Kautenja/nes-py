@@ -8,25 +8,25 @@
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
 
+#include "common.hpp"
 #include <vector>
-#include <string>
-#include <cstdint>
 
 /// A cartridge holding game ROM and a special hardware mapper emulation
 class Cartridge {
 
 private:
     /// the PRG ROM
-    std::vector<uint8_t> m_PRG_ROM;
+    std::vector<NES_Byte> m_PRG_ROM;
     /// the CHR ROM
-    std::vector<uint8_t> m_CHR_ROM;
+    std::vector<NES_Byte> m_CHR_ROM;
     /// the name table mirroring mode
-    uint8_t m_nameTableMirroring;
+    NES_Byte m_nameTableMirroring;
     /// the mapper ID number
-    uint8_t m_mapperNumber;
+    NES_Byte m_mapperNumber;
     /// whether this cartridge uses extended RAM
     bool m_extendedRAM;
     /// whether this cartridge has CHR RAM
+    /// TODO: delete? was commented in SimpleNES repository
     // bool m_chrRAM;
 
 public:
@@ -37,16 +37,16 @@ public:
     void loadFromFile(std::string path);
 
     /// Return the ROM data.
-    const std::vector<uint8_t>& getROM() { return m_PRG_ROM; };
+    const std::vector<NES_Byte>& getROM() { return m_PRG_ROM; };
 
     /// Return the VROM data.
-    const std::vector<uint8_t>& getVROM() { return m_CHR_ROM; };
+    const std::vector<NES_Byte>& getVROM() { return m_CHR_ROM; };
 
     /// Return the mapper ID number.
-    uint8_t getMapper() { return m_mapperNumber; };
+    NES_Byte getMapper() { return m_mapperNumber; };
 
     /// Return the name table mirroring mode.
-    uint8_t getNameTableMirroring() { return m_nameTableMirroring; };
+    NES_Byte getNameTableMirroring() { return m_nameTableMirroring; };
 
     /// Return a boolean determining whether this cartridge uses extended RAM.
     bool hasExtendedRAM() { return m_extendedRAM; };

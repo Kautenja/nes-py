@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef PALETTE_COLORS_H
-#define PALETTE_COLORS_H
+#ifndef PALETTE_COLORS_HPP
+#define PALETTE_COLORS_HPP
 
 #include "common.hpp"
 
@@ -23,4 +23,4 @@ const NES_Pixel colors[] = {
     0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000, 0x000000
 };
 
-#endif // PALETTE_COLORS_H
+#endif // PALETTE_COLORS_HPP

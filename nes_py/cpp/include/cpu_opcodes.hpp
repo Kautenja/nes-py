@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CPUOPCODES_H_INCLUDED
-#define CPUOPCODES_H_INCLUDED
+#ifndef CPUOPCODES_HPP
+#define CPUOPCODES_HPP
 
 #include "common.hpp"
 
@@ -140,4 +140,4 @@ NES_Byte OperationCycles[0x100] = {
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
 };
 
-#endif // CPUOPCODES_H_INCLUDED
+#endif // CPUOPCODES_HPP

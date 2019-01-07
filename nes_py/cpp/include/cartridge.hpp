@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CARTRIDGE_H
-#define CARTRIDGE_H
+#ifndef CARTRIDGE_HPP
+#define CARTRIDGE_HPP
 
 #include "common.hpp"
 #include <vector>
@@ -51,4 +51,4 @@ public:
 
 };
 
-#endif // CARTRIDGE_H
+#endif // CARTRIDGE_HPP

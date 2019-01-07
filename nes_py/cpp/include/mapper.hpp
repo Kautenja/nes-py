@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPER_H
-#define MAPPER_H
+#ifndef MAPPER_HPP
+#define MAPPER_HPP
 
 #include "common.hpp"
 #include "cartridge.hpp"
@@ -91,4 +91,4 @@ public:
 
 };
 
-#endif //MAPPER_H
+#endif //MAPPER_HPP

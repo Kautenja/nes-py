@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERCNROM_H
-#define MAPPERCNROM_H
+#ifndef MAPPERCNROM_HPP
+#define MAPPERCNROM_HPP
 
 #include "common.hpp"
 #include "mapper.hpp"
@@ -63,4 +63,4 @@ public:
 
 };
 
-#endif // MAPPERCNROM_H
+#endif // MAPPERCNROM_HPP

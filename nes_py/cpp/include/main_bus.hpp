@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAIN_BUS_H
-#define MAIN_BUS_H
+#ifndef MAIN_BUS_HPP
+#define MAIN_BUS_HPP
 
 #include "common.hpp"
 #include "mapper.hpp"
@@ -85,4 +85,4 @@ public:
 
 };
 
-#endif // MAIN_BUS_H
+#endif // MAIN_BUS_HPP

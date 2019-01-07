@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERUXROM_H
-#define MAPPERUXROM_H
+#ifndef MAPPERUXROM_HPP
+#define MAPPERUXROM_HPP
 
 #include "common.hpp"
 #include "mapper.hpp"
@@ -67,4 +67,4 @@ public:
 
 };
 
-#endif // MAPPERUXROM_H
+#endif // MAPPERUXROM_HPP

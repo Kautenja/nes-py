@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERNROM_H
-#define MAPPERNROM_H
+#ifndef MAPPERNROM_HPP
+#define MAPPERNROM_HPP
 
 #include "common.hpp"
 #include "mapper.hpp"
@@ -65,4 +65,4 @@ public:
 
 };
 
-#endif // MAPPERNROM_H
+#endif // MAPPERNROM_HPP

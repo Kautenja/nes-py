@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef PICTUREBUS_H
-#define PICTUREBUS_H
+#ifndef PICTURE_BUS_HPP
+#define PICTURE_BUS_HPP
 
 #include "common.hpp"
 #include "mapper.hpp"
@@ -64,4 +64,4 @@ public:
 
 };
 
-#endif // PICTUREBUS_H
+#endif // PICTURE_BUS_HPP

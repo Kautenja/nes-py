@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERSXROM_H
-#define MAPPERSXROM_H
+#ifndef MAPPERSXROM_HPP
+#define MAPPERSXROM_HPP
 
 #include "common.hpp"
 #include "mapper.hpp"
@@ -89,4 +89,4 @@ public:
 
 };
 
-#endif // MAPPERSXROM_H
+#endif // MAPPERSXROM_HPP

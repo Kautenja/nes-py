@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CPU_H
-#define CPU_H
+#ifndef CPU_HPP
+#define CPU_HPP
 
 #include "common.hpp"
 #include "main_bus.hpp"
@@ -102,4 +102,4 @@ public:
 
 };
 
-#endif // CPU_H
+#endif // CPU_HPP

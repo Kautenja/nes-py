@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef EMULATOR_H
-#define EMULATOR_H
+#ifndef EMULATOR_HPP
+#define EMULATOR_HPP
 
 #include "common.hpp"
 #include "cartridge.hpp"
@@ -104,4 +104,4 @@ public:
 
 };
 
-#endif // EMULATOR_H
+#endif // EMULATOR_HPP

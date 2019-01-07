@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef PPU_H
-#define PPU_H
+#ifndef PPU_HPP
+#define PPU_HPP
 
 #include "common.hpp"
 #include "picture_bus.hpp"
@@ -119,4 +119,4 @@ public:
 
 };
 
-#endif // PPU_H
+#endif // PPU_HPP

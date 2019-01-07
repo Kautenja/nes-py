@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CONTROLLER_H
-#define CONTROLLER_H
+#ifndef CONTROLLER_HPP
+#define CONTROLLER_HPP
 
 #include "common.hpp"
 
@@ -44,4 +44,4 @@ public:
 
 };
 
-#endif // CONTROLLER_H
+#endif // CONTROLLER_HPP

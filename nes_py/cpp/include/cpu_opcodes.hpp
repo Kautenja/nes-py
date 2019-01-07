@@ -8,6 +8,8 @@
 #ifndef CPUOPCODES_H_INCLUDED
 #define CPUOPCODES_H_INCLUDED
 
+#include "common.hpp"
+
 const auto INSTRUCTION_MODE_MASK = 0x3;
 
 const auto OPERATION_MASK = 0xe0;

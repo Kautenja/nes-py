@@ -8,6 +8,7 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "common.hpp"
 #include "main_bus.hpp"
 
 /// An MOS6502 for an NES emulation
@@ -18,13 +19,13 @@ private:
     int m_cycles;
 
     //Registers
-    uint16_t r_PC;
-    uint8_t r_SP;
-    uint8_t r_A;
-    uint8_t r_X;
-    uint8_t r_Y;
+    NES_Address r_PC;
+    NES_Byte r_SP;
+    NES_Byte r_A;
+    NES_Byte r_X;
+    NES_Byte r_Y;
 
-    // CPU Status flags.
+    // CPU Statgis flags.
     // TODO: Is storing them in one byte better ?
     bool f_C;
     bool f_Z;
@@ -36,19 +37,19 @@ private:
 
     //Instructions are split into five sets to make decoding easier.
     //These functions return true if they succeed
-    bool executeImplied(MainBus &m_bus, uint8_t opcode);
-    bool executeBranch(MainBus &m_bus, uint8_t opcode);
-    bool executeType0(MainBus &m_bus, uint8_t opcode);
-    bool executeType1(MainBus &m_bus, uint8_t opcode);
-    bool executeType2(MainBus &m_bus, uint8_t opcode);
+    bool executeImplied(MainBus &m_bus, NES_Byte opcode);
+    bool executeBranch(MainBus &m_bus, NES_Byte opcode);
+    bool executeType0(MainBus &m_bus, NES_Byte opcode);
+    bool executeType1(MainBus &m_bus, NES_Byte opcode);
+    bool executeType2(MainBus &m_bus, NES_Byte opcode);
 
-    uint16_t readAddress(MainBus &m_bus, uint16_t addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
-    void pushStack(MainBus &m_bus, uint8_t value) {  m_bus.write(0x100 | r_SP--, value); };
-    uint8_t pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
+    NES_Address readAddress(MainBus &m_bus, NES_Address addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
+    void pushStack(MainBus &m_bus, NES_Byte value) {  m_bus.write(0x100 | r_SP--, value); };
+    NES_Byte pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
 
     //If a and b are in different pages, increases the m_SkipCycles by inc
-    void setPageCrossed(uint16_t a, uint16_t b, int inc = 1);
-    void setZN(uint8_t value) { f_Z = !value; f_N = value & 0x80; };
+    void setPageCrossed(NES_Address a, NES_Address b, int inc = 1);
+    void setZN(NES_Byte value) { f_Z = !value; f_N = value & 0x80; };
 
 public:
     /// The interrupt types available to this CPU
@@ -81,7 +82,7 @@ public:
     ///
     /// @param start_addr the starting address for the program counter
     ///
-    void reset(uint16_t start_addr);
+    void reset(NES_Address start_addr);
 
     /// Reset using the given main bus to lookup a starting address.
     ///
@@ -90,7 +91,7 @@ public:
     void reset(MainBus &m_bus);
 
     /// Return the program counter of the CPU.
-    uint16_t getPC() { return r_PC; }
+    NES_Address getPC() { return r_PC; }
 
     /// Skip DMA cycles.
     ///

@@ -7,6 +7,7 @@
 
 #ifndef MAPPERCNROM_H
 #define MAPPERCNROM_H
+
 #include "mapper.hpp"
 
 class MapperCNROM : public Mapper {

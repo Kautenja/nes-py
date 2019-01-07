@@ -31,6 +31,7 @@ enum IORegisters {
 
 /// The main bus for data to travel along the NES hardware
 class MainBus {
+
 private:
     /// The RAM on the main bus
     std::vector<uint8_t> m_RAM;

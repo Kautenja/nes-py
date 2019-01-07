@@ -8,8 +8,7 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include <stdint.h>
-#include <vector>
+#include "common.hpp"
 
 /// A standard NES controller
 class Controller {
@@ -18,9 +17,9 @@ private:
     /// whether strobe is on
     bool is_strobe;
     /// the emulation of the buttons on the controller
-    uint8_t joypad_buttons;
+    NES_Byte joypad_buttons;
     /// the state of the buttons
-    uint8_t joypad_bits;
+    NES_Byte joypad_bits;
 
 public:
     /// Initialize a new controller
@@ -43,16 +42,16 @@ public:
     ///
     /// @param buttons the button bitmap to write to the controller
     ///
-    void write_buttons(uint8_t buttons) { joypad_buttons = buttons; };
+    void write_buttons(NES_Byte buttons) { joypad_buttons = buttons; };
 
     /// Strobe the controller
-    void strobe(uint8_t b);
+    void strobe(NES_Byte b);
 
     /// Read the controller state
     ///
     /// @return a state from the controller
     ///
-    uint8_t read();
+    NES_Byte read();
 
 };
 

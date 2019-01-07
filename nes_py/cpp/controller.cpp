@@ -7,14 +7,14 @@
 
 #include "controller.hpp"
 
-void Controller::strobe(uint8_t b) {
+void Controller::strobe(NES_Byte b) {
     is_strobe = (b & 1);
     if (!is_strobe)
         joypad_bits = joypad_buttons;
 }
 
-uint8_t Controller::read() {
-    uint8_t ret;
+NES_Byte Controller::read() {
+    NES_Byte ret;
     if (is_strobe)
         ret = (joypad_buttons & 1);
     else {

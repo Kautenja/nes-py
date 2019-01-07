@@ -8,7 +8,6 @@
 #include "cpu.hpp"
 #include "cpu_opcodes.hpp"
 #include "log.hpp"
-#include <iomanip>
 
 void CPU::reset(uint16_t start_addr) {
     m_skipCycles = m_cycles = 0;

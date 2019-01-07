@@ -7,7 +7,6 @@
 
 #include "main_bus.hpp"
 #include "log.hpp"
-#include <cstring>
 
 uint8_t MainBus::read(uint16_t addr) {
     if (addr < 0x2000)

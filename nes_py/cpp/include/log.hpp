@@ -9,10 +9,6 @@
 #define LOG_H
 
 #include <iostream>
-#include <string>
-#include <fstream>
-#include <memory>
-#include <cstring>
 
 #define debug_disabled true
 

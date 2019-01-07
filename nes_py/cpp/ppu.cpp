@@ -50,7 +50,7 @@ void PPU::cycle(PictureBus& m_bus) {
             break;
         case Render:
             if (m_cycle > 0 && m_cycle <= SCANLINE_VISIBLE_DOTS) {
-                uint8_t bgColor = 0, sprColor = 0;
+                NES_Byte bgColor = 0, sprColor = 0;
                 bool bgOpaque = false, sprOpaque = true;
                 bool spriteForeground = false;
 
@@ -64,7 +64,7 @@ void PPU::cycle(PictureBus& m_bus) {
                         // mask off fine y
                         auto addr = 0x2000 | (m_dataAddress & 0x0FFF);
                         //auto addr = 0x2000 + x / 8 + (y / 8) * (SCANLINE_VISIBLE_DOTS / 8);
-                        uint8_t tile = m_bus.read(addr);
+                        NES_Byte tile = m_bus.read(addr);
 
                         //fetch pattern
                         //Each pattern occupies 16 bytes, so multiply by 16
@@ -106,12 +106,12 @@ void PPU::cycle(PictureBus& m_bus) {
 
                 if (m_showSprites && (!m_hideEdgeSprites || x >= 8)) {
                     for (auto i : m_scanlineSprites) {
-                        uint8_t spr_x =     m_spriteMemory[i * 4 + 3];
+                        NES_Byte spr_x =     m_spriteMemory[i * 4 + 3];
 
                         if (0 > x - spr_x || x - spr_x >= 8)
                             continue;
 
-                        uint8_t spr_y     = m_spriteMemory[i * 4 + 0] + 1,
+                        NES_Byte spr_y     = m_spriteMemory[i * 4 + 0] + 1,
                              tile      = m_spriteMemory[i * 4 + 1],
                              attribute = m_spriteMemory[i * 4 + 2];
 
@@ -124,7 +124,7 @@ void PPU::cycle(PictureBus& m_bus) {
                         if ((attribute & 0x80) != 0) //IF flipping vertically
                             y_offset ^= (length - 1);
 
-                        uint16_t addr = 0;
+                        NES_Address addr = 0;
 
                         if (!m_longSprites) {
                             addr = tile * 16 + y_offset;
@@ -159,7 +159,7 @@ void PPU::cycle(PictureBus& m_bus) {
                     }
                 }
 
-                uint8_t paletteAddr = bgColor;
+                NES_Byte paletteAddr = bgColor;
 
                 if ( (!bgOpaque && sprOpaque) || (bgOpaque && sprOpaque && spriteForeground) )
                     paletteAddr = sprColor;
@@ -208,8 +208,8 @@ void PPU::cycle(PictureBus& m_bus) {
                 if (m_longSprites)
                     range = 16;
 
-                uint8_t j = 0;
-                for (uint8_t i = m_spriteDataAddress / 4; i < 64; ++i) {
+                NES_Byte j = 0;
+                for (NES_Byte i = m_spriteDataAddress / 4; i < 64; ++i) {
                     auto diff = (m_scanline - m_spriteMemory[i * 4]);
                     if (0 <= diff && diff < range) {
                         m_scanlineSprites.push_back(i);
@@ -260,13 +260,13 @@ void PPU::cycle(PictureBus& m_bus) {
     ++m_cycle;
 }
 
-void PPU::doDMA(const uint8_t* page_ptr) {
+void PPU::doDMA(const NES_Byte* page_ptr) {
     std::memcpy(m_spriteMemory.data() + m_spriteDataAddress, page_ptr, 256 - m_spriteDataAddress);
     if (m_spriteDataAddress)
         std::memcpy(m_spriteMemory.data(), page_ptr + (256 - m_spriteDataAddress), m_spriteDataAddress);
 }
 
-void PPU::control(uint8_t ctrl) {
+void PPU::control(NES_Byte ctrl) {
     m_generateInterrupt = ctrl & 0x80;
     m_longSprites = ctrl & 0x20;
     m_bgPage = static_cast<CharacterPage>(!!(ctrl & 0x10));
@@ -282,7 +282,7 @@ void PPU::control(uint8_t ctrl) {
     m_tempAddress |= (ctrl & 0x3) << 10;     //Set according to ctrl bits
 }
 
-void PPU::setMask(uint8_t mask) {
+void PPU::setMask(NES_Byte mask) {
     m_greyscaleMode = mask & 0x1;
     m_hideEdgeBackground = !(mask & 0x2);
     m_hideEdgeSprites = !(mask & 0x4);
@@ -290,15 +290,15 @@ void PPU::setMask(uint8_t mask) {
     m_showSprites = mask & 0x10;
 }
 
-uint8_t PPU::getStatus() {
-    uint8_t status = m_sprZeroHit << 6 | m_vblank << 7;
+NES_Byte PPU::getStatus() {
+    NES_Byte status = m_sprZeroHit << 6 | m_vblank << 7;
     //m_dataAddress = 0;
     m_vblank = false;
     m_firstWrite = true;
     return status;
 }
 
-void PPU::setDataAddress(uint8_t addr) {
+void PPU::setDataAddress(NES_Byte addr) {
     //m_dataAddress = ((m_dataAddress << 8) & 0xff00) | addr;
     if (m_firstWrite) {
         //Unset the upper byte
@@ -315,7 +315,7 @@ void PPU::setDataAddress(uint8_t addr) {
     }
 }
 
-uint8_t PPU::getData(PictureBus& m_bus) {
+NES_Byte PPU::getData(PictureBus& m_bus) {
     auto data = m_bus.read(m_dataAddress);
     m_dataAddress += m_dataAddrIncrement;
 
@@ -327,12 +327,12 @@ uint8_t PPU::getData(PictureBus& m_bus) {
     return data;
 }
 
-void PPU::setData(PictureBus& m_bus, uint8_t data) {
+void PPU::setData(PictureBus& m_bus, NES_Byte data) {
     m_bus.write(m_dataAddress, data);
     m_dataAddress += m_dataAddrIncrement;
 }
 
-void PPU::setScroll(uint8_t scroll) {
+void PPU::setScroll(NES_Byte scroll) {
     if (m_firstWrite) {
         m_tempAddress &= ~0x1f;
         m_tempAddress |= (scroll >> 3) & 0x1f;

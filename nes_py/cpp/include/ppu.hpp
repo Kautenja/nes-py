@@ -8,6 +8,7 @@
 #ifndef PPU_H
 #define PPU_H
 
+#include "common.hpp"
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
 #include "palette_colors.hpp"
@@ -27,14 +28,14 @@ const int FRAME_END_SCANLINE = 261;
 class PPU {
 
 private:
-    uint8_t readOAM(uint8_t addr) { return m_spriteMemory[addr]; };
-    void writeOAM(uint8_t addr, uint8_t value) { m_spriteMemory[addr] = value; };
+    NES_Byte readOAM(NES_Byte addr) { return m_spriteMemory[addr]; };
+    void writeOAM(NES_Byte addr, NES_Byte value) { m_spriteMemory[addr] = value; };
 
     std::function<void(void)> m_vblankCallback;
 
-    std::vector<uint8_t> m_spriteMemory;
+    std::vector<NES_Byte> m_spriteMemory;
 
-    std::vector<uint8_t> m_scanlineSprites;
+    std::vector<NES_Byte> m_scanlineSprites;
 
     enum State {
         PreRender,
@@ -51,13 +52,13 @@ private:
     bool m_sprZeroHit;
 
     //Registers
-    uint16_t m_dataAddress;
-    uint16_t m_tempAddress;
-    uint8_t m_fineXScroll;
+    NES_Address m_dataAddress;
+    NES_Address m_tempAddress;
+    NES_Byte m_fineXScroll;
     bool m_firstWrite;
-    uint8_t m_dataBuffer;
+    NES_Byte m_dataBuffer;
 
-    uint8_t m_spriteDataAddress;
+    NES_Byte m_spriteDataAddress;
 
     //Setup flags and variables
     bool m_longSprites;
@@ -74,7 +75,7 @@ private:
         High,
     } m_bgPage, m_sprPage;
 
-    uint16_t m_dataAddrIncrement;
+    NES_Address m_dataAddrIncrement;
 
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
@@ -97,21 +98,21 @@ public:
     /// Set the interrupt callback for the CPU
     void setInterruptCallback(std::function<void(void)> cb) { m_vblankCallback = cb; };
 
-    void doDMA(const uint8_t* page_ptr);
+    void doDMA(const NES_Byte* page_ptr);
 
     //Callbacks mapped to CPU address space
     //Addresses written to by the program
-    void control(uint8_t ctrl);
-    void setMask(uint8_t mask);
-    void setOAMAddress(uint8_t addr) { m_spriteDataAddress = addr; };
-    void setDataAddress(uint8_t addr);
-    void setScroll(uint8_t scroll);
-    void setData(PictureBus& m_bus, uint8_t data);
+    void control(NES_Byte ctrl);
+    void setMask(NES_Byte mask);
+    void setOAMAddress(NES_Byte addr) { m_spriteDataAddress = addr; };
+    void setDataAddress(NES_Byte addr);
+    void setScroll(NES_Byte scroll);
+    void setData(PictureBus& m_bus, NES_Byte data);
     //Read by the program
-    uint8_t getStatus();
-    uint8_t getData(PictureBus& m_bus);
-    uint8_t getOAMData() { return readOAM(m_spriteDataAddress); };
-    void setOAMData(uint8_t value) { writeOAM(m_spriteDataAddress++, value); };
+    NES_Byte getStatus();
+    NES_Byte getData(PictureBus& m_bus);
+    NES_Byte getOAMData() { return readOAM(m_spriteDataAddress); };
+    void setOAMData(NES_Byte value) { writeOAM(m_spriteDataAddress++, value); };
 
     /// Return a pointer to the screen buffer.
     uint32_t* get_screen_buffer() { return *screen_buffer; };

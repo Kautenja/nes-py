@@ -24,7 +24,7 @@ private:
 
 public:
     /// Initialize a new controller
-    Controller();
+    Controller() : is_strobe(true), joypad_buttons(0), joypad_bits(0) { };
 
     /// The buttons on the controller
     enum Buttons {

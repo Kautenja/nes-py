@@ -7,17 +7,10 @@
 
 #include "controller.hpp"
 
-Controller::Controller() {
-    is_strobe = true;
-    joypad_buttons = 0;
-    joypad_bits = 0;
-}
-
 void Controller::strobe(uint8_t b) {
     is_strobe = (b & 1);
-    if (!is_strobe) {
+    if (!is_strobe)
         joypad_bits = joypad_buttons;
-    }
 }
 
 uint8_t Controller::read() {

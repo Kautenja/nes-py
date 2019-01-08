@@ -148,7 +148,10 @@ public:
     /// TODO: doc
     void set_data(PictureBus& bus, NES_Byte data);
 
-    /// TODO: doc
+    /// Set the sprite data address to a new value.
+    ///
+    /// @param address the new OAM data address
+    ///
     void set_OAM_address(NES_Byte address) { sprite_data_address = address; };
 
     /// Read a byte from OAM memory at the sprite data address.

@@ -124,13 +124,22 @@ public:
 
     // MARK: Callbacks mapped to CPU address space
 
-    /// TODO: doc
+    /// Set the control register to a new value.
+    ///
+    /// @param ctrl the new control register byte
+    ///
     void control(NES_Byte ctrl);
 
-    /// TODO: doc
+    /// Set the mask register to a new value.
+    ///
+    /// @param mask the new mask value
+    ///
     void set_mask(NES_Byte mask);
 
-    /// TODO: doc
+    /// Set the scroll register to a new value.
+    ///
+    /// @param scroll the new scroll register value
+    ///
     void set_scroll(NES_Byte scroll);
 
     /// Return the value in the PPU status register.

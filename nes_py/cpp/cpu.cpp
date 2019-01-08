@@ -19,7 +19,7 @@ void CPU::reset(NES_Address start_address) {
     register_SP = 0xfd; //documented startup state
 }
 
-void CPU::reset(MainBus &bus) { reset(readAddress(bus, RESET_VECTOR)); }
+void CPU::reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); }
 
 void CPU::interrupt(MainBus &bus, InterruptType type) {
     if (flags.bits.I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)
@@ -28,32 +28,26 @@ void CPU::interrupt(MainBus &bus, InterruptType type) {
     if (type == BRK_INTERRUPT) //Add one if BRK, a quirk of 6502
         ++register_PC;
 
-    pushStack(bus, register_PC >> 8);
-    pushStack(bus, register_PC);
+    push_stack(bus, register_PC >> 8);
+    push_stack(bus, register_PC);
 
     // set the constant flag and Break flag
     NES_Byte flags_ = flags.byte | 0b00100000 | (type == BRK_INTERRUPT) << 4;
-    pushStack(bus, flags_);
+    push_stack(bus, flags_);
 
     flags.bits.I = true;
 
     switch (type) {
         case IRQ_INTERRUPT:
         case BRK_INTERRUPT:
-            register_PC = readAddress(bus, IRQ_VECTOR);
+            register_PC = read_address(bus, IRQ_VECTOR);
             break;
         case NMI_INTERRUPT:
-            register_PC = readAddress(bus, NMI_VECTOR);
+            register_PC = read_address(bus, NMI_VECTOR);
             break;
     }
 
     skip_cycles += 7;
-}
-
-void CPU::setPageCrossed(NES_Address a, NES_Address b, int inc) {
-    //Page is determined by the high byte
-    if ((a & 0xff00) != (b & 0xff00))
-        skip_cycles += inc;
 }
 
 void CPU::step(MainBus &bus) {
@@ -107,26 +101,26 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
         case JSR:
             //Push address of next instruction - 1, thus register_PC + 1 instead of register_PC + 2
             //since register_PC and register_PC + 1 are address of subroutine
-            pushStack(bus, static_cast<NES_Byte>((register_PC + 1) >> 8));
-            pushStack(bus, static_cast<NES_Byte>(register_PC + 1));
-            register_PC = readAddress(bus, register_PC);
+            push_stack(bus, static_cast<NES_Byte>((register_PC + 1) >> 8));
+            push_stack(bus, static_cast<NES_Byte>(register_PC + 1));
+            register_PC = read_address(bus, register_PC);
             break;
         case RTS:
-            register_PC = pullStack(bus);
-            register_PC |= pullStack(bus) << 8;
+            register_PC = pop_stack(bus);
+            register_PC |= pop_stack(bus) << 8;
             ++register_PC;
             break;
         case RTI: {
-                flags.byte = pullStack(bus);
+                flags.byte = pop_stack(bus);
             }
-            register_PC = pullStack(bus);
-            register_PC |= pullStack(bus) << 8;
+            register_PC = pop_stack(bus);
+            register_PC |= pop_stack(bus) << 8;
             break;
         case JMP:
-            register_PC = readAddress(bus, register_PC);
+            register_PC = read_address(bus, register_PC);
             break;
         case JMPI: {
-                NES_Address location = readAddress(bus, register_PC);
+                NES_Address location = read_address(bus, register_PC);
                 //6502 has a bug such that the when the vector of anindirect address begins at the last byte of a page,
                 //the second byte is fetched from the beginning of that page rather than the beginning of the next
                 //Recreating here:
@@ -136,39 +130,39 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
             }
             break;
         case PHP: {
-                pushStack(bus, flags.byte);
+                push_stack(bus, flags.byte);
             }
             break;
         case PLP: {
-                flags.byte = pullStack(bus);
+                flags.byte = pop_stack(bus);
             }
             break;
         case PHA:
-            pushStack(bus, register_A);
+            push_stack(bus, register_A);
             break;
         case PLA:
-            register_A = pullStack(bus);
-            setZN(register_A);
+            register_A = pop_stack(bus);
+            set_ZN(register_A);
             break;
         case DEY:
             --register_Y;
-            setZN(register_Y);
+            set_ZN(register_Y);
             break;
         case DEX:
             --register_X;
-            setZN(register_X);
+            set_ZN(register_X);
             break;
         case TAY:
             register_Y = register_A;
-            setZN(register_Y);
+            set_ZN(register_Y);
             break;
         case INY:
             ++register_Y;
-            setZN(register_Y);
+            set_ZN(register_Y);
             break;
         case INX:
             ++register_X;
-            setZN(register_X);
+            set_ZN(register_X);
             break;
         case CLC:
             flags.bits.C = false;
@@ -190,25 +184,25 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
             break;
         case TYA:
             register_A = register_Y;
-            setZN(register_A);
+            set_ZN(register_A);
             break;
         case CLV:
             flags.bits.V = false;
             break;
         case TXA:
             register_A = register_X;
-            setZN(register_A);
+            set_ZN(register_A);
             break;
         case TXS:
             register_SP = register_X;
             break;
         case TAX:
             register_X = register_A;
-            setZN(register_X);
+            set_ZN(register_X);
             break;
         case TSX:
             register_X = register_SP;
-            setZN(register_X);
+            set_ZN(register_X);
             break;
         default:
             return false;
@@ -244,7 +238,7 @@ bool CPU::executeBranch(MainBus &bus, NES_Byte opcode) {
             int8_t offset = bus.read(register_PC++);
             ++skip_cycles;
             auto newPC = static_cast<NES_Address>(register_PC + offset);
-            setPageCrossed(register_PC, newPC, 2);
+            set_page_crossed(register_PC, newPC, 2);
             register_PC = newPC;
         }
         else
@@ -272,14 +266,14 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
                 location = register_PC++;
                 break;
             case M1_ABSOLUTE:
-                location = readAddress(bus, register_PC);
+                location = read_address(bus, register_PC);
                 register_PC += 2;
                 break;
             case M1_INDIRECT_Y: {
                     NES_Byte zero_address = bus.read(register_PC++);
                     location = bus.read(zero_address & 0xff) | bus.read((zero_address + 1) & 0xff) << 8;
                     if (op != STA)
-                        setPageCrossed(location, location + register_Y);
+                        set_page_crossed(location, location + register_Y);
                     location += register_Y;
                 }
                 break;
@@ -288,17 +282,17 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
                 location = (bus.read(register_PC++) + register_X) & 0xff;
                 break;
             case M1_ABSOLUTE_Y:
-                location = readAddress(bus, register_PC);
+                location = read_address(bus, register_PC);
                 register_PC += 2;
                 if (op != STA)
-                    setPageCrossed(location, location + register_Y);
+                    set_page_crossed(location, location + register_Y);
                 location += register_Y;
                 break;
             case M1_ABSOLUTE_X:
-                location = readAddress(bus, register_PC);
+                location = read_address(bus, register_PC);
                 register_PC += 2;
                 if (op != STA)
-                    setPageCrossed(location, location + register_X);
+                    set_page_crossed(location, location + register_X);
                 location += register_X;
                 break;
             default:
@@ -308,15 +302,15 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
         switch (op) {
             case ORA:
                 register_A |= bus.read(location);
-                setZN(register_A);
+                set_ZN(register_A);
                 break;
             case AND:
                 register_A &= bus.read(location);
-                setZN(register_A);
+                set_ZN(register_A);
                 break;
             case EOR:
                 register_A ^= bus.read(location);
-                setZN(register_A);
+                set_ZN(register_A);
                 break;
             case ADC: {
                     NES_Byte operand = bus.read(location);
@@ -327,7 +321,7 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
                     //different from BOTH the operands
                     flags.bits.V = (register_A ^ sum) & (operand ^ sum) & 0x80;
                     register_A = static_cast<NES_Byte>(sum);
-                    setZN(register_A);
+                    set_ZN(register_A);
                 }
                 break;
             case STA:
@@ -335,7 +329,7 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
                 break;
             case LDA:
                 register_A = bus.read(location);
-                setZN(register_A);
+                set_ZN(register_A);
                 break;
             case SBC: {
                     //High carry means "no borrow", thus negate and subtract
@@ -347,13 +341,13 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
                     //substitute with it's one complement
                     flags.bits.V = (register_A ^ diff) & (~subtrahend ^ diff) & 0x80;
                     register_A = diff;
-                    setZN(diff);
+                    set_ZN(diff);
                 }
                 break;
             case CMP: {
                     NES_Address diff = register_A - bus.read(location);
                     flags.bits.C = !(diff & 0x100);
-                    setZN(diff);
+                    set_ZN(diff);
                 }
                 break;
             default:
@@ -380,7 +374,7 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
             case M2_ACCUMULATOR:
                 break;
             case M2_ABSOLUTE:
-                location = readAddress(bus, register_PC);
+                location = read_address(bus, register_PC);
                 register_PC += 2;
                 break;
             case M2_INDEXED: {
@@ -395,14 +389,14 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
                 }
                 break;
             case M2_ABSOLUTE_INDEXED: {
-                    location = readAddress(bus, register_PC);
+                    location = read_address(bus, register_PC);
                     register_PC += 2;
                     NES_Byte index;
                     if (op == LDX || op == STX)
                         index = register_Y;
                     else
                         index = register_X;
-                    setPageCrossed(location, location + index);
+                    set_page_crossed(location, location + index);
                     location += index;
                 }
                 break;
@@ -420,14 +414,14 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
                     register_A <<= 1;
                     //If Rotating, set the bit-0 to the the previous carry
                     register_A = register_A | (prev_C && (op == ROL));
-                    setZN(register_A);
+                    set_ZN(register_A);
                 }
                 else {
                     auto prev_C = flags.bits.C;
                     operand = bus.read(location);
                     flags.bits.C = operand & 0x80;
                     operand = operand << 1 | (prev_C && (op == ROL));
-                    setZN(operand);
+                    set_ZN(operand);
                     bus.write(location, operand);
                 }
                 break;
@@ -439,14 +433,14 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
                     register_A >>= 1;
                     //If Rotating, set the bit-7 to the previous carry
                     register_A = register_A | (prev_C && (op == ROR)) << 7;
-                    setZN(register_A);
+                    set_ZN(register_A);
                 }
                 else {
                     auto prev_C = flags.bits.C;
                     operand = bus.read(location);
                     flags.bits.C = operand & 1;
                     operand = operand >> 1 | (prev_C && (op == ROR)) << 7;
-                    setZN(operand);
+                    set_ZN(operand);
                     bus.write(location, operand);
                 }
                 break;
@@ -455,17 +449,17 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
                 break;
             case LDX:
                 register_X = bus.read(location);
-                setZN(register_X);
+                set_ZN(register_X);
                 break;
             case DEC: {
                     auto tmp = bus.read(location) - 1;
-                    setZN(tmp);
+                    set_ZN(tmp);
                     bus.write(location, tmp);
                 }
                 break;
             case INC: {
                     auto tmp = bus.read(location) + 1;
-                    setZN(tmp);
+                    set_ZN(tmp);
                     bus.write(location, tmp);
                 }
                 break;
@@ -488,7 +482,7 @@ bool CPU::executeType0(MainBus &bus, NES_Byte opcode) {
                 location = bus.read(register_PC++);
                 break;
             case M2_ABSOLUTE:
-                location = readAddress(bus, register_PC);
+                location = read_address(bus, register_PC);
                 register_PC += 2;
                 break;
             case M2_INDEXED:
@@ -496,9 +490,9 @@ bool CPU::executeType0(MainBus &bus, NES_Byte opcode) {
                 location = (bus.read(register_PC++) + register_X) & 0xff;
                 break;
             case M2_ABSOLUTE_INDEXED:
-                location = readAddress(bus, register_PC);
+                location = read_address(bus, register_PC);
                 register_PC += 2;
-                setPageCrossed(location, location + register_X);
+                set_page_crossed(location, location + register_X);
                 location += register_X;
                 break;
             default:
@@ -517,18 +511,18 @@ bool CPU::executeType0(MainBus &bus, NES_Byte opcode) {
                 break;
             case LDY:
                 register_Y = bus.read(location);
-                setZN(register_Y);
+                set_ZN(register_Y);
                 break;
             case CPY: {
                     NES_Address diff = register_Y - bus.read(location);
                     flags.bits.C = !(diff & 0x100);
-                    setZN(diff);
+                    set_ZN(diff);
                 }
                 break;
             case CPX: {
                     NES_Address diff = register_X - bus.read(location);
                     flags.bits.C = !(diff & 0x100);
-                    setZN(diff);
+                    set_ZN(diff);
                 }
                 break;
             default:

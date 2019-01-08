@@ -37,7 +37,7 @@ Emulator::Emulator(std::string rom_path) {
 
 void Emulator::DMA(NES_Byte page) {
     // skip the DMA cycles on the CPU
-    cpu.skipDMACycles();
+    cpu.skip_DMA_cycles();
     // do the DMA page change on the PPU
     ppu.doDMA(bus.get_page_pointer(page));
 }

@@ -54,27 +54,51 @@ private:
     /// The number of cycles the CPU has run
     int cycles;
 
+    /// Set the zero and negative flags based on the given value.
+    ///
+    /// @param value the value to set the zero and negative flags using
+    ///
+    inline void set_ZN(NES_Byte value) {
+        flags.bits.Z = !value; flags.bits.N = value & 0x80;
+    };
+
     /// Read a 16-bit address from the bus given an address.
     ///
     /// @param bus the bus to read data from
     /// @param address the address in memory to read an address from
     /// @return the 16-bit address located at the given memory address
     ///
-    inline NES_Address readAddress(MainBus &bus, NES_Address address) { return bus.read(address) | bus.read(address + 1) << 8; };
+    inline NES_Address read_address(MainBus &bus, NES_Address address) {
+        return bus.read(address) | bus.read(address + 1) << 8;
+    };
 
     /// Push a value onto the stack.
     ///
     /// @param bus the bus to read data from
     /// @param value the value to push onto the stack
     ///
-    inline void pushStack(MainBus &bus, NES_Byte value) { bus.write(0x100 | register_SP--, value); };
+    inline void push_stack(MainBus &bus, NES_Byte value) {
+        bus.write(0x100 | register_SP--, value);
+    };
 
     /// Pop a value off the stack.
     ///
     /// @param bus the bus to read data from
     /// @return the value on the top of the stack
     ///
-    inline NES_Byte pullStack(MainBus &bus) { return bus.read(0x100 | ++register_SP); };
+    inline NES_Byte pop_stack(MainBus &bus) {
+        return bus.read(0x100 | ++register_SP);
+    };
+
+    /// Increment the skip cycles if two addresses refer to different pages.
+    ///
+    /// @param a an address
+    /// @param b another address
+    /// @param inc the number of skip cycles to add
+    ///
+    inline void set_page_crossed(NES_Address a, NES_Address b, int inc = 1) {
+        if ((a & 0xff00) != (b & 0xff00)) skip_cycles += inc;
+    };
 
     //Instructions are split into five sets to make decoding easier.
     //These functions return true if they succeed
@@ -84,15 +108,6 @@ private:
     bool executeType0(MainBus &bus, NES_Byte opcode);
     bool executeType1(MainBus &bus, NES_Byte opcode);
     bool executeType2(MainBus &bus, NES_Byte opcode);
-
-    //If a and b are in different pages, increases the skip_cycles by inc
-    void setPageCrossed(NES_Address a, NES_Address b, int inc = 1);
-
-    /// Set the zero and negative flags based on the given value.
-    ///
-    /// @param value the value to set the zero and negative flags using
-    ///
-    inline void setZN(NES_Byte value) { flags.bits.Z = !value; flags.bits.N = value & 0x80; };
 
     /// Reset the emulator using the given starting address.
     ///
@@ -138,7 +153,7 @@ public:
     /// 513 = 256 read + 256 write + 1 dummy read
     /// &1 -> +1 if on odd cycle
     ///
-    void skipDMACycles() { skip_cycles += 513 + (cycles & 1); };
+    void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); };
 
 };
 

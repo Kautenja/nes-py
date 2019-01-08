@@ -26,7 +26,7 @@ Emulator::Emulator(std::string rom_path) {
     bus.set_write_callback(JOY1, [&](NES_Byte b) {controller1.strobe(b); controller2.strobe(b);});
     bus.set_write_callback(OAMDATA, [&](NES_Byte b) {ppu.setOAMData(b);});
     // set the interrupt callback for the PPU
-    ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
+    ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI_INTERRUPT); });
     // load the ROM from disk, expect that the Python code has validated it
     cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM

@@ -27,27 +27,27 @@ const int FRAME_END_SCANLINE = 261;
 class PPU {
 
 private:
-    std::function<void(void)> m_vblankCallback;
+    std::function<void(void)> vblank_callback;
 
-    std::vector<NES_Byte> m_spriteMemory;
+    std::vector<NES_Byte> sprite_memory;
 
-    std::vector<NES_Byte> m_scanlineSprites;
+    std::vector<NES_Byte> scanline_sprites;
 
     enum State {
         PreRender,
         Render,
         PostRender,
         VerticalBlank
-    } m_pipelineState;
+    } pipeline_state;
 
-    int m_cycle;
-    int m_scanline;
-    bool m_evenFrame;
+    int m_cycles;
+    int scanline;
+    bool is_even_frame;
 
-    bool m_vblank;
-    bool m_sprZeroHit;
+    bool vblank;
+    bool sprite_zero_hit;
 
-    //Registers
+    // Registers
     NES_Address m_dataAddress;
     NES_Address m_tempAddress;
     NES_Byte m_fineXScroll;
@@ -56,7 +56,7 @@ private:
 
     NES_Byte m_spriteDataAddress;
 
-    //Setup flags and variables
+    // Setup flags and variables
     bool m_longSprites;
     bool m_generateInterrupt;
 
@@ -78,12 +78,12 @@ private:
     /// the number of visible scan line dots
     NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
 
-    NES_Byte readOAM(NES_Byte address) { return m_spriteMemory[address]; };
-    void writeOAM(NES_Byte address, NES_Byte value) { m_spriteMemory[address] = value; };
+    NES_Byte readOAM(NES_Byte address) { return sprite_memory[address]; };
+    void writeOAM(NES_Byte address, NES_Byte value) { sprite_memory[address] = value; };
 
 public:
     /// Initialize a new PPU
-    PPU() : m_spriteMemory(64 * 4) { };
+    PPU() : sprite_memory(64 * 4) { };
 
     /// Perform a single cycle on the PPU
     void cycle(PictureBus& bus);
@@ -95,7 +95,7 @@ public:
     void reset();
 
     /// Set the interrupt callback for the CPU
-    void setInterruptCallback(std::function<void(void)> cb) { m_vblankCallback = cb; };
+    void setInterruptCallback(std::function<void(void)> cb) { vblank_callback = cb; };
 
     void doDMA(const NES_Byte* page_ptr);
 

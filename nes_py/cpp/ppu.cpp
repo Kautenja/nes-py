@@ -10,53 +10,53 @@
 #include "log.hpp"
 
 void PPU::reset() {
-    m_longSprites = m_generateInterrupt = m_greyscaleMode = m_vblank = false;
-    m_showBackground = m_showSprites = m_evenFrame = m_firstWrite = true;
+    m_longSprites = m_generateInterrupt = m_greyscaleMode = vblank = false;
+    m_showBackground = m_showSprites = is_even_frame = m_firstWrite = true;
     m_bgPage = m_sprPage = Low;
     m_dataAddress = 0;
-    m_cycle = 0;
-    m_scanline = 0;
+    m_cycles = 0;
+    scanline = 0;
     m_spriteDataAddress = 0;
     m_fineXScroll = 0;
     m_tempAddress = 0;
     //m_baseNameTable = 0x2000;
     m_dataAddrIncrement = 1;
-    m_pipelineState = PreRender;
-    m_scanlineSprites.reserve(8);
-    m_scanlineSprites.resize(0);
+    pipeline_state = PreRender;
+    scanline_sprites.reserve(8);
+    scanline_sprites.resize(0);
 }
 
 void PPU::cycle(PictureBus& m_bus) {
-    switch (m_pipelineState) {
+    switch (pipeline_state) {
         case PreRender:
-            if (m_cycle == 1)
-                m_vblank = m_sprZeroHit = false;
-            else if (m_cycle == SCANLINE_VISIBLE_DOTS + 2 && m_showBackground && m_showSprites) {
+            if (m_cycles == 1)
+                vblank = sprite_zero_hit = false;
+            else if (m_cycles == SCANLINE_VISIBLE_DOTS + 2 && m_showBackground && m_showSprites) {
                 //Set bits related to horizontal position
                 m_dataAddress &= ~0x41f; //Unset horizontal bits
                 m_dataAddress |= m_tempAddress & 0x41f; //Copy
             }
-            else if (m_cycle > 280 && m_cycle <= 304 && m_showBackground && m_showSprites) {
+            else if (m_cycles > 280 && m_cycles <= 304 && m_showBackground && m_showSprites) {
                 //Set vertical bits
                 m_dataAddress &= ~0x7be0; //Unset bits related to horizontal
                 m_dataAddress |= m_tempAddress & 0x7be0; //Copy
             }
-            // if (m_cycle > 257 && m_cycle < 320)
+            // if (m_cycles > 257 && m_cycles < 320)
             //     m_spriteDataAddress = 0;
             // if rendering is on, every other frame is one cycle shorter
-            if (m_cycle >= SCANLINE_END_CYCLE - (!m_evenFrame && m_showBackground && m_showSprites)) {
-                m_pipelineState = Render;
-                m_cycle = m_scanline = 0;
+            if (m_cycles >= SCANLINE_END_CYCLE - (!is_even_frame && m_showBackground && m_showSprites)) {
+                pipeline_state = Render;
+                m_cycles = scanline = 0;
             }
             break;
         case Render:
-            if (m_cycle > 0 && m_cycle <= SCANLINE_VISIBLE_DOTS) {
+            if (m_cycles > 0 && m_cycles <= SCANLINE_VISIBLE_DOTS) {
                 NES_Byte bgColor = 0, sprColor = 0;
                 bool bgOpaque = false, sprOpaque = true;
                 bool spriteForeground = false;
 
-                int x = m_cycle - 1;
-                int y = m_scanline;
+                int x = m_cycles - 1;
+                int y = scanline;
 
                 if (m_showBackground) {
                     auto x_fine = (m_fineXScroll + x) % 8;
@@ -106,15 +106,15 @@ void PPU::cycle(PictureBus& m_bus) {
                 }
 
                 if (m_showSprites && (!m_hideEdgeSprites || x >= 8)) {
-                    for (auto i : m_scanlineSprites) {
-                        NES_Byte spr_x =     m_spriteMemory[i * 4 + 3];
+                    for (auto i : scanline_sprites) {
+                        NES_Byte spr_x =     sprite_memory[i * 4 + 3];
 
                         if (0 > x - spr_x || x - spr_x >= 8)
                             continue;
 
-                        NES_Byte spr_y     = m_spriteMemory[i * 4 + 0] + 1,
-                             tile      = m_spriteMemory[i * 4 + 1],
-                             attribute = m_spriteMemory[i * 4 + 2];
+                        NES_Byte spr_y     = sprite_memory[i * 4 + 0] + 1,
+                             tile      = sprite_memory[i * 4 + 1],
+                             attribute = sprite_memory[i * 4 + 2];
 
                         int length = (m_longSprites) ? 16 : 8;
 
@@ -153,8 +153,8 @@ void PPU::cycle(PictureBus& m_bus) {
                         spriteForeground = !(attribute & 0x20);
 
                         //Sprite-0 hit detection
-                        if (!m_sprZeroHit && m_showBackground && i == 0 && sprOpaque && bgOpaque)
-                            m_sprZeroHit = true;
+                        if (!sprite_zero_hit && m_showBackground && i == 0 && sprOpaque && bgOpaque)
+                            sprite_zero_hit = true;
 
                         break; //Exit the loop now since we've found the highest priority sprite
                     }
@@ -169,7 +169,7 @@ void PPU::cycle(PictureBus& m_bus) {
                 // lookup the pixel in the palette and write it to the screen
                 screen[y][x] = PALETTE[m_bus.read_palette(paletteAddr)];
             }
-            else if (m_cycle == SCANLINE_VISIBLE_DOTS + 1 && m_showBackground) {
+            else if (m_cycles == SCANLINE_VISIBLE_DOTS + 1 && m_showBackground) {
                 //Shamelessly copied from nesdev wiki
                 if ((m_dataAddress & 0x7000) != 0x7000)  // if fine Y < 7
                     m_dataAddress += 0x1000;              // increment fine Y
@@ -188,21 +188,21 @@ void PPU::cycle(PictureBus& m_bus) {
                                                             // put coarse Y back into m_dataAddress
                 }
             }
-            else if (m_cycle == SCANLINE_VISIBLE_DOTS + 2 && m_showBackground && m_showSprites) {
+            else if (m_cycles == SCANLINE_VISIBLE_DOTS + 2 && m_showBackground && m_showSprites) {
                 //Copy bits related to horizontal position
                 m_dataAddress &= ~0x41f;
                 m_dataAddress |= m_tempAddress & 0x41f;
             }
 
-//                 if (m_cycle > 257 && m_cycle < 320)
+//                 if (m_cycles > 257 && m_cycles < 320)
 //                     m_spriteDataAddress = 0;
 
-            if (m_cycle >= SCANLINE_END_CYCLE) {
+            if (m_cycles >= SCANLINE_END_CYCLE) {
                 //Find and index sprites that are on the next Scanline
                 //This isn't where/when this indexing, actually copying in 2C02 is done
                 //but (I think) it shouldn't hurt any games if this is done here
 
-                m_scanlineSprites.resize(0);
+                scanline_sprites.resize(0);
 
                 int range = 8;
                 if (m_longSprites)
@@ -210,46 +210,46 @@ void PPU::cycle(PictureBus& m_bus) {
 
                 NES_Byte j = 0;
                 for (NES_Byte i = m_spriteDataAddress / 4; i < 64; ++i) {
-                    auto diff = (m_scanline - m_spriteMemory[i * 4]);
+                    auto diff = (scanline - sprite_memory[i * 4]);
                     if (0 <= diff && diff < range) {
-                        m_scanlineSprites.push_back(i);
+                        scanline_sprites.push_back(i);
                         if (++j >= 8)
                             break;
                     }
                 }
 
-                ++m_scanline;
-                m_cycle = 0;
+                ++scanline;
+                m_cycles = 0;
             }
 
-            if (m_scanline >= VISIBLE_SCANLINES)
-                m_pipelineState = PostRender;
+            if (scanline >= VISIBLE_SCANLINES)
+                pipeline_state = PostRender;
 
             break;
         case PostRender:
-            if (m_cycle >= SCANLINE_END_CYCLE) {
-                ++m_scanline;
-                m_cycle = 0;
-                m_pipelineState = VerticalBlank;
+            if (m_cycles >= SCANLINE_END_CYCLE) {
+                ++scanline;
+                m_cycles = 0;
+                pipeline_state = VerticalBlank;
             }
 
             break;
         case VerticalBlank:
-            if (m_cycle == 1 && m_scanline == VISIBLE_SCANLINES + 1) {
-                m_vblank = true;
-                if (m_generateInterrupt) m_vblankCallback();
+            if (m_cycles == 1 && scanline == VISIBLE_SCANLINES + 1) {
+                vblank = true;
+                if (m_generateInterrupt) vblank_callback();
             }
 
-            if (m_cycle >= SCANLINE_END_CYCLE) {
-                ++m_scanline;
-                m_cycle = 0;
+            if (m_cycles >= SCANLINE_END_CYCLE) {
+                ++scanline;
+                m_cycles = 0;
             }
 
-            if (m_scanline >= FRAME_END_SCANLINE) {
-                m_pipelineState = PreRender;
-                m_scanline = 0;
-                m_evenFrame = !m_evenFrame;
-                // m_vblank = false;
+            if (scanline >= FRAME_END_SCANLINE) {
+                pipeline_state = PreRender;
+                scanline = 0;
+                is_even_frame = !is_even_frame;
+                // vblank = false;
             }
 
             break;
@@ -257,13 +257,13 @@ void PPU::cycle(PictureBus& m_bus) {
             LOG(Error) << "Well, this shouldn't have happened." << std::endl;
     }
 
-    ++m_cycle;
+    ++m_cycles;
 }
 
 void PPU::doDMA(const NES_Byte* page_ptr) {
-    std::memcpy(m_spriteMemory.data() + m_spriteDataAddress, page_ptr, 256 - m_spriteDataAddress);
+    std::memcpy(sprite_memory.data() + m_spriteDataAddress, page_ptr, 256 - m_spriteDataAddress);
     if (m_spriteDataAddress)
-        std::memcpy(m_spriteMemory.data(), page_ptr + (256 - m_spriteDataAddress), m_spriteDataAddress);
+        std::memcpy(sprite_memory.data(), page_ptr + (256 - m_spriteDataAddress), m_spriteDataAddress);
 }
 
 void PPU::control(NES_Byte ctrl) {
@@ -291,9 +291,9 @@ void PPU::setMask(NES_Byte mask) {
 }
 
 NES_Byte PPU::getStatus() {
-    NES_Byte status = m_sprZeroHit << 6 | m_vblank << 7;
+    NES_Byte status = sprite_zero_hit << 6 | vblank << 7;
     //m_dataAddress = 0;
-    m_vblank = false;
+    vblank = false;
     m_firstWrite = true;
     return status;
 }

@@ -12,16 +12,18 @@
 void CPU::reset(NES_Address start_address) {
     skip_cycles = cycles = 0;
     register_A = register_X = register_Y = 0;
-    f_I = true;
-    f_C = f_D = f_N = f_V = f_Z = false;
+    // TODO: set using a byte instead (more readable, less code)
+    flags.bits.I = true;
+    flags.bits.C = flags.bits.D = flags.bits.N = flags.bits.V = flags.bits.Z = false;
     register_PC = start_address;
     register_SP = 0xfd; //documented startup state
 }
 
+// TODO: inline
 void CPU::reset(MainBus &bus) { reset(readAddress(bus, RESET_VECTOR)); }
 
 void CPU::interrupt(MainBus &bus, InterruptType type) {
-    if (f_I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)
+    if (flags.bits.I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)
         return;
 
     if (type == BRK_INTERRUPT) //Add one if BRK, a quirk of 6502
@@ -30,17 +32,11 @@ void CPU::interrupt(MainBus &bus, InterruptType type) {
     pushStack(bus, register_PC >> 8);
     pushStack(bus, register_PC);
 
-    NES_Byte flags = f_N << 7 |
-                 f_V << 6 |
-                   1 << 5 | //unused bit, supposed to be always 1
-      (type == BRK_INTERRUPT) << 4 | //B flag set if BRK
-                 f_D << 3 |
-                 f_I << 2 |
-                 f_Z << 1 |
-                 f_C;
-    pushStack(bus, flags);
+    // set the constant flag and Break flag
+    NES_Byte flags_ = flags.byte | 0b00100000 | (type == BRK_INTERRUPT) << 4;
+    pushStack(bus, flags_);
 
-    f_I = true;
+    flags.bits.I = true;
 
     switch (type) {
         case IRQ_INTERRUPT:
@@ -69,13 +65,13 @@ void CPU::step(MainBus &bus) {
 
     skip_cycles = 0;
 
-    // int psw =    f_N << 7 |
-    //              f_V << 6 |
+    // int psw =    flags.bits.N << 7 |
+    //              flags.bits.V << 6 |
     //                1 << 5 |
-    //              f_D << 3 |
-    //              f_I << 2 |
-    //              f_Z << 1 |
-    //              f_C;
+    //              flags.bits.D << 3 |
+    //              flags.bits.I << 2 |
+    //              flags.bits.Z << 1 |
+    //              flags.bits.C;
     // std::cout << std::hex << std::setfill('0') << std::uppercase
     //           << std::setw(4) << +register_PC
     //           << "  "
@@ -122,13 +118,7 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
             ++register_PC;
             break;
         case RTI: {
-                NES_Byte flags = pullStack(bus);
-                f_N = flags & 0x80;
-                f_V = flags & 0x40;
-                f_D = flags & 0x8;
-                f_I = flags & 0x4;
-                f_Z = flags & 0x2;
-                f_C = flags & 0x1;
+                flags.byte = pullStack(bus);
             }
             register_PC = pullStack(bus);
             register_PC |= pullStack(bus) << 8;
@@ -147,25 +137,11 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
             }
             break;
         case PHP: {
-                NES_Byte flags = f_N << 7 |
-                             f_V << 6 |
-                               1 << 5 | //supposed to always be 1
-                               1 << 4 | //PHP pushes with the B flag as 1, no matter what
-                             f_D << 3 |
-                             f_I << 2 |
-                             f_Z << 1 |
-                             f_C;
-                pushStack(bus, flags);
+                pushStack(bus, flags.byte);
             }
             break;
         case PLP: {
-                NES_Byte flags = pullStack(bus);
-                f_N = flags & 0x80;
-                f_V = flags & 0x40;
-                f_D = flags & 0x8;
-                f_I = flags & 0x4;
-                f_Z = flags & 0x2;
-                f_C = flags & 0x1;
+                flags.byte = pullStack(bus);
             }
             break;
         case PHA:
@@ -196,29 +172,29 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
             setZN(register_X);
             break;
         case CLC:
-            f_C = false;
+            flags.bits.C = false;
             break;
         case SEC:
-            f_C = true;
+            flags.bits.C = true;
             break;
         case CLI:
-            f_I = false;
+            flags.bits.I = false;
             break;
         case SEI:
-            f_I = true;
+            flags.bits.I = true;
             break;
         case CLD:
-            f_D = false;
+            flags.bits.D = false;
             break;
         case SED:
-            f_D = true;
+            flags.bits.D = true;
             break;
         case TYA:
             register_A = register_Y;
             setZN(register_A);
             break;
         case CLV:
-            f_V = false;
+            flags.bits.V = false;
             break;
         case TXA:
             register_A = register_X;
@@ -250,16 +226,16 @@ bool CPU::executeBranch(MainBus &bus, NES_Byte opcode) {
         //We use xnor here, it is true if either both operands are true or false
         switch (opcode >> BRANCH_ON_FLAG_SHIFT) {
             case NEGATIVE:
-                branch = !(branch ^ f_N);
+                branch = !(branch ^ flags.bits.N);
                 break;
             case OVERFLOW:
-                branch = !(branch ^ f_V);
+                branch = !(branch ^ flags.bits.V);
                 break;
             case CARRY:
-                branch = !(branch ^ f_C);
+                branch = !(branch ^ flags.bits.C);
                 break;
             case ZERO:
-                branch = !(branch ^ f_Z);
+                branch = !(branch ^ flags.bits.Z);
                 break;
             default:
                 return false;
@@ -345,12 +321,12 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
                 break;
             case ADC: {
                     NES_Byte operand = bus.read(location);
-                    NES_Address sum = register_A + operand + f_C;
+                    NES_Address sum = register_A + operand + flags.bits.C;
                     //Carry forward or UNSIGNED overflow
-                    f_C = sum & 0x100;
+                    flags.bits.C = sum & 0x100;
                     //SIGNED overflow, would only happen if the sign of sum is
                     //different from BOTH the operands
-                    f_V = (register_A ^ sum) & (operand ^ sum) & 0x80;
+                    flags.bits.V = (register_A ^ sum) & (operand ^ sum) & 0x80;
                     register_A = static_cast<NES_Byte>(sum);
                     setZN(register_A);
                 }
@@ -365,19 +341,19 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
             case SBC: {
                     //High carry means "no borrow", thus negate and subtract
                     NES_Address subtrahend = bus.read(location),
-                             diff = register_A - subtrahend - !f_C;
+                             diff = register_A - subtrahend - !flags.bits.C;
                     //if the ninth bit is 1, the resulting number is negative => borrow => low carry
-                    f_C = !(diff & 0x100);
+                    flags.bits.C = !(diff & 0x100);
                     //Same as ADC, except instead of the subtrahend,
                     //substitute with it's one complement
-                    f_V = (register_A ^ diff) & (~subtrahend ^ diff) & 0x80;
+                    flags.bits.V = (register_A ^ diff) & (~subtrahend ^ diff) & 0x80;
                     register_A = diff;
                     setZN(diff);
                 }
                 break;
             case CMP: {
                     NES_Address diff = register_A - bus.read(location);
-                    f_C = !(diff & 0x100);
+                    flags.bits.C = !(diff & 0x100);
                     setZN(diff);
                 }
                 break;
@@ -440,17 +416,17 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
             case ASL:
             case ROL:
                 if (address_mode == M2_ACCUMULATOR) {
-                    auto prev_C = f_C;
-                    f_C = register_A & 0x80;
+                    auto prev_C = flags.bits.C;
+                    flags.bits.C = register_A & 0x80;
                     register_A <<= 1;
                     //If Rotating, set the bit-0 to the the previous carry
                     register_A = register_A | (prev_C && (op == ROL));
                     setZN(register_A);
                 }
                 else {
-                    auto prev_C = f_C;
+                    auto prev_C = flags.bits.C;
                     operand = bus.read(location);
-                    f_C = operand & 0x80;
+                    flags.bits.C = operand & 0x80;
                     operand = operand << 1 | (prev_C && (op == ROL));
                     setZN(operand);
                     bus.write(location, operand);
@@ -459,17 +435,17 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
             case LSR:
             case ROR:
                 if (address_mode == M2_ACCUMULATOR) {
-                    auto prev_C = f_C;
-                    f_C = register_A & 1;
+                    auto prev_C = flags.bits.C;
+                    flags.bits.C = register_A & 1;
                     register_A >>= 1;
                     //If Rotating, set the bit-7 to the previous carry
                     register_A = register_A | (prev_C && (op == ROR)) << 7;
                     setZN(register_A);
                 }
                 else {
-                    auto prev_C = f_C;
+                    auto prev_C = flags.bits.C;
                     operand = bus.read(location);
-                    f_C = operand & 1;
+                    flags.bits.C = operand & 1;
                     operand = operand >> 1 | (prev_C && (op == ROR)) << 7;
                     setZN(operand);
                     bus.write(location, operand);
@@ -533,9 +509,9 @@ bool CPU::executeType0(MainBus &bus, NES_Byte opcode) {
         switch (static_cast<Operation0>((opcode & OPERATION_MASK) >> OPERATION_SHIFT)) {
             case BIT:
                 operand = bus.read(location);
-                f_Z = !(register_A & operand);
-                f_V = operand & 0x40;
-                f_N = operand & 0x80;
+                flags.bits.Z = !(register_A & operand);
+                flags.bits.V = operand & 0x40;
+                flags.bits.N = operand & 0x80;
                 break;
             case STY:
                 bus.write(location, register_Y);
@@ -546,13 +522,13 @@ bool CPU::executeType0(MainBus &bus, NES_Byte opcode) {
                 break;
             case CPY: {
                     NES_Address diff = register_Y - bus.read(location);
-                    f_C = !(diff & 0x100);
+                    flags.bits.C = !(diff & 0x100);
                     setZN(diff);
                 }
                 break;
             case CPX: {
                     NES_Address diff = register_X - bus.read(location);
-                    f_C = !(diff & 0x100);
+                    flags.bits.C = !(diff & 0x100);
                     setZN(diff);
                 }
                 break;

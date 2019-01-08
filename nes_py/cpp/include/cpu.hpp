@@ -11,29 +11,66 @@
 #include "common.hpp"
 #include "main_bus.hpp"
 
-/// An MOS6502 for an NES emulation
+typedef union {
+    struct {
+        bool N : 1,
+             V : 1,
+             ONE : 1,
+             B : 1,
+             D : 1,
+             I : 1,
+             Z : 1,
+             C : 1;
+    } bits;
+    NES_Byte byte;
+} Flags;
+
+/// The MOS6502 CPU for the Nintendo Entertainment System (NES)
 class CPU {
 
 private:
+    /// The program counter register
+    NES_Address register_PC;
+
+    /// The stack pointer register
+    NES_Byte register_SP;
+
+    /// The A register
+    NES_Byte register_A;
+
+    /// The X register
+    NES_Byte register_X;
+
+    /// The Y register
+    NES_Byte register_Y;
+
+    /// The flags register
+    Flags flags;
+
     int skip_cycles;
     int cycles;
 
-    // Registers
-    NES_Address register_PC;
-    NES_Byte register_SP;
-    NES_Byte register_A;
-    NES_Byte register_X;
-    NES_Byte register_Y;
+    /// Read a 16-bit address from the bus given an address.
+    ///
+    /// @param bus the bus to read data from
+    /// @param address the address in memory to read an address from
+    /// @return the 16-bit address located at the given memory address
+    ///
+    inline NES_Address readAddress(MainBus &bus, NES_Address address) { return bus.read(address) | bus.read(address + 1) << 8; };
 
-    // CPU Status flags.
-    // TODO: Is storing them in one byte better ?
-    bool f_C;
-    bool f_Z;
-    bool f_I;
-    // bool f_B;
-    bool f_D;
-    bool f_V;
-    bool f_N;
+    /// Push a value onto the stack.
+    ///
+    /// @param bus the bus to read data from
+    /// @param value the value to push onto the stack
+    ///
+    inline void pushStack(MainBus &bus, NES_Byte value) { bus.write(0x100 | register_SP--, value); };
+
+    /// Pop a value off the stack.
+    ///
+    /// @param bus the bus to read data from
+    /// @return the value on the top of the stack
+    ///
+    inline NES_Byte pullStack(MainBus &bus) { return bus.read(0x100 | ++register_SP); };
 
     //Instructions are split into five sets to make decoding easier.
     //These functions return true if they succeed
@@ -43,13 +80,9 @@ private:
     bool executeType1(MainBus &bus, NES_Byte opcode);
     bool executeType2(MainBus &bus, NES_Byte opcode);
 
-    NES_Address readAddress(MainBus &bus, NES_Address address) { return bus.read(address) | bus.read(address + 1) << 8; };
-    void pushStack(MainBus &bus, NES_Byte value) { bus.write(0x100 | register_SP--, value); };
-    NES_Byte pullStack(MainBus &bus) { return bus.read(0x100 | ++register_SP); };
-
     //If a and b are in different pages, increases the skip_cycles by inc
     void setPageCrossed(NES_Address a, NES_Address b, int inc = 1);
-    void setZN(NES_Byte value) { f_Z = !value; f_N = value & 0x80; };
+    void setZN(NES_Byte value) { flags.bits.Z = !value; flags.bits.N = value & 0x80; };
 
 public:
     /// The interrupt types available to this CPU

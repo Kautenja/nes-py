@@ -90,7 +90,7 @@ void CPU::step(MainBus &bus) {
     //           << std::endl;
 
     NES_Byte opcode = bus.read(register_PC++);
-    auto CycleLength = OperationCycles[opcode];
+    auto CycleLength = OPERATION_CYCLES[opcode];
 
     // Using short-circuit evaluation, call the other function only if the
     // first failed. ExecuteImplied must be called first and ExecuteBranch

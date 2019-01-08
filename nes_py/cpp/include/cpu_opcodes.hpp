@@ -121,7 +121,7 @@ enum OperationImplied {
 };
 
 // 0 implies unused opcode
-NES_Byte OperationCycles[0x100] = {
+const NES_Byte OPERATION_CYCLES[0x100] = {
     7, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 0, 4, 6, 0,
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
     6, 6, 0, 0, 3, 3, 5, 0, 4, 2, 2, 0, 4, 4, 6, 0,

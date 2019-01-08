@@ -14,7 +14,6 @@
 class Controller {
 
 private:
-
     /// whether strobe is on
     bool is_strobe;
     /// the emulation of the buttons on the controller
@@ -23,7 +22,6 @@ private:
     NES_Byte joypad_bits;
 
 public:
-
     /// Initialize a new controller.
     Controller() : is_strobe(true), joypad_buttons(0), joypad_bits(0) { };
 

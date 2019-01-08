@@ -33,11 +33,12 @@ private:
 
     std::vector<NES_Byte> scanline_sprites;
 
+    /// The current pipeline state of the PPU
     enum State {
-        PreRender,
-        Render,
-        PostRender,
-        VerticalBlank
+        PRE_RENDER,
+        RENDER,
+        POST_RENDER,
+        VERTICAL_BLANK
     } pipeline_state;
 
     int cycles;
@@ -48,6 +49,7 @@ private:
     bool is_sprite_zero_hit;
 
     // Registers
+
     NES_Address data_address;
     NES_Address temp_address;
     NES_Byte fine_x_scroll;
@@ -57,6 +59,7 @@ private:
     NES_Byte sprite_data_address;
 
     // Setup flags and variables
+
     bool is_long_sprites;
     bool is_interrupting;
 
@@ -66,8 +69,8 @@ private:
     bool is_hiding_edge_background;
 
     enum CharacterPage {
-        Low,
-        High,
+        LOW,
+        HIGH,
     } background_page, sprite_page;
 
     NES_Address data_address_increment;
@@ -111,13 +114,16 @@ public:
 
     //Callbacks mapped to CPU address space
     //Addresses written to by the program
+
     void control(NES_Byte ctrl);
     void setMask(NES_Byte mask);
     void setOAMAddress(NES_Byte address) { sprite_data_address = address; };
     void setDataAddress(NES_Byte address);
     void setScroll(NES_Byte scroll);
     void setData(PictureBus& bus, NES_Byte data);
+
     //Read by the program
+
     NES_Byte getStatus();
     NES_Byte getData(PictureBus& bus);
     NES_Byte getOAMData() { return readOAM(sprite_data_address); };

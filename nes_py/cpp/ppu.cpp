@@ -13,7 +13,7 @@
 void PPU::reset() {
     is_long_sprites = is_interrupting = is_vblank = false;
     is_showing_background = is_showing_sprites = is_even_frame = is_first_write = true;
-    background_page = sprite_page = Low;
+    background_page = sprite_page = LOW;
     data_address = 0;
     cycles = 0;
     scanline = 0;
@@ -21,14 +21,14 @@ void PPU::reset() {
     fine_x_scroll = 0;
     temp_address = 0;
     data_address_increment = 1;
-    pipeline_state = PreRender;
+    pipeline_state = PRE_RENDER;
     scanline_sprites.reserve(8);
     scanline_sprites.resize(0);
 }
 
 void PPU::cycle(PictureBus& bus) {
     switch (pipeline_state) {
-        case PreRender:
+        case PRE_RENDER:
             if (cycles == 1)
                 is_vblank = is_sprite_zero_hit = false;
             else if (cycles == SCANLINE_VISIBLE_DOTS + 2 && is_showing_background && is_showing_sprites) {
@@ -45,11 +45,11 @@ void PPU::cycle(PictureBus& bus) {
             //     sprite_data_address = 0;
             // if rendering is on, every other frame is one cycle shorter
             if (cycles >= SCANLINE_END_CYCLE - (!is_even_frame && is_showing_background && is_showing_sprites)) {
-                pipeline_state = Render;
+                pipeline_state = RENDER;
                 cycles = scanline = 0;
             }
             break;
-        case Render:
+        case RENDER:
             if (cycles > 0 && cycles <= SCANLINE_VISIBLE_DOTS) {
                 NES_Byte bgColor = 0, sprColor = 0;
                 bool bgOpaque = false, sprOpaque = true;
@@ -129,7 +129,7 @@ void PPU::cycle(PictureBus& bus) {
 
                         if (!is_long_sprites) {
                             address = tile * 16 + y_offset;
-                            if (sprite_page == High) address += 0x1000;
+                            if (sprite_page == HIGH) address += 0x1000;
                         }
                         // 8 x 16 sprites
                         else {
@@ -223,18 +223,18 @@ void PPU::cycle(PictureBus& bus) {
             }
 
             if (scanline >= VISIBLE_SCANLINES)
-                pipeline_state = PostRender;
+                pipeline_state = POST_RENDER;
 
             break;
-        case PostRender:
+        case POST_RENDER:
             if (cycles >= SCANLINE_END_CYCLE) {
                 ++scanline;
                 cycles = 0;
-                pipeline_state = VerticalBlank;
+                pipeline_state = VERTICAL_BLANK;
             }
 
             break;
-        case VerticalBlank:
+        case VERTICAL_BLANK:
             if (cycles == 1 && scanline == VISIBLE_SCANLINES + 1) {
                 is_vblank = true;
                 if (is_interrupting) vblank_callback();
@@ -246,7 +246,7 @@ void PPU::cycle(PictureBus& bus) {
             }
 
             if (scanline >= FRAME_END_SCANLINE) {
-                pipeline_state = PreRender;
+                pipeline_state = PRE_RENDER;
                 scanline = 0;
                 is_even_frame = !is_even_frame;
                 // is_vblank = false;

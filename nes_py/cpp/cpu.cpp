@@ -6,7 +6,7 @@
 //
 
 #include "cpu.hpp"
-#include "cpu_opcodes.hpp"
+
 #include "log.hpp"
 
 
@@ -466,8 +466,6 @@ void CPU::reset(NES_Address start_address) {
     register_PC = start_address;
     register_SP = 0xfd; //documented startup state
 }
-
-void CPU::reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); }
 
 void CPU::interrupt(MainBus &bus, InterruptType type) {
     if (flags.bits.I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)

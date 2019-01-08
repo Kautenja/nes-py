@@ -9,6 +9,7 @@
 #define CPU_HPP
 
 #include "common.hpp"
+#include "cpu_opcodes.hpp"
 #include "main_bus.hpp"
 
 /// A structure for working with the flags register
@@ -161,7 +162,7 @@ public:
     ///
     /// @param bus the main bus of the NES emulator
     ///
-    void reset(MainBus &bus);
+    inline void reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); };
 
     /// Interrupt the CPU.
     ///

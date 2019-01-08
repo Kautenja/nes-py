@@ -84,6 +84,7 @@ enum Operation0 {
     CPX,
 };
 
+/// Implied mode opcodes
 enum OperationImplied {
     NOP = 0xea,
     BRK = 0x00,
@@ -120,7 +121,8 @@ enum OperationImplied {
     TSX = 0xba,
 };
 
-// 0 implies unused opcode
+/// a mapping of opcodes to the number of cycles used by the opcode. 0 implies
+/// an unused opcode.
 const NES_Byte OPERATION_CYCLES[0x100] = {
     7, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 0, 4, 6, 0,
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,

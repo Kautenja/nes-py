@@ -18,8 +18,9 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             interrupt(bus, BRK_INTERRUPT);
             break;
         case JSR:
-            //Push address of next instruction - 1, thus register_PC + 1 instead of register_PC + 2
-            //since register_PC and register_PC + 1 are address of subroutine
+            // Push address of next instruction - 1, thus register_PC + 1
+            // instead of register_PC + 2 since register_PC and
+            // register_PC + 1 are address of subroutine
             push_stack(bus, static_cast<NES_Byte>((register_PC + 1) >> 8));
             push_stack(bus, static_cast<NES_Byte>(register_PC + 1));
             register_PC = read_address(bus, register_PC);
@@ -40,9 +41,11 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             break;
         case JMPI: {
                 NES_Address location = read_address(bus, register_PC);
-                //6502 has a bug such that the when the vector of anindirect address begins at the last byte of a page,
-                //the second byte is fetched from the beginning of that page rather than the beginning of the next
-                //Recreating here:
+                // 6502 has a bug such that the when the vector of an indirect
+                // address begins at the last byte of a page, the second byte
+                // is fetched from the beginning of that page rather than the
+                // beginning of the next
+                // Recreating here:
                 NES_Address Page = location & 0xff00;
                 register_PC = bus.read(location) |
                        bus.read(Page | ((location + 1) & 0xff)) << 8;
@@ -131,11 +134,13 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
 
 bool CPU::branch(MainBus &bus, NES_Byte opcode) {
     if ((opcode & BRANCH_INSTRUCTION_MASK) == BRANCH_INSTRUCTION_MASK_RESULT) {
-        //branch is initialized to the condition required (for the flag specified later)
+        // branch is initialized to the condition required (for the flag
+        // specified later)
         bool branch = opcode & BRANCH_CONDITION_MASK;
 
-        //set branch to true if the given condition is met by the given flag
-        //We use xnor here, it is true if either both operands are true or false
+        // set branch to true if the given condition is met by the given flag
+        // We use xnor here, it is true if either both operands are true or
+        // false
         switch (opcode >> BRANCH_ON_FLAG_SHIFT) {
             case NEGATIVE:
                 branch = !(branch ^ flags.bits.N);
@@ -456,7 +461,6 @@ bool CPU::type2(MainBus &bus, NES_Byte opcode) {
 void CPU::reset(NES_Address start_address) {
     skip_cycles = cycles = 0;
     register_A = register_X = register_Y = 0;
-    // TODO: set using a byte instead (more readable, less code)
     flags.bits.I = true;
     flags.bits.C = flags.bits.D = flags.bits.N = flags.bits.V = flags.bits.Z = false;
     register_PC = start_address;
@@ -468,19 +472,16 @@ void CPU::reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); }
 void CPU::interrupt(MainBus &bus, InterruptType type) {
     if (flags.bits.I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)
         return;
-
-    if (type == BRK_INTERRUPT) //Add one if BRK, a quirk of 6502
+    // Add one if BRK, a quirk of 6502
+    if (type == BRK_INTERRUPT)
         ++register_PC;
-
+    // push values on to the stack
     push_stack(bus, register_PC >> 8);
     push_stack(bus, register_PC);
-
-    // set the constant flag and Break flag
-    NES_Byte flags_ = flags.byte | 0b00100000 | (type == BRK_INTERRUPT) << 4;
-    push_stack(bus, flags_);
-
+    push_stack(bus, flags.byte | 0b00100000 | (type == BRK_INTERRUPT) << 4);
+    // set the interrupt flag
     flags.bits.I = true;
-
+    // handle the kind of interrupt
     switch (type) {
         case IRQ_INTERRUPT:
         case BRK_INTERRUPT:
@@ -490,7 +491,7 @@ void CPU::interrupt(MainBus &bus, InterruptType type) {
             register_PC = read_address(bus, NMI_VECTOR);
             break;
     }
-
+    // add the number of cycles to handle the interrupt
     skip_cycles += 7;
 }
 
@@ -504,13 +505,11 @@ void CPU::step(MainBus &bus) {
     skip_cycles = 0;
     // read the opcode from the bus and lookup the number of cycles
     NES_Byte op = bus.read(register_PC++);
-    // lookup the number of cycles required for this operation
-    NES_Byte cycle_length = OPERATION_CYCLES[op];
     // Using short-circuit evaluation, call the other function only if the
     // first failed. ExecuteImplied must be called first and ExecuteBranch
     // must be before ExecuteType0
     if (implied(bus, op) || branch(bus, op) || type1(bus, op) || type2(bus, op) || type0(bus, op))
-        skip_cycles += cycle_length;
+        skip_cycles += OPERATION_CYCLES[op];
     else
         std::cout << "failed to execute opcode: " << std::hex << +op << std::endl;
 }

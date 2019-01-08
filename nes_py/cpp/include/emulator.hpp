@@ -77,7 +77,7 @@ public:
     NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
-    inline void reset() { cpu.reset(bus); ppu.reset(); };
+    void reset() { cpu.reset(bus); ppu.reset(); };
 
     /// Perform a discrete "step" of the NES by rendering 1 frame.
     ///

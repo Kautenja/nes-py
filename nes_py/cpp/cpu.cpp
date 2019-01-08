@@ -505,7 +505,7 @@ void CPU::step(MainBus &bus) {
     // read the opcode from the bus and lookup the number of cycles
     NES_Byte op = bus.read(register_PC++);
     // lookup the number of cycles required for this operation
-    auto cycle_length = OPERATION_CYCLES[op];
+    NES_Byte cycle_length = OPERATION_CYCLES[op];
     // Using short-circuit evaluation, call the other function only if the
     // first failed. ExecuteImplied must be called first and ExecuteBranch
     // must be before ExecuteType0

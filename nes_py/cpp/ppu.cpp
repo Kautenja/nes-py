@@ -166,9 +166,8 @@ void PPU::cycle(PictureBus& m_bus) {
                     paletteAddr = sprColor;
                 else if (!bgOpaque && !sprOpaque)
                     paletteAddr = 0;
-
-                screen_buffer[y][x] = PALETTE[m_bus.read_palette(paletteAddr)];
-
+                // lookup the pixel in the palette and write it to the screen
+                screen[y][x] = PALETTE[m_bus.read_palette(paletteAddr)];
             }
             else if (m_cycle == SCANLINE_VISIBLE_DOTS + 1 && m_showBackground) {
                 //Shamelessly copied from nesdev wiki

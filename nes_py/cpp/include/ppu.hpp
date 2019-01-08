@@ -27,9 +27,6 @@ const int FRAME_END_SCANLINE = 261;
 class PPU {
 
 private:
-    NES_Byte readOAM(NES_Byte address) { return m_spriteMemory[address]; };
-    void writeOAM(NES_Byte address, NES_Byte value) { m_spriteMemory[address] = value; };
-
     std::function<void(void)> m_vblankCallback;
 
     std::vector<NES_Byte> m_spriteMemory;
@@ -79,7 +76,10 @@ private:
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
     /// the number of visible scan line dots
-    NES_Pixel screen_buffer[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
+    NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
+
+    NES_Byte readOAM(NES_Byte address) { return m_spriteMemory[address]; };
+    void writeOAM(NES_Byte address, NES_Byte value) { m_spriteMemory[address] = value; };
 
 public:
     /// Initialize a new PPU
@@ -114,7 +114,7 @@ public:
     void setOAMData(NES_Byte value) { writeOAM(m_spriteDataAddress++, value); };
 
     /// Return a pointer to the screen buffer.
-    NES_Pixel* get_screen_buffer() { return *screen_buffer; };
+    NES_Pixel* get_screen_buffer() { return *screen; };
 
 };
 

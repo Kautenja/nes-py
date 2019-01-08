@@ -11,6 +11,7 @@
 #include "common.hpp"
 #include "main_bus.hpp"
 
+/// A structure for working with the flags register
 typedef union {
     struct {
         bool N : 1,
@@ -47,7 +48,10 @@ private:
     /// The flags register
     Flags flags;
 
+    /// The number of cycles to skip
     int skip_cycles;
+
+    /// The number of cycles the CPU has run
     int cycles;
 
     /// Read a 16-bit address from the bus given an address.
@@ -74,6 +78,7 @@ private:
 
     //Instructions are split into five sets to make decoding easier.
     //These functions return true if they succeed
+
     bool executeImplied(MainBus &bus, NES_Byte opcode);
     bool executeBranch(MainBus &bus, NES_Byte opcode);
     bool executeType0(MainBus &bus, NES_Byte opcode);
@@ -82,7 +87,18 @@ private:
 
     //If a and b are in different pages, increases the skip_cycles by inc
     void setPageCrossed(NES_Address a, NES_Address b, int inc = 1);
-    void setZN(NES_Byte value) { flags.bits.Z = !value; flags.bits.N = value & 0x80; };
+
+    /// Set the zero and negative flags based on the given value.
+    ///
+    /// @param value the value to set the zero and negative flags using
+    ///
+    inline void setZN(NES_Byte value) { flags.bits.Z = !value; flags.bits.N = value & 0x80; };
+
+    /// Reset the emulator using the given starting address.
+    ///
+    /// @param start_address the starting address for the program counter
+    ///
+    void reset(NES_Address start_address);
 
 public:
     /// The interrupt types available to this CPU
@@ -105,26 +121,17 @@ public:
     ///
     void interrupt(MainBus &bus, InterruptType type);
 
-    /// Perform a full CPU cycle using and storing data in the given bus.
-    ///
-    /// @param bus the bus to read and write data from / to
-    ///
-    void step(MainBus &bus);
-
-    /// Reset the emulator using the given starting address.
-    ///
-    /// @param start_address the starting address for the program counter
-    ///
-    void reset(NES_Address start_address);
-
     /// Reset using the given main bus to lookup a starting address.
     ///
     /// @param bus the main bus of the NES emulator
     ///
     void reset(MainBus &bus);
 
-    /// Return the program counter of the CPU.
-    NES_Address getPC() { return register_PC; }
+    /// Perform a full CPU cycle using and storing data in the given bus.
+    ///
+    /// @param bus the bus to read and write data from / to
+    ///
+    void step(MainBus &bus);
 
     /// Skip DMA cycles.
     ///

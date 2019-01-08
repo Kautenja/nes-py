@@ -19,7 +19,6 @@ void CPU::reset(NES_Address start_address) {
     register_SP = 0xfd; //documented startup state
 }
 
-// TODO: inline
 void CPU::reset(MainBus &bus) { reset(readAddress(bus, RESET_VECTOR)); }
 
 void CPU::interrupt(MainBus &bus, InterruptType type) {

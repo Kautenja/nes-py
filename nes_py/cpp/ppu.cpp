@@ -10,17 +10,17 @@
 #include "log.hpp"
 
 void PPU::reset() {
-    longSprites = generateInterrupt = greyscaleMode = vblank = false;
-    showBackground = showSprites = is_even_frame = firstWrite = true;
-    bgPage = sprPage = Low;
-    dataAddress = 0;
+    is_long_sprites = is_interrupting = is_vblank = false;
+    is_showing_background = is_showing_sprites = is_even_frame = is_first_write = true;
+    background_page = sprite_page = Low;
+    data_address = 0;
     cycles = 0;
     scanline = 0;
-    spriteDataAddress = 0;
-    fineXScroll = 0;
-    tempAddress = 0;
+    sprite_data_address = 0;
+    fine_x_scroll = 0;
+    temp_address = 0;
     //baseNameTable = 0x2000;
-    dataAddrIncrement = 1;
+    data_address_increment = 1;
     pipeline_state = PreRender;
     scanline_sprites.reserve(8);
     scanline_sprites.resize(0);
@@ -30,21 +30,21 @@ void PPU::cycle(PictureBus& bus) {
     switch (pipeline_state) {
         case PreRender:
             if (cycles == 1)
-                vblank = sprite_zero_hit = false;
-            else if (cycles == SCANLINE_VISIBLE_DOTS + 2 && showBackground && showSprites) {
+                is_vblank = is_sprite_zero_hit = false;
+            else if (cycles == SCANLINE_VISIBLE_DOTS + 2 && is_showing_background && is_showing_sprites) {
                 //Set bits related to horizontal position
-                dataAddress &= ~0x41f; //Unset horizontal bits
-                dataAddress |= tempAddress & 0x41f; //Copy
+                data_address &= ~0x41f; //Unset horizontal bits
+                data_address |= temp_address & 0x41f; //Copy
             }
-            else if (cycles > 280 && cycles <= 304 && showBackground && showSprites) {
+            else if (cycles > 280 && cycles <= 304 && is_showing_background && is_showing_sprites) {
                 //Set vertical bits
-                dataAddress &= ~0x7be0; //Unset bits related to horizontal
-                dataAddress |= tempAddress & 0x7be0; //Copy
+                data_address &= ~0x7be0; //Unset bits related to horizontal
+                data_address |= temp_address & 0x7be0; //Copy
             }
             // if (cycles > 257 && cycles < 320)
-            //     spriteDataAddress = 0;
+            //     sprite_data_address = 0;
             // if rendering is on, every other frame is one cycle shorter
-            if (cycles >= SCANLINE_END_CYCLE - (!is_even_frame && showBackground && showSprites)) {
+            if (cycles >= SCANLINE_END_CYCLE - (!is_even_frame && is_showing_background && is_showing_sprites)) {
                 pipeline_state = Render;
                 cycles = scanline = 0;
             }
@@ -58,21 +58,21 @@ void PPU::cycle(PictureBus& bus) {
                 int x = cycles - 1;
                 int y = scanline;
 
-                if (showBackground) {
-                    auto x_fine = (fineXScroll + x) % 8;
-                    if (!hideEdgeBackground || x >= 8) {
+                if (is_showing_background) {
+                    auto x_fine = (fine_x_scroll + x) % 8;
+                    if (!is_hiding_edge_background || x >= 8) {
                         // fetch tile
                         // mask off fine y
-                        auto address = 0x2000 | (dataAddress & 0x0FFF);
+                        auto address = 0x2000 | (data_address & 0x0FFF);
                         //auto address = 0x2000 + x / 8 + (y / 8) * (SCANLINE_VISIBLE_DOTS / 8);
                         NES_Byte tile = bus.read(address);
 
                         //fetch pattern
                         //Each pattern occupies 16 bytes, so multiply by 16
                         //Add fine y
-                        address = (tile * 16) + ((dataAddress >> 12/*y % 8*/) & 0x7);
+                        address = (tile * 16) + ((data_address >> 12/*y % 8*/) & 0x7);
                         //set whether the pattern is in the high or low page
-                        address |= bgPage << 12;
+                        address |= background_page << 12;
                         //Get the corresponding bit determined by (8 - x_fine) from the right
                         //bit 0 of palette entry
                         bgColor = (bus.read(address) >> (7 ^ x_fine)) & 1;
@@ -83,29 +83,29 @@ void PPU::cycle(PictureBus& bus) {
                         bgOpaque = bgColor;
 
                         //fetch attribute and calculate higher two bits of palette
-                        address = 0x23C0 | (dataAddress & 0x0C00) | ((dataAddress >> 4) & 0x38)
-                                    | ((dataAddress >> 2) & 0x07);
+                        address = 0x23C0 | (data_address & 0x0C00) | ((data_address >> 4) & 0x38)
+                                    | ((data_address >> 2) & 0x07);
                         auto attribute = bus.read(address);
-                        int shift = ((dataAddress >> 4) & 4) | (dataAddress & 2);
+                        int shift = ((data_address >> 4) & 4) | (data_address & 2);
                         //Extract and set the upper two bits for the color
                         bgColor |= ((attribute >> shift) & 0x3) << 2;
                     }
                     //Increment/wrap coarse X
                     if (x_fine == 7) {
                         // if coarse X == 31
-                        if ((dataAddress & 0x001F) == 31) {
+                        if ((data_address & 0x001F) == 31) {
                             // coarse X = 0
-                            dataAddress &= ~0x001F;
+                            data_address &= ~0x001F;
                             // switch horizontal nametable
-                            dataAddress ^= 0x0400;
+                            data_address ^= 0x0400;
                         }
                         else
                             // increment coarse X
-                            dataAddress += 1;
+                            data_address += 1;
                     }
                 }
 
-                if (showSprites && (!hideEdgeSprites || x >= 8)) {
+                if (is_showing_sprites && (!is_hiding_edge_sprites || x >= 8)) {
                     for (auto i : scanline_sprites) {
                         NES_Byte spr_x =     sprite_memory[i * 4 + 3];
 
@@ -116,7 +116,7 @@ void PPU::cycle(PictureBus& bus) {
                              tile      = sprite_memory[i * 4 + 1],
                              attribute = sprite_memory[i * 4 + 2];
 
-                        int length = (longSprites) ? 16 : 8;
+                        int length = (is_long_sprites) ? 16 : 8;
 
                         int x_shift = (x - spr_x) % 8, y_offset = (y - spr_y) % length;
 
@@ -127,9 +127,9 @@ void PPU::cycle(PictureBus& bus) {
 
                         NES_Address address = 0;
 
-                        if (!longSprites) {
+                        if (!is_long_sprites) {
                             address = tile * 16 + y_offset;
-                            if (sprPage == High) address += 0x1000;
+                            if (sprite_page == High) address += 0x1000;
                         }
                         // 8 x 16 sprites
                         else {
@@ -153,8 +153,8 @@ void PPU::cycle(PictureBus& bus) {
                         spriteForeground = !(attribute & 0x20);
 
                         //Sprite-0 hit detection
-                        if (!sprite_zero_hit && showBackground && i == 0 && sprOpaque && bgOpaque)
-                            sprite_zero_hit = true;
+                        if (!is_sprite_zero_hit && is_showing_background && i == 0 && sprOpaque && bgOpaque)
+                            is_sprite_zero_hit = true;
 
                         break; //Exit the loop now since we've found the highest priority sprite
                     }
@@ -169,33 +169,33 @@ void PPU::cycle(PictureBus& bus) {
                 // lookup the pixel in the palette and write it to the screen
                 screen[y][x] = PALETTE[bus.read_palette(paletteAddr)];
             }
-            else if (cycles == SCANLINE_VISIBLE_DOTS + 1 && showBackground) {
+            else if (cycles == SCANLINE_VISIBLE_DOTS + 1 && is_showing_background) {
                 //Shamelessly copied from nesdev wiki
-                if ((dataAddress & 0x7000) != 0x7000)  // if fine Y < 7
-                    dataAddress += 0x1000;              // increment fine Y
+                if ((data_address & 0x7000) != 0x7000)  // if fine Y < 7
+                    data_address += 0x1000;              // increment fine Y
                 else {
-                    dataAddress &= ~0x7000;             // fine Y = 0
-                    int y = (dataAddress & 0x03E0) >> 5;    // let y = coarse Y
+                    data_address &= ~0x7000;             // fine Y = 0
+                    int y = (data_address & 0x03E0) >> 5;    // let y = coarse Y
                     if (y == 29) {
                         y = 0;                                // coarse Y = 0
-                        dataAddress ^= 0x0800;              // switch vertical nametable
+                        data_address ^= 0x0800;              // switch vertical nametable
                     }
                     else if (y == 31)
                         y = 0;                                // coarse Y = 0, nametable not switched
                     else
                         y += 1;                               // increment coarse Y
-                    dataAddress = (dataAddress & ~0x03E0) | (y << 5);
-                                                            // put coarse Y back into dataAddress
+                    data_address = (data_address & ~0x03E0) | (y << 5);
+                                                            // put coarse Y back into data_address
                 }
             }
-            else if (cycles == SCANLINE_VISIBLE_DOTS + 2 && showBackground && showSprites) {
+            else if (cycles == SCANLINE_VISIBLE_DOTS + 2 && is_showing_background && is_showing_sprites) {
                 //Copy bits related to horizontal position
-                dataAddress &= ~0x41f;
-                dataAddress |= tempAddress & 0x41f;
+                data_address &= ~0x41f;
+                data_address |= temp_address & 0x41f;
             }
 
 //                 if (cycles > 257 && cycles < 320)
-//                     spriteDataAddress = 0;
+//                     sprite_data_address = 0;
 
             if (cycles >= SCANLINE_END_CYCLE) {
                 //Find and index sprites that are on the next Scanline
@@ -205,11 +205,11 @@ void PPU::cycle(PictureBus& bus) {
                 scanline_sprites.resize(0);
 
                 int range = 8;
-                if (longSprites)
+                if (is_long_sprites)
                     range = 16;
 
                 NES_Byte j = 0;
-                for (NES_Byte i = spriteDataAddress / 4; i < 64; ++i) {
+                for (NES_Byte i = sprite_data_address / 4; i < 64; ++i) {
                     auto diff = (scanline - sprite_memory[i * 4]);
                     if (0 <= diff && diff < range) {
                         scanline_sprites.push_back(i);
@@ -236,8 +236,8 @@ void PPU::cycle(PictureBus& bus) {
             break;
         case VerticalBlank:
             if (cycles == 1 && scanline == VISIBLE_SCANLINES + 1) {
-                vblank = true;
-                if (generateInterrupt) vblank_callback();
+                is_vblank = true;
+                if (is_interrupting) vblank_callback();
             }
 
             if (cycles >= SCANLINE_END_CYCLE) {
@@ -249,7 +249,7 @@ void PPU::cycle(PictureBus& bus) {
                 pipeline_state = PreRender;
                 scanline = 0;
                 is_even_frame = !is_even_frame;
-                // vblank = false;
+                // is_vblank = false;
             }
 
             break;
@@ -261,88 +261,87 @@ void PPU::cycle(PictureBus& bus) {
 }
 
 void PPU::doDMA(const NES_Byte* page_ptr) {
-    std::memcpy(sprite_memory.data() + spriteDataAddress, page_ptr, 256 - spriteDataAddress);
-    if (spriteDataAddress)
-        std::memcpy(sprite_memory.data(), page_ptr + (256 - spriteDataAddress), spriteDataAddress);
+    std::memcpy(sprite_memory.data() + sprite_data_address, page_ptr, 256 - sprite_data_address);
+    if (sprite_data_address)
+        std::memcpy(sprite_memory.data(), page_ptr + (256 - sprite_data_address), sprite_data_address);
 }
 
 void PPU::control(NES_Byte ctrl) {
-    generateInterrupt = ctrl & 0x80;
-    longSprites = ctrl & 0x20;
-    bgPage = static_cast<CharacterPage>(!!(ctrl & 0x10));
-    sprPage = static_cast<CharacterPage>(!!(ctrl & 0x8));
+    is_interrupting = ctrl & 0x80;
+    is_long_sprites = ctrl & 0x20;
+    background_page = static_cast<CharacterPage>(!!(ctrl & 0x10));
+    sprite_page = static_cast<CharacterPage>(!!(ctrl & 0x8));
     if (ctrl & 0x4)
-        dataAddrIncrement = 0x20;
+        data_address_increment = 0x20;
     else
-        dataAddrIncrement = 1;
+        data_address_increment = 1;
     //baseNameTable = (ctrl & 0x3) * 0x400 + 0x2000;
 
     //Set the nametable in the temp address, this will be reflected in the data address during rendering
-    tempAddress &= ~0xc00;                 //Unset
-    tempAddress |= (ctrl & 0x3) << 10;     //Set according to ctrl bits
+    temp_address &= ~0xc00;                 //Unset
+    temp_address |= (ctrl & 0x3) << 10;     //Set according to ctrl bits
 }
 
 void PPU::setMask(NES_Byte mask) {
-    greyscaleMode = mask & 0x1;
-    hideEdgeBackground = !(mask & 0x2);
-    hideEdgeSprites = !(mask & 0x4);
-    showBackground = mask & 0x8;
-    showSprites = mask & 0x10;
+    is_hiding_edge_background = !(mask & 0x2);
+    is_hiding_edge_sprites = !(mask & 0x4);
+    is_showing_background = mask & 0x8;
+    is_showing_sprites = mask & 0x10;
 }
 
 NES_Byte PPU::getStatus() {
-    NES_Byte status = sprite_zero_hit << 6 | vblank << 7;
-    //dataAddress = 0;
-    vblank = false;
-    firstWrite = true;
+    NES_Byte status = is_sprite_zero_hit << 6 | is_vblank << 7;
+    //data_address = 0;
+    is_vblank = false;
+    is_first_write = true;
     return status;
 }
 
 void PPU::setDataAddress(NES_Byte address) {
-    //dataAddress = ((dataAddress << 8) & 0xff00) | address;
-    if (firstWrite) {
+    //data_address = ((data_address << 8) & 0xff00) | address;
+    if (is_first_write) {
         //Unset the upper byte
-        tempAddress &= ~0xff00;
-        tempAddress |= (address & 0x3f) << 8;
-        firstWrite = false;
+        temp_address &= ~0xff00;
+        temp_address |= (address & 0x3f) << 8;
+        is_first_write = false;
     }
     else {
         //Unset the lower byte;
-        tempAddress &= ~0xff;
-        tempAddress |= address;
-        dataAddress = tempAddress;
-        firstWrite = true;
+        temp_address &= ~0xff;
+        temp_address |= address;
+        data_address = temp_address;
+        is_first_write = true;
     }
 }
 
 NES_Byte PPU::getData(PictureBus& bus) {
-    auto data = bus.read(dataAddress);
-    dataAddress += dataAddrIncrement;
+    auto data = bus.read(data_address);
+    data_address += data_address_increment;
 
     // Reads are delayed by one byte/read when address is in this range
-    if (dataAddress < 0x3f00)
+    if (data_address < 0x3f00)
         //Return from the data buffer and store the current value in the buffer
-        std::swap(data, dataBuffer);
+        std::swap(data, data_buffer);
 
     return data;
 }
 
 void PPU::setData(PictureBus& bus, NES_Byte data) {
-    bus.write(dataAddress, data);
-    dataAddress += dataAddrIncrement;
+    bus.write(data_address, data);
+    data_address += data_address_increment;
 }
 
 void PPU::setScroll(NES_Byte scroll) {
-    if (firstWrite) {
-        tempAddress &= ~0x1f;
-        tempAddress |= (scroll >> 3) & 0x1f;
-        fineXScroll = scroll & 0x7;
-        firstWrite = false;
+    if (is_first_write) {
+        temp_address &= ~0x1f;
+        temp_address |= (scroll >> 3) & 0x1f;
+        fine_x_scroll = scroll & 0x7;
+        is_first_write = false;
     }
     else {
-        tempAddress &= ~0x73e0;
-        tempAddress |= ((scroll & 0x7) << 12) |
+        temp_address &= ~0x73e0;
+        temp_address |= ((scroll & 0x7) << 12) |
                          ((scroll & 0xf8) << 2);
-        firstWrite = true;
+        is_first_write = true;
     }
 }

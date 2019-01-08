@@ -46,14 +46,14 @@ enum Operation1 {
 };
 
 enum AddrMode1 {
-    IndexedIndirectX,
-    ZeroPage,
-    Immediate,
-    Absolute,
-    IndirectY,
-    IndexedX,
-    AbsoluteY,
-    AbsoluteX,
+    M1_INDEXED_INDIRECT_X,
+    M1_ZERO_PAGE,
+    M1_IMMEDIATE,
+    M1_ABSOLUTE,
+    M1_INDIRECT_Y,
+    M1_INDEXED_X,
+    M1_ABSOLUTE_Y,
+    M1_ABSOLUTE_X,
 };
 
 enum Operation2 {
@@ -68,12 +68,12 @@ enum Operation2 {
 };
 
 enum AddrMode2 {
-    Immediate_,
-    ZeroPage_,
-    Accumulator,
-    Absolute_,
-    Indexed         = 5,
-    AbsoluteIndexed = 7,
+    M2_IMMEDIATE,
+    M2_ZERO_PAGE,
+    M2_ACCUMULATOR,
+    M2_ABSOLUTE,
+    M2_INDEXED          = 5,
+    M2_ABSOLUTE_INDEXED = 7,
 };
 
 enum Operation0 {

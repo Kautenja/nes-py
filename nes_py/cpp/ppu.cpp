@@ -260,7 +260,7 @@ void PPU::cycle(PictureBus& bus) {
     ++cycles;
 }
 
-void PPU::doDMA(const NES_Byte* page_ptr) {
+void PPU::do_DMA(const NES_Byte* page_ptr) {
     std::memcpy(sprite_memory.data() + sprite_data_address, page_ptr, 256 - sprite_data_address);
     if (sprite_data_address)
         std::memcpy(sprite_memory.data(), page_ptr + (256 - sprite_data_address), sprite_data_address);
@@ -282,14 +282,14 @@ void PPU::control(NES_Byte ctrl) {
     temp_address |= (ctrl & 0x3) << 10;     //Set according to ctrl bits
 }
 
-void PPU::setMask(NES_Byte mask) {
+void PPU::set_mask(NES_Byte mask) {
     is_hiding_edge_background = !(mask & 0x2);
     is_hiding_edge_sprites = !(mask & 0x4);
     is_showing_background = mask & 0x8;
     is_showing_sprites = mask & 0x10;
 }
 
-NES_Byte PPU::getStatus() {
+NES_Byte PPU::get_status() {
     NES_Byte status = is_sprite_zero_hit << 6 | is_vblank << 7;
     //data_address = 0;
     is_vblank = false;
@@ -297,7 +297,7 @@ NES_Byte PPU::getStatus() {
     return status;
 }
 
-void PPU::setDataAddress(NES_Byte address) {
+void PPU::set_data_address(NES_Byte address) {
     //data_address = ((data_address << 8) & 0xff00) | address;
     if (is_first_write) {
         //Unset the upper byte
@@ -314,7 +314,7 @@ void PPU::setDataAddress(NES_Byte address) {
     }
 }
 
-NES_Byte PPU::getData(PictureBus& bus) {
+NES_Byte PPU::get_data(PictureBus& bus) {
     auto data = bus.read(data_address);
     data_address += data_address_increment;
 
@@ -326,12 +326,12 @@ NES_Byte PPU::getData(PictureBus& bus) {
     return data;
 }
 
-void PPU::setData(PictureBus& bus, NES_Byte data) {
+void PPU::set_data(PictureBus& bus, NES_Byte data) {
     bus.write(data_address, data);
     data_address += data_address_increment;
 }
 
-void PPU::setScroll(NES_Byte scroll) {
+void PPU::set_scroll(NES_Byte scroll) {
     if (is_first_write) {
         temp_address &= ~0x1f;
         temp_address |= (scroll >> 3) & 0x1f;

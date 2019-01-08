@@ -117,10 +117,10 @@ public:
     void reset();
 
     /// Set the interrupt callback for the CPU.
-    void setInterruptCallback(std::function<void(void)> cb) { vblank_callback = cb; };
+    void set_interrupt_callback(std::function<void(void)> cb) { vblank_callback = cb; };
 
     /// TODO: doc
-    void doDMA(const NES_Byte* page_ptr);
+    void do_DMA(const NES_Byte* page_ptr);
 
     // MARK: Callbacks mapped to CPU address space
 
@@ -128,40 +128,40 @@ public:
     void control(NES_Byte ctrl);
 
     /// TODO: doc
-    void setMask(NES_Byte mask);
+    void set_mask(NES_Byte mask);
 
     /// TODO: doc
-    void setScroll(NES_Byte scroll);
+    void set_scroll(NES_Byte scroll);
 
     /// Return the value in the PPU status register.
-    NES_Byte getStatus();
+    NES_Byte get_status();
 
     /// TODO: doc
-    void setDataAddress(NES_Byte address);
+    void set_data_address(NES_Byte address);
 
     /// Read data off the picture bus.
     ///
     /// @param bus the bus to read data off of
     ///
-    NES_Byte getData(PictureBus& bus);
+    NES_Byte get_data(PictureBus& bus);
 
     /// TODO: doc
-    void setData(PictureBus& bus, NES_Byte data);
+    void set_data(PictureBus& bus, NES_Byte data);
 
     /// TODO: doc
-    void setOAMAddress(NES_Byte address) { sprite_data_address = address; };
+    void set_OAM_address(NES_Byte address) { sprite_data_address = address; };
 
     /// Read a byte from OAM memory at the sprite data address.
     ///
     /// @return the byte at the given address in OAM memory
     ///
-    NES_Byte getOAMData() { return sprite_memory[sprite_data_address]; };
+    NES_Byte get_OAM_data() { return sprite_memory[sprite_data_address]; };
 
     /// Write a byte to OAM memory at the sprite data address.
     ///
     /// @param value the byte to write to the given address
     ///
-    void setOAMData(NES_Byte value) { sprite_memory[sprite_data_address++] = value; };
+    void set_OAM_data(NES_Byte value) { sprite_memory[sprite_data_address++] = value; };
 
     /// Return a pointer to the screen buffer.
     NES_Pixel* get_screen_buffer() { return *screen; };

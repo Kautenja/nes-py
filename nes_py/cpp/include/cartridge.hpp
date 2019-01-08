@@ -31,23 +31,23 @@ public:
     /// Initialize a new cartridge
     Cartridge() : name_table_mirroring(0), mapper_number(0), has_extended_ram(false) { };
 
-    /// Load a ROM file into the cartridge and build the corresponding mapper.
-    void loadFromFile(std::string path);
-
     /// Return the ROM data.
-    const std::vector<NES_Byte>& getROM() { return prg_rom; };
+    const inline std::vector<NES_Byte>& getROM() { return prg_rom; };
 
     /// Return the VROM data.
-    const std::vector<NES_Byte>& getVROM() { return chr_rom; };
+    const inline std::vector<NES_Byte>& getVROM() { return chr_rom; };
 
     /// Return the mapper ID number.
-    NES_Byte getMapper() { return mapper_number; };
+    inline NES_Byte getMapper() { return mapper_number; };
 
     /// Return the name table mirroring mode.
-    NES_Byte getNameTableMirroring() { return name_table_mirroring; };
+    inline NES_Byte getNameTableMirroring() { return name_table_mirroring; };
 
     /// Return a boolean determining whether this cartridge uses extended RAM.
-    bool hasExtendedRAM() { return has_extended_ram; };
+    inline bool hasExtendedRAM() { return has_extended_ram; };
+
+    /// Load a ROM file into the cartridge and build the corresponding mapper.
+    void loadFromFile(std::string path);
 
 };
 

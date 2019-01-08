@@ -33,25 +33,25 @@ class MainBus {
 
 private:
     /// The RAM on the main bus
-    std::vector<NES_Byte> m_RAM;
+    std::vector<NES_Byte> ram;
     /// The extended RAM (if the mapper has extended RAM)
-    std::vector<NES_Byte> m_extRAM;
+    std::vector<NES_Byte> extended_ram;
     /// a pointer to the mapper on the cartridge
-    Mapper* m_mapper;
+    Mapper* mapper;
     /// a map of IO registers to callback methods for writes
-    std::map<IORegisters, std::function<void(NES_Byte)>> m_writeCallbacks;
+    std::map<IORegisters, std::function<void(NES_Byte)>> write_callbacks;
     /// a map of IO registers to callback methods for reads
-    std::map<IORegisters, std::function<NES_Byte(void)>> m_readCallbacks;
+    std::map<IORegisters, std::function<NES_Byte(void)>> read_callbacks;
 
 public:
     /// Initialize a new main bus.
-    MainBus() : m_RAM(0x800, 0), m_mapper(nullptr) { };
+    MainBus() : ram(0x800, 0), mapper(nullptr) { };
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    NES_Byte* get_memory_buffer() { return &m_RAM.front(); };
+    NES_Byte* get_memory_buffer() { return &ram.front(); };
 
     /// Read a byte from an address on the RAM.
     ///
@@ -72,13 +72,17 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool set_mapper(Mapper* mapper);
+    void set_mapper(Mapper* mapper);
 
     /// Set a callback for when writes occur.
-    bool set_write_callback(IORegisters reg, std::function<void(NES_Byte)> callback);
+    void set_write_callback(IORegisters reg, std::function<void(NES_Byte)> callback) {
+        write_callbacks.emplace(reg, callback);
+    };
 
     /// Set a callback for when reads occur.
-    bool set_read_callback(IORegisters reg, std::function<NES_Byte(void)> callback);
+    void set_read_callback(IORegisters reg, std::function<NES_Byte(void)> callback) {
+        read_callbacks.emplace(reg, callback);
+    };
 
     /// Return a pointer to the page in memory.
     const NES_Byte* get_page_pointer(NES_Byte page);

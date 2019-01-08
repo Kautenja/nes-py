@@ -9,30 +9,22 @@
 #include "log.hpp"
 
 Emulator::Emulator(std::string rom_path) {
-    // raise an error if IO callback setup fails
-    if (
-        !bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
-        !bus.set_read_callback(PPUDATA, [&](void) {return ppu.getData(picture_bus);}) ||
-        !bus.set_read_callback(JOY1, [&](void) {return controller1.read();}) ||
-        !bus.set_read_callback(JOY2, [&](void) {return controller2.read();}) ||
-        !bus.set_read_callback(OAMDATA, [&](void) {return ppu.getOAMData();})
-    ) {
-        LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
-    }
-    // raise an error if IO callback setup fails
-    if (
-        !bus.set_write_callback(PPUCTRL, [&](NES_Byte b) {ppu.control(b);}) ||
-        !bus.set_write_callback(PPUMASK, [&](NES_Byte b) {ppu.setMask(b);}) ||
-        !bus.set_write_callback(OAMADDR, [&](NES_Byte b) {ppu.setOAMAddress(b);}) ||
-        !bus.set_write_callback(PPUADDR, [&](NES_Byte b) {ppu.setDataAddress(b);}) ||
-        !bus.set_write_callback(PPUSCROL, [&](NES_Byte b) {ppu.setScroll(b);}) ||
-        !bus.set_write_callback(PPUDATA, [&](NES_Byte b) {ppu.setData(picture_bus, b);}) ||
-        !bus.set_write_callback(OAMDMA, [&](NES_Byte b) {DMA(b);}) ||
-        !bus.set_write_callback(JOY1, [&](NES_Byte b) {controller1.strobe(b); controller2.strobe(b);}) ||
-        !bus.set_write_callback(OAMDATA, [&](NES_Byte b) {ppu.setOAMData(b);})
-    ) {
-        LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
-    }
+    // set the read callbacks
+    bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();});
+    bus.set_read_callback(PPUDATA, [&](void) {return ppu.getData(picture_bus);});
+    bus.set_read_callback(JOY1, [&](void) {return controller1.read();});
+    bus.set_read_callback(JOY2, [&](void) {return controller2.read();});
+    bus.set_read_callback(OAMDATA, [&](void) {return ppu.getOAMData();});
+    // set the write callbacks
+    bus.set_write_callback(PPUCTRL, [&](NES_Byte b) {ppu.control(b);});
+    bus.set_write_callback(PPUMASK, [&](NES_Byte b) {ppu.setMask(b);});
+    bus.set_write_callback(OAMADDR, [&](NES_Byte b) {ppu.setOAMAddress(b);});
+    bus.set_write_callback(PPUADDR, [&](NES_Byte b) {ppu.setDataAddress(b);});
+    bus.set_write_callback(PPUSCROL, [&](NES_Byte b) {ppu.setScroll(b);});
+    bus.set_write_callback(PPUDATA, [&](NES_Byte b) {ppu.setData(picture_bus, b);});
+    bus.set_write_callback(OAMDMA, [&](NES_Byte b) {DMA(b);});
+    bus.set_write_callback(JOY1, [&](NES_Byte b) {controller1.strobe(b); controller2.strobe(b);});
+    bus.set_write_callback(OAMDATA, [&](NES_Byte b) {ppu.setOAMData(b);});
     // set the interrupt callback for the PPU
     ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
     // load the ROM from disk, expect that the Python code has validated it

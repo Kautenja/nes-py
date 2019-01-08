@@ -158,7 +158,7 @@ class NESEnv(gym.Env):
         screen = screen.reshape(SCREEN_SHAPE_32_BIT)
         # flip the bytes if the machine is little-endian (which it likely is)
         if sys.byteorder == 'little':
-            # invert the little-endian BGR channels to RGB
+            # invert the little-endian BGRx channels to big-endian xRGB
             screen = screen[:, :, ::-1]
         # remove the 0th axis (padding from storing colors in 32 bit)
         screen = screen[:, :, 1:]

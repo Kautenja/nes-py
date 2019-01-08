@@ -117,7 +117,7 @@ public:
     void reset();
 
     /// Set the interrupt callback for the CPU.
-    void set_interrupt_callback(std::function<void(void)> cb) { vblank_callback = cb; };
+    inline void set_interrupt_callback(std::function<void(void)> cb) { vblank_callback = cb; };
 
     /// TODO: doc
     void do_DMA(const NES_Byte* page_ptr);
@@ -152,22 +152,22 @@ public:
     ///
     /// @param address the new OAM data address
     ///
-    void set_OAM_address(NES_Byte address) { sprite_data_address = address; };
+    inline void set_OAM_address(NES_Byte address) { sprite_data_address = address; };
 
     /// Read a byte from OAM memory at the sprite data address.
     ///
     /// @return the byte at the given address in OAM memory
     ///
-    NES_Byte get_OAM_data() { return sprite_memory[sprite_data_address]; };
+    inline NES_Byte get_OAM_data() { return sprite_memory[sprite_data_address]; };
 
     /// Write a byte to OAM memory at the sprite data address.
     ///
     /// @param value the byte to write to the given address
     ///
-    void set_OAM_data(NES_Byte value) { sprite_memory[sprite_data_address++] = value; };
+    inline void set_OAM_data(NES_Byte value) { sprite_memory[sprite_data_address++] = value; };
 
     /// Return a pointer to the screen buffer.
-    NES_Pixel* get_screen_buffer() { return *screen; };
+    inline NES_Pixel* get_screen_buffer() { return *screen; };
 
 };
 

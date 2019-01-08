@@ -185,7 +185,7 @@ public:
     /// 513 = 256 read + 256 write + 1 dummy read
     /// &1 -> +1 if on odd cycle
     ///
-    void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); };
+    inline void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); };
 
 };
 

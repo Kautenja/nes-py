@@ -159,9 +159,8 @@ void PPU::cycle(PictureBus& bus) {
                         break; //Exit the loop now since we've found the highest priority sprite
                     }
                 }
-
+                // get the address of the color in the palette
                 NES_Byte paletteAddr = bgColor;
-
                 if ( (!bgOpaque && sprOpaque) || (bgOpaque && sprOpaque && spriteForeground) )
                     paletteAddr = sprColor;
                 else if (!bgOpaque && !sprOpaque)

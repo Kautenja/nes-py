@@ -42,7 +42,7 @@ public:
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (NES_Address address, NES_Byte value) { select_prg = value; };
+    inline void writePRG (NES_Address address, NES_Byte value) { select_prg = value; };
 
     /// Read a byte from the CHR RAM.
     ///

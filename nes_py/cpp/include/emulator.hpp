@@ -68,16 +68,16 @@ public:
     ///
     /// @return a 32-bit pointer to the screen buffer's first address
     ///
-    NES_Pixel* get_screen_buffer() { return ppu.get_screen_buffer(); };
+    inline NES_Pixel* get_screen_buffer() { return ppu.get_screen_buffer(); };
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
+    inline NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
-    void reset() { cpu.reset(bus); ppu.reset(); };
+    inline void reset() { cpu.reset(bus); ppu.reset(); };
 
     /// Perform a discrete "step" of the NES by rendering 1 frame.
     ///

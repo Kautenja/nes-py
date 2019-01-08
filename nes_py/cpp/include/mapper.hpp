@@ -87,12 +87,12 @@ public:
     virtual const NES_Byte* getPagePtr (NES_Address address) = 0;
 
     /// Return the name table mirroring mode of this mapper.
-    virtual NameTableMirroring getNameTableMirroring() {
+    inline virtual NameTableMirroring getNameTableMirroring() {
         return static_cast<NameTableMirroring>(cartridge.getNameTableMirroring());
     };
 
     /// Return true if this mapper has extended RAM, false otherwise.
-    bool hasExtendedRAM() { return cartridge.hasExtendedRAM(); };
+    inline bool hasExtendedRAM() { return cartridge.hasExtendedRAM(); };
 
 };
 

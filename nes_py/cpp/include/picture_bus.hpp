@@ -50,7 +50,7 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    void set_mapper(Mapper *mapper) { this->mapper = mapper; update_mirroring(); };
+    inline void set_mapper(Mapper *mapper) { this->mapper = mapper; update_mirroring(); };
 
     /// Read a color index from the palette.
     ///
@@ -58,7 +58,7 @@ public:
     ///
     /// @return the index of the RGB tuple in the color array
     ///
-    NES_Byte read_palette(NES_Byte address) { return palette[address]; };
+    inline NES_Byte read_palette(NES_Byte address) { return palette[address]; };
 
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();

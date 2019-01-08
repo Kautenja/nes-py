@@ -38,14 +38,14 @@ public:
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (NES_Address address, NES_Byte value) { select_chr = value & 0x3; };
+    inline void writePRG (NES_Address address, NES_Byte value) { select_chr = value & 0x3; };
 
     /// Read a byte from the CHR RAM.
     ///
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    NES_Byte readCHR (NES_Address address) { return cartridge.getVROM()[address | (select_chr << 13)]; };
+    inline NES_Byte readCHR (NES_Address address) { return cartridge.getVROM()[address | (select_chr << 13)]; };
 
     /// Write a byte to an address in the CHR RAM.
     ///

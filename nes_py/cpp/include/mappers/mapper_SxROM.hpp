@@ -92,7 +92,7 @@ public:
     const NES_Byte* getPagePtr(NES_Address address);
 
     /// Return the name table mirroring mode of this mapper.
-    NameTableMirroring getNameTableMirroring() { return mirroing; };
+    inline NameTableMirroring getNameTableMirroring() { return mirroing; };
 
 };
 

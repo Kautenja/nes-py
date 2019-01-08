@@ -29,7 +29,7 @@ public:
     ///
     /// @param buttons the button bitmap to write to the controller
     ///
-    void write_buttons(NES_Byte buttons) { joypad_buttons = buttons; };
+    inline void write_buttons(NES_Byte buttons) { joypad_buttons = buttons; };
 
     /// Strobe the controller.
     void strobe(NES_Byte b);

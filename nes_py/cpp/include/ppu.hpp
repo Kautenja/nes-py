@@ -40,7 +40,7 @@ private:
         VerticalBlank
     } pipeline_state;
 
-    int m_cycles;
+    int cycles;
     int scanline;
     bool is_even_frame;
 
@@ -48,30 +48,30 @@ private:
     bool sprite_zero_hit;
 
     // Registers
-    NES_Address m_dataAddress;
-    NES_Address m_tempAddress;
-    NES_Byte m_fineXScroll;
-    bool m_firstWrite;
-    NES_Byte m_dataBuffer;
+    NES_Address dataAddress;
+    NES_Address tempAddress;
+    NES_Byte fineXScroll;
+    bool firstWrite;
+    NES_Byte dataBuffer;
 
-    NES_Byte m_spriteDataAddress;
+    NES_Byte spriteDataAddress;
 
     // Setup flags and variables
-    bool m_longSprites;
-    bool m_generateInterrupt;
+    bool longSprites;
+    bool generateInterrupt;
 
-    bool m_greyscaleMode;
-    bool m_showSprites;
-    bool m_showBackground;
-    bool m_hideEdgeSprites;
-    bool m_hideEdgeBackground;
+    bool greyscaleMode;
+    bool showSprites;
+    bool showBackground;
+    bool hideEdgeSprites;
+    bool hideEdgeBackground;
 
     enum CharacterPage {
         Low,
         High,
-    } m_bgPage, m_sprPage;
+    } bgPage, sprPage;
 
-    NES_Address m_dataAddrIncrement;
+    NES_Address dataAddrIncrement;
 
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
@@ -103,15 +103,15 @@ public:
     //Addresses written to by the program
     void control(NES_Byte ctrl);
     void setMask(NES_Byte mask);
-    void setOAMAddress(NES_Byte address) { m_spriteDataAddress = address; };
+    void setOAMAddress(NES_Byte address) { spriteDataAddress = address; };
     void setDataAddress(NES_Byte address);
     void setScroll(NES_Byte scroll);
-    void setData(PictureBus& m_bus, NES_Byte data);
+    void setData(PictureBus& bus, NES_Byte data);
     //Read by the program
     NES_Byte getStatus();
-    NES_Byte getData(PictureBus& m_bus);
-    NES_Byte getOAMData() { return readOAM(m_spriteDataAddress); };
-    void setOAMData(NES_Byte value) { writeOAM(m_spriteDataAddress++, value); };
+    NES_Byte getData(PictureBus& bus);
+    NES_Byte getOAMData() { return readOAM(spriteDataAddress); };
+    void setOAMData(NES_Byte value) { writeOAM(spriteDataAddress++, value); };
 
     /// Return a pointer to the screen buffer.
     NES_Pixel* get_screen_buffer() { return *screen; };

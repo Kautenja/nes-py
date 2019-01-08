@@ -8,6 +8,7 @@
 #include "ppu.hpp"
 #include "palette.hpp"
 #include "log.hpp"
+#include <cstring>
 
 void PPU::reset() {
     is_long_sprites = is_interrupting = is_vblank = false;

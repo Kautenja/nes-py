@@ -47,7 +47,7 @@ private:
     void pushStack(MainBus &bus, NES_Byte value) { bus.write(0x100 | register_SP--, value); };
     NES_Byte pullStack(MainBus &bus) { return bus.read(0x100 | ++register_SP); };
 
-    //If a and b are in different pages, increases the m_SkipCycles by inc
+    //If a and b are in different pages, increases the skip_cycles by inc
     void setPageCrossed(NES_Address a, NES_Address b, int inc = 1);
     void setZN(NES_Byte value) { f_Z = !value; f_N = value & 0x80; };
 

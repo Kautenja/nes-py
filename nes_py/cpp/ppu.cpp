@@ -19,7 +19,6 @@ void PPU::reset() {
     sprite_data_address = 0;
     fine_x_scroll = 0;
     temp_address = 0;
-    //baseNameTable = 0x2000;
     data_address_increment = 1;
     pipeline_state = PreRender;
     scanline_sprites.reserve(8);

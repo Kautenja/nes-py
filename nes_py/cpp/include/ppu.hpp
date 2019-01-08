@@ -77,8 +77,19 @@ private:
     /// the number of visible scan line dots
     NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
 
-    NES_Byte readOAM(NES_Byte address) { return sprite_memory[address]; };
-    void writeOAM(NES_Byte address, NES_Byte value) { sprite_memory[address] = value; };
+    /// Read a byte from OAM memory.
+    ///
+    /// @param address the address to read from OAM memory
+    /// @return the byte at the given address in OAM memory
+    ///
+    inline NES_Byte readOAM(NES_Byte address) { return sprite_memory[address]; };
+
+    /// Write a byte to OAM memory.
+    ///
+    /// @param address the address to write to in OAM memory
+    /// @param value the byte to write to the given address
+    ///
+    inline void writeOAM(NES_Byte address, NES_Byte value) { sprite_memory[address] = value; };
 
 public:
     /// Initialize a new PPU

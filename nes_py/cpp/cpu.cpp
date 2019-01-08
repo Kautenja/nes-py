@@ -9,89 +9,8 @@
 #include "cpu_opcodes.hpp"
 #include "log.hpp"
 
-void CPU::reset(NES_Address start_address) {
-    skip_cycles = cycles = 0;
-    register_A = register_X = register_Y = 0;
-    // TODO: set using a byte instead (more readable, less code)
-    flags.bits.I = true;
-    flags.bits.C = flags.bits.D = flags.bits.N = flags.bits.V = flags.bits.Z = false;
-    register_PC = start_address;
-    register_SP = 0xfd; //documented startup state
-}
 
-void CPU::reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); }
-
-void CPU::interrupt(MainBus &bus, InterruptType type) {
-    if (flags.bits.I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)
-        return;
-
-    if (type == BRK_INTERRUPT) //Add one if BRK, a quirk of 6502
-        ++register_PC;
-
-    push_stack(bus, register_PC >> 8);
-    push_stack(bus, register_PC);
-
-    // set the constant flag and Break flag
-    NES_Byte flags_ = flags.byte | 0b00100000 | (type == BRK_INTERRUPT) << 4;
-    push_stack(bus, flags_);
-
-    flags.bits.I = true;
-
-    switch (type) {
-        case IRQ_INTERRUPT:
-        case BRK_INTERRUPT:
-            register_PC = read_address(bus, IRQ_VECTOR);
-            break;
-        case NMI_INTERRUPT:
-            register_PC = read_address(bus, NMI_VECTOR);
-            break;
-    }
-
-    skip_cycles += 7;
-}
-
-void CPU::step(MainBus &bus) {
-    ++cycles;
-
-    if (skip_cycles-- > 1)
-        return;
-
-    skip_cycles = 0;
-
-    // int psw =    flags.bits.N << 7 |
-    //              flags.bits.V << 6 |
-    //                1 << 5 |
-    //              flags.bits.D << 3 |
-    //              flags.bits.I << 2 |
-    //              flags.bits.Z << 1 |
-    //              flags.bits.C;
-    // std::cout << std::hex << std::setfill('0') << std::uppercase
-    //           << std::setw(4) << +register_PC
-    //           << "  "
-    //           << std::setw(2) << +bus.read(register_PC)
-    //           << "  "
-    //           << "A:"   << std::setw(2) << +register_A << " "
-    //           << "X:"   << std::setw(2) << +register_X << " "
-    //           << "Y:"   << std::setw(2) << +register_Y << " "
-    //           << "P:"   << std::setw(2) << psw << " "
-    //           << "SP:"  << std::setw(2) << +register_SP  << /*std::endl;*/" "
-    //           << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((cycles - 1) * 3) % 341
-    //           << std::endl;
-
-    NES_Byte opcode = bus.read(register_PC++);
-    auto CycleLength = OPERATION_CYCLES[opcode];
-
-    // Using short-circuit evaluation, call the other function only if the
-    // first failed. ExecuteImplied must be called first and ExecuteBranch
-    // must be before ExecuteType0
-    if (CycleLength && (executeImplied(bus, opcode) || executeBranch(bus, opcode) ||
-                    executeType1(bus, opcode) || executeType2(bus, opcode) || executeType0(bus, opcode)))
-        skip_cycles += CycleLength;
-    else
-        std::cout << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
-}
-
-bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
+bool CPU::execute_implied(MainBus &bus, NES_Byte opcode) {
     switch (static_cast<OperationImplied>(opcode)) {
         case NOP:
             break;
@@ -210,7 +129,7 @@ bool CPU::executeImplied(MainBus &bus, NES_Byte opcode) {
     return true;
 }
 
-bool CPU::executeBranch(MainBus &bus, NES_Byte opcode) {
+bool CPU::execute_branch(MainBus &bus, NES_Byte opcode) {
     if ((opcode & BRANCH_INSTRUCTION_MASK) == BRANCH_INSTRUCTION_MASK_RESULT) {
         //branch is initialized to the condition required (for the flag specified later)
         bool branch = opcode & BRANCH_CONDITION_MASK;
@@ -248,7 +167,70 @@ bool CPU::executeBranch(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
-bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
+bool CPU::execute_type0(MainBus &bus, NES_Byte opcode) {
+    if ((opcode & INSTRUCTION_MODE_MASK) == 0x0) {
+        NES_Address location = 0;
+        switch (static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT)) {
+            case M2_IMMEDIATE:
+                location = register_PC++;
+                break;
+            case M2_ZERO_PAGE:
+                location = bus.read(register_PC++);
+                break;
+            case M2_ABSOLUTE:
+                location = read_address(bus, register_PC);
+                register_PC += 2;
+                break;
+            case M2_INDEXED:
+                // Address wraps around in the zero page
+                location = (bus.read(register_PC++) + register_X) & 0xff;
+                break;
+            case M2_ABSOLUTE_INDEXED:
+                location = read_address(bus, register_PC);
+                register_PC += 2;
+                set_page_crossed(location, location + register_X);
+                location += register_X;
+                break;
+            default:
+                return false;
+        }
+        NES_Address operand = 0;
+        switch (static_cast<Operation0>((opcode & OPERATION_MASK) >> OPERATION_SHIFT)) {
+            case BIT:
+                operand = bus.read(location);
+                flags.bits.Z = !(register_A & operand);
+                flags.bits.V = operand & 0x40;
+                flags.bits.N = operand & 0x80;
+                break;
+            case STY:
+                bus.write(location, register_Y);
+                break;
+            case LDY:
+                register_Y = bus.read(location);
+                set_ZN(register_Y);
+                break;
+            case CPY: {
+                    NES_Address diff = register_Y - bus.read(location);
+                    flags.bits.C = !(diff & 0x100);
+                    set_ZN(diff);
+                }
+                break;
+            case CPX: {
+                    NES_Address diff = register_X - bus.read(location);
+                    flags.bits.C = !(diff & 0x100);
+                    set_ZN(diff);
+                }
+                break;
+            default:
+                return false;
+        }
+
+        return true;
+    }
+    return false;
+}
+
+bool CPU::execute_type1(MainBus &bus, NES_Byte opcode) {
     if ((opcode & INSTRUCTION_MODE_MASK) == 0x1) {
         NES_Address location = 0; //Location of the operand, could be in RAM
         auto op = static_cast<Operation1>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
@@ -358,7 +340,7 @@ bool CPU::executeType1(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
-bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
+bool CPU::execute_type2(MainBus &bus, NES_Byte opcode) {
     if ((opcode & INSTRUCTION_MODE_MASK) == 2) {
         NES_Address location = 0;
         auto op = static_cast<Operation2>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
@@ -471,65 +453,84 @@ bool CPU::executeType2(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
-bool CPU::executeType0(MainBus &bus, NES_Byte opcode) {
-    if ((opcode & INSTRUCTION_MODE_MASK) == 0x0) {
-        NES_Address location = 0;
-        switch (static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT)) {
-            case M2_IMMEDIATE:
-                location = register_PC++;
-                break;
-            case M2_ZERO_PAGE:
-                location = bus.read(register_PC++);
-                break;
-            case M2_ABSOLUTE:
-                location = read_address(bus, register_PC);
-                register_PC += 2;
-                break;
-            case M2_INDEXED:
-                // Address wraps around in the zero page
-                location = (bus.read(register_PC++) + register_X) & 0xff;
-                break;
-            case M2_ABSOLUTE_INDEXED:
-                location = read_address(bus, register_PC);
-                register_PC += 2;
-                set_page_crossed(location, location + register_X);
-                location += register_X;
-                break;
-            default:
-                return false;
-        }
-        NES_Address operand = 0;
-        switch (static_cast<Operation0>((opcode & OPERATION_MASK) >> OPERATION_SHIFT)) {
-            case BIT:
-                operand = bus.read(location);
-                flags.bits.Z = !(register_A & operand);
-                flags.bits.V = operand & 0x40;
-                flags.bits.N = operand & 0x80;
-                break;
-            case STY:
-                bus.write(location, register_Y);
-                break;
-            case LDY:
-                register_Y = bus.read(location);
-                set_ZN(register_Y);
-                break;
-            case CPY: {
-                    NES_Address diff = register_Y - bus.read(location);
-                    flags.bits.C = !(diff & 0x100);
-                    set_ZN(diff);
-                }
-                break;
-            case CPX: {
-                    NES_Address diff = register_X - bus.read(location);
-                    flags.bits.C = !(diff & 0x100);
-                    set_ZN(diff);
-                }
-                break;
-            default:
-                return false;
-        }
+void CPU::reset(NES_Address start_address) {
+    skip_cycles = cycles = 0;
+    register_A = register_X = register_Y = 0;
+    // TODO: set using a byte instead (more readable, less code)
+    flags.bits.I = true;
+    flags.bits.C = flags.bits.D = flags.bits.N = flags.bits.V = flags.bits.Z = false;
+    register_PC = start_address;
+    register_SP = 0xfd; //documented startup state
+}
 
-        return true;
+void CPU::reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); }
+
+void CPU::interrupt(MainBus &bus, InterruptType type) {
+    if (flags.bits.I && type != NMI_INTERRUPT && type != BRK_INTERRUPT)
+        return;
+
+    if (type == BRK_INTERRUPT) //Add one if BRK, a quirk of 6502
+        ++register_PC;
+
+    push_stack(bus, register_PC >> 8);
+    push_stack(bus, register_PC);
+
+    // set the constant flag and Break flag
+    NES_Byte flags_ = flags.byte | 0b00100000 | (type == BRK_INTERRUPT) << 4;
+    push_stack(bus, flags_);
+
+    flags.bits.I = true;
+
+    switch (type) {
+        case IRQ_INTERRUPT:
+        case BRK_INTERRUPT:
+            register_PC = read_address(bus, IRQ_VECTOR);
+            break;
+        case NMI_INTERRUPT:
+            register_PC = read_address(bus, NMI_VECTOR);
+            break;
     }
-    return false;
+
+    skip_cycles += 7;
+}
+
+void CPU::step(MainBus &bus) {
+    ++cycles;
+
+    if (skip_cycles-- > 1)
+        return;
+
+    skip_cycles = 0;
+
+    // int psw =    flags.bits.N << 7 |
+    //              flags.bits.V << 6 |
+    //                1 << 5 |
+    //              flags.bits.D << 3 |
+    //              flags.bits.I << 2 |
+    //              flags.bits.Z << 1 |
+    //              flags.bits.C;
+    // std::cout << std::hex << std::setfill('0') << std::uppercase
+    //           << std::setw(4) << +register_PC
+    //           << "  "
+    //           << std::setw(2) << +bus.read(register_PC)
+    //           << "  "
+    //           << "A:"   << std::setw(2) << +register_A << " "
+    //           << "X:"   << std::setw(2) << +register_X << " "
+    //           << "Y:"   << std::setw(2) << +register_Y << " "
+    //           << "P:"   << std::setw(2) << psw << " "
+    //           << "SP:"  << std::setw(2) << +register_SP  << /*std::endl;*/" "
+    //           << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((cycles - 1) * 3) % 341
+    //           << std::endl;
+
+    NES_Byte opcode = bus.read(register_PC++);
+    auto CycleLength = OPERATION_CYCLES[opcode];
+
+    // Using short-circuit evaluation, call the other function only if the
+    // first failed. ExecuteImplied must be called first and ExecuteBranch
+    // must be before ExecuteType0
+    if (CycleLength && (execute_implied(bus, opcode) || execute_branch(bus, opcode) ||
+                    execute_type1(bus, opcode) || execute_type2(bus, opcode) || execute_type0(bus, opcode)))
+        skip_cycles += CycleLength;
+    else
+        std::cout << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
 }

@@ -18,17 +18,18 @@ class PictureBus {
 
 private:
     /// the VRAM on the picture bus
-    std::vector<NES_Byte> m_RAM;
+    std::vector<NES_Byte> ram;
     /// indexes where they start in RAM vector
-    std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
+    // std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
+    std::size_t name_tables[4] = {0, 0, 0, 0};
     /// the palette for decoding RGB tuples
-    std::vector<NES_Byte> m_palette;
+    std::vector<NES_Byte> palette;
     /// a pointer to the mapper on the cartridge
-    Mapper* m_mapper;
+    Mapper* mapper;
 
 public:
     /// Initialize a new picture bus.
-    PictureBus() : m_RAM(0x800), m_palette(0x20), m_mapper(nullptr) { };;
+    PictureBus() : ram(0x800), palette(0x20), mapper(nullptr) { };;
 
     /// Read a byte from an address on the VRAM.
     ///
@@ -49,7 +50,7 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool set_mapper(Mapper *mapper);
+    void set_mapper(Mapper *mapper) { this->mapper = mapper; update_mirroring(); };
 
     /// Read a color index from the palette.
     ///
@@ -57,7 +58,7 @@ public:
     ///
     /// @return the index of the RGB tuple in the color array
     ///
-    NES_Byte read_palette(NES_Byte address) { return m_palette[address]; };
+    NES_Byte read_palette(NES_Byte address) { return palette[address]; };
 
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();

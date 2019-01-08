@@ -65,27 +65,27 @@ void PictureBus::write(NES_Address address, NES_Byte value) {
 
 void PictureBus::update_mirroring() {
     switch (mapper->getNameTableMirroring()) {
-        case Horizontal:
+        case HORIZONTAL:
             name_tables[0] = name_tables[1] = 0;
             name_tables[2] = name_tables[3] = 0x400;
             LOG(InfoVerbose) <<
                 "Horizontal Name Table mirroring set. (Vertical Scrolling)" <<
                 std::endl;
             break;
-        case Vertical:
+        case VERTICAL:
             name_tables[0] = name_tables[2] = 0;
             name_tables[1] = name_tables[3] = 0x400;
             LOG(InfoVerbose) <<
                 "Vertical Name Table mirroring set. (Horizontal Scrolling)" <<
                 std::endl;
             break;
-        case OneScreenLower:
+        case ONE_SCREEN_LOWER:
             name_tables[0] = name_tables[1] = name_tables[2] = name_tables[3] = 0;
             LOG(InfoVerbose) <<
                 "Single Screen mirroring set with lower bank." <<
                 std::endl;
             break;
-        case OneScreenHigher:
+        case ONE_SCREEN_HIGHER:
             name_tables[0] = name_tables[1] = name_tables[2] = name_tables[3] = 0x400;
             LOG(InfoVerbose) <<
                 "Single Screen mirroring set with higher bank." <<

@@ -14,11 +14,11 @@
 
 /// Mirroring modes supported by the NES
 enum NameTableMirroring {
-    Horizontal  = 0,
-    Vertical    = 1,
-    FourScreen  = 8,
-    OneScreenLower,
-    OneScreenHigher,
+    HORIZONTAL  = 0,
+    VERTICAL    = 1,
+    FOUR_SCREEN  = 8,
+    ONE_SCREEN_LOWER,
+    ONE_SCREEN_HIGHER,
 };
 
 /// An abstraction of a general hardware mapper for different NES cartridges

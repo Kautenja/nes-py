@@ -11,7 +11,7 @@
 MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb) :
     Mapper(cart),
     mirroring_callback(mirroring_cb),
-    mirroing(Horizontal),
+    mirroing(HORIZONTAL),
     mode_chr(0),
     mode_prg(3),
     temp_register(0),
@@ -55,10 +55,10 @@ void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
         if (write_counter == 5) {
             if (address <= 0x9fff) {
                 switch (temp_register & 0x3) {
-                    case 0:     mirroing = OneScreenLower;    break;
-                    case 1:     mirroing = OneScreenHigher;   break;
-                    case 2:     mirroing = Vertical;          break;
-                    case 3:     mirroing = Horizontal;        break;
+                    case 0:     mirroing = ONE_SCREEN_LOWER;   break;
+                    case 1:     mirroing = ONE_SCREEN_HIGHER;  break;
+                    case 2:     mirroing = VERTICAL;           break;
+                    case 3:     mirroing = HORIZONTAL;         break;
                 }
                 mirroring_callback();
 

@@ -5,116 +5,179 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef PPU_H
-#define PPU_H
+#ifndef PPU_HPP
+#define PPU_HPP
 
-#include <functional>
-#include <array>
+#include "common.hpp"
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
-#include "palette_colors.hpp"
 
-const int ScanlineCycleLength = 341;
-const int ScanlineEndCycle = 340;
-const int VisibleScanlines = 240;
-const int ScanlineVisibleDots = 256;
-const int FrameEndScanline = 261;
+/// The number of visible scan lines (i.e., the height of the screen)
+const int VISIBLE_SCANLINES = 240;
+/// The number of visible dots per scan line (i.e., the width of the screen)
+const int SCANLINE_VISIBLE_DOTS = 256;
+/// The number of cycles per scanline
+const int SCANLINE_CYCLE_LENGTH = 341;
+/// The last cycle of a scan line
+const int SCANLINE_END_CYCLE = 340;
+/// The last scanline per frame
+const int FRAME_END_SCANLINE = 261;
 
-const int AttributeOffset = 0x3C0;
-
+/// The Picture Processing Unit (PPU) for the NES
 class PPU {
-public:
-    /// Initialize a new PPU
-    PPU() : m_spriteMemory(64 * 4) { };
-
-    /// Perform a single cycle on the PPU
-    void cycle(PictureBus& bus);
-
-    /// Perform the number of PPU cycles that fit into a clock cycle (3)
-    inline void step(PictureBus& bus) { cycle(bus); cycle(bus); cycle(bus); };
-
-    /// Reset the PPU
-    void reset();
-
-    /// Set the interrupt callback for the CPU
-    void setInterruptCallback(std::function<void(void)> cb) { m_vblankCallback = cb; };
-
-    void doDMA(const uint8_t* page_ptr);
-
-    //Callbacks mapped to CPU address space
-    //Addresses written to by the program
-    void control(uint8_t ctrl);
-    void setMask(uint8_t mask);
-    void setOAMAddress(uint8_t addr) { m_spriteDataAddress = addr; };
-    void setDataAddress(uint8_t addr);
-    void setScroll(uint8_t scroll);
-    void setData(PictureBus& m_bus, uint8_t data);
-    //Read by the program
-    uint8_t getStatus();
-    uint8_t getData(PictureBus& m_bus);
-    uint8_t getOAMData() { return readOAM(m_spriteDataAddress); };
-    void setOAMData(uint8_t value) { writeOAM(m_spriteDataAddress++, value); };
-
-    /// Return a pointer to the screen buffer.
-    uint32_t* get_screen_buffer() { return *screen_buffer; };
 
 private:
-    uint8_t readOAM(uint8_t addr) { return m_spriteMemory[addr]; };
-    void writeOAM(uint8_t addr, uint8_t value) { m_spriteMemory[addr] = value; };
+    /// The callback to fire when entering vertical blanking mode
+    std::function<void(void)> vblank_callback;
+    /// The OAM memory (sprites)
+    std::vector<NES_Byte> sprite_memory;
+    /// OAM memory (sprites) for the next scanline
+    std::vector<NES_Byte> scanline_sprites;
 
-    std::function<void(void)> m_vblankCallback;
+    /// The current pipeline state of the PPU
+    enum State {
+        PRE_RENDER,
+        RENDER,
+        POST_RENDER,
+        VERTICAL_BLANK
+    } pipeline_state;
 
-    std::vector<uint8_t> m_spriteMemory;
+    /// The number of cycles left in the frame
+    int cycles;
+    /// the current scanline of the frame
+    int scanline;
+    /// whether the PPU is on an even frame
+    bool is_even_frame;
 
-    std::vector<uint8_t> m_scanlineSprites;
+    // Status
 
-    enum State
-    {
-        PreRender,
-        Render,
-        PostRender,
-        VerticalBlank
-    } m_pipelineState;
-    int m_cycle;
-    int m_scanline;
-    bool m_evenFrame;
+    /// whether the PPU is in vertical blanking mode
+    bool is_vblank;
+    /// whether sprite 0 has been hit (i.e., collision detection)
+    bool is_sprite_zero_hit;
 
-    bool m_vblank;
-    bool m_sprZeroHit;
+    // Registers
 
-    //Registers
-    uint16_t m_dataAddress;
-    uint16_t m_tempAddress;
-    uint8_t m_fineXScroll;
-    bool m_firstWrite;
-    uint8_t m_dataBuffer;
+    /// the current data address to (read / write) (from / to)
+    NES_Address data_address;
+    /// a temporary address register
+    NES_Address temp_address;
+    /// the fine scrolling position
+    NES_Byte fine_x_scroll;
+    /// TODO: doc
+    bool is_first_write;
+    /// The address of the data buffer
+    NES_Byte data_buffer;
+    /// the read / write address for the OAM memory (sprites)
+    NES_Byte sprite_data_address;
 
-    uint8_t m_spriteDataAddress;
+    // Mask
 
-    //Setup flags and variables
-    bool m_longSprites;
-    bool m_generateInterrupt;
+    /// whether the PPU is showing sprites
+    bool is_showing_sprites;
+    /// whether the PPU is showing background pixels
+    bool is_showing_background;
+    /// whether the PPU is hiding sprites along the edges
+    bool is_hiding_edge_sprites;
+    /// whether the PPU is hiding the background along the edges
+    bool is_hiding_edge_background;
 
-    bool m_greyscaleMode;
-    bool m_showSprites;
-    bool m_showBackground;
-    bool m_hideEdgeSprites;
-    bool m_hideEdgeBackground;
+    // Setup flags and variables
 
-    enum CharacterPage
-    {
-        Low,
-        High,
-    } m_bgPage,
-      m_sprPage;
+    /// TODO: doc
+    bool is_long_sprites;
+    /// whether the PPU is in the interrupt handler
+    bool is_interrupting;
 
-    uint16_t m_dataAddrIncrement;
+    /// TODO: doc
+    enum CharacterPage {
+        LOW,
+        HIGH,
+    } background_page, sprite_page;
+
+    /// The value to increment the data address by
+    NES_Address data_address_increment;
 
     /// The internal screen data structure as a vector representation of a
     /// matrix of height matching the visible scans lines and width matching
     /// the number of visible scan line dots
-    uint32_t screen_buffer[VisibleScanlines][ScanlineVisibleDots];
+    NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
+
+public:
+    /// Initialize a new PPU.
+    PPU() : sprite_memory(64 * 4) { };
+
+    /// Perform a single cycle on the PPU.
+    void cycle(PictureBus& bus);
+
+    /// Perform the number of PPU cycles that fit into a clock cycle (3).
+    inline void step(PictureBus& bus) { cycle(bus); cycle(bus); cycle(bus); };
+
+    /// Reset the PPU.
+    void reset();
+
+    /// Set the interrupt callback for the CPU.
+    inline void set_interrupt_callback(std::function<void(void)> cb) { vblank_callback = cb; };
+
+    /// TODO: doc
+    void do_DMA(const NES_Byte* page_ptr);
+
+    // MARK: Callbacks mapped to CPU address space
+
+    /// Set the control register to a new value.
+    ///
+    /// @param ctrl the new control register byte
+    ///
+    void control(NES_Byte ctrl);
+
+    /// Set the mask register to a new value.
+    ///
+    /// @param mask the new mask value
+    ///
+    void set_mask(NES_Byte mask);
+
+    /// Set the scroll register to a new value.
+    ///
+    /// @param scroll the new scroll register value
+    ///
+    void set_scroll(NES_Byte scroll);
+
+    /// Return the value in the PPU status register.
+    NES_Byte get_status();
+
+    /// TODO: doc
+    void set_data_address(NES_Byte address);
+
+    /// Read data off the picture bus.
+    ///
+    /// @param bus the bus to read data off of
+    ///
+    NES_Byte get_data(PictureBus& bus);
+
+    /// TODO: doc
+    void set_data(PictureBus& bus, NES_Byte data);
+
+    /// Set the sprite data address to a new value.
+    ///
+    /// @param address the new OAM data address
+    ///
+    inline void set_OAM_address(NES_Byte address) { sprite_data_address = address; };
+
+    /// Read a byte from OAM memory at the sprite data address.
+    ///
+    /// @return the byte at the given address in OAM memory
+    ///
+    inline NES_Byte get_OAM_data() { return sprite_memory[sprite_data_address]; };
+
+    /// Write a byte to OAM memory at the sprite data address.
+    ///
+    /// @param value the byte to write to the given address
+    ///
+    inline void set_OAM_data(NES_Byte value) { sprite_memory[sprite_data_address++] = value; };
+
+    /// Return a pointer to the screen buffer.
+    inline NES_Pixel* get_screen_buffer() { return *screen; };
 
 };
 
-#endif // PPU_H
+#endif // PPU_HPP

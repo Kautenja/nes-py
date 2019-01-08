@@ -5,72 +5,188 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CPU_H
-#define CPU_H
+#ifndef CPU_HPP
+#define CPU_HPP
 
+#include "common.hpp"
+#include "cpu_opcodes.hpp"
 #include "main_bus.hpp"
 
-/// An MOS6502 for an NES emulation
+/// A structure for working with the flags register
+typedef union {
+    struct {
+        bool N : 1,
+             V : 1,
+             ONE : 1,
+             B : 1,
+             D : 1,
+             I : 1,
+             Z : 1,
+             C : 1;
+    } bits;
+    NES_Byte byte;
+} Flags;
+
+/// The MOS6502 CPU for the Nintendo Entertainment System (NES)
 class CPU {
 
 private:
-    //Instructions are split into five sets to make decoding easier.
-    //These functions return true if they succeed
-    bool executeImplied(MainBus &m_bus, uint8_t opcode);
-    bool executeBranch(MainBus &m_bus, uint8_t opcode);
-    bool executeType0(MainBus &m_bus, uint8_t opcode);
-    bool executeType1(MainBus &m_bus, uint8_t opcode);
-    bool executeType2(MainBus &m_bus, uint8_t opcode);
+    /// The program counter register
+    NES_Address register_PC;
 
-    uint16_t readAddress(MainBus &m_bus, uint16_t addr) { return m_bus.read(addr) | m_bus.read(addr + 1) << 8; };
-    void pushStack(MainBus &m_bus, uint8_t value) {  m_bus.write(0x100 | r_SP--, value); };
-    uint8_t pullStack(MainBus &m_bus) { return m_bus.read(0x100 | ++r_SP); };
+    /// The stack pointer register
+    NES_Byte register_SP;
 
-    //If a and b are in different pages, increases the m_SkipCycles by inc
-    void setPageCrossed(uint16_t a, uint16_t b, int inc = 1);
-    void setZN(uint8_t value) { f_Z = !value; f_N = value & 0x80; };
+    /// The A register
+    NES_Byte register_A;
 
-    int m_skipCycles;
-    int m_cycles;
+    /// The X register
+    NES_Byte register_X;
 
-    //Registers
-    uint16_t r_PC;
-    uint8_t r_SP;
-    uint8_t r_A;
-    uint8_t r_X;
-    uint8_t r_Y;
+    /// The Y register
+    NES_Byte register_Y;
 
-    //Status flags.
-    //Is storing them in one byte better ?
-    bool f_C;
-    bool f_Z;
-    bool f_I;
-//            bool f_B;
-    bool f_D;
-    bool f_V;
-    bool f_N;
+    /// The flags register
+    Flags flags;
+
+    /// The number of cycles to skip
+    int skip_cycles;
+
+    /// The number of cycles the CPU has run
+    int cycles;
+
+    /// Set the zero and negative flags based on the given value.
+    ///
+    /// @param value the value to set the zero and negative flags using
+    ///
+    inline void set_ZN(NES_Byte value) {
+        flags.bits.Z = !value; flags.bits.N = value & 0x80;
+    };
+
+    /// Read a 16-bit address from the bus given an address.
+    ///
+    /// @param bus the bus to read data from
+    /// @param address the address in memory to read an address from
+    /// @return the 16-bit address located at the given memory address
+    ///
+    inline NES_Address read_address(MainBus &bus, NES_Address address) {
+        return bus.read(address) | bus.read(address + 1) << 8;
+    };
+
+    /// Push a value onto the stack.
+    ///
+    /// @param bus the bus to read data from
+    /// @param value the value to push onto the stack
+    ///
+    inline void push_stack(MainBus &bus, NES_Byte value) {
+        bus.write(0x100 | register_SP--, value);
+    };
+
+    /// Pop a value off the stack.
+    ///
+    /// @param bus the bus to read data from
+    /// @return the value on the top of the stack
+    ///
+    inline NES_Byte pop_stack(MainBus &bus) {
+        return bus.read(0x100 | ++register_SP);
+    };
+
+    /// Increment the skip cycles if two addresses refer to different pages.
+    ///
+    /// @param a an address
+    /// @param b another address
+    /// @param inc the number of skip cycles to add
+    ///
+    inline void set_page_crossed(NES_Address a, NES_Address b, int inc = 1) {
+        if ((a & 0xff00) != (b & 0xff00)) skip_cycles += inc;
+    };
+
+    /// Execute an implied mode instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool implied(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a branch instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool branch(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a type 0 instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool type0(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a type 1 instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool type1(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a type 2 instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool type2(MainBus &bus, NES_Byte opcode);
+
+    /// Reset the emulator using the given starting address.
+    ///
+    /// @param start_address the starting address for the program counter
+    ///
+    void reset(NES_Address start_address);
 
 public:
+    /// The interrupt types available to this CPU
     enum InterruptType {
-        IRQ,
-        NMI,
-        BRK_
+        IRQ_INTERRUPT,
+        NMI_INTERRUPT,
+        BRK_INTERRUPT,
     };
 
     /// Initialize a new CPU.
     CPU() { };
 
-    //Assuming sequential execution, for asynchronously calling this with Execute, further work needed
-    void interrupt(MainBus &m_bus, InterruptType type);
+    /// Reset using the given main bus to lookup a starting address.
+    ///
+    /// @param bus the main bus of the NES emulator
+    ///
+    inline void reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); };
 
-    void step(MainBus &m_bus);
-    void reset(MainBus &m_bus);
-    void reset(uint16_t start_addr);
-    void log();
+    /// Interrupt the CPU.
+    ///
+    /// @param bus the main bus of the machine
+    /// @param type the type of interrupt to issue
+    ///
+    /// TODO: Assuming sequential execution, for asynchronously calling this
+    ///       with Execute, further work needed
+    ///
+    void interrupt(MainBus &bus, InterruptType type);
 
-    uint16_t getPC() { return r_PC; }
-    void skipDMACycles();
+    /// Perform a full CPU cycle using and storing data in the given bus.
+    ///
+    /// @param bus the bus to read and write data from / to
+    ///
+    void step(MainBus &bus);
+
+    /// Skip DMA cycles.
+    ///
+    /// 513 = 256 read + 256 write + 1 dummy read
+    /// &1 -> +1 if on odd cycle
+    ///
+    inline void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); };
 
 };
 
-#endif // CPU_H
+#endif // CPU_HPP

@@ -5,29 +5,31 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef PICTUREBUS_H
-#define PICTUREBUS_H
+#ifndef PICTURE_BUS_HPP
+#define PICTURE_BUS_HPP
 
-#include <vector>
-#include "cartridge.hpp"
+#include "common.hpp"
 #include "mapper.hpp"
+#include <vector>
+#include <stdlib.h>
 
 /// The bus for graphical data to travel along
 class PictureBus {
 
 private:
     /// the VRAM on the picture bus
-    std::vector<uint8_t> m_RAM;
+    std::vector<NES_Byte> ram;
     /// indexes where they start in RAM vector
-    std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
+    // std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
+    std::size_t name_tables[4] = {0, 0, 0, 0};
     /// the palette for decoding RGB tuples
-    std::vector<uint8_t> m_palette;
+    std::vector<NES_Byte> palette;
     /// a pointer to the mapper on the cartridge
-    Mapper* m_mapper;
+    Mapper* mapper;
 
 public:
     /// Initialize a new picture bus.
-    PictureBus() : m_RAM(0x800), m_palette(0x20), m_mapper(nullptr) { };;
+    PictureBus() : ram(0x800), palette(0x20), mapper(nullptr) { };;
 
     /// Read a byte from an address on the VRAM.
     ///
@@ -35,20 +37,20 @@ public:
     ///
     /// @return the byte located at the given address
     ///
-    uint8_t read(uint16_t address);
+    NES_Byte read(NES_Address address);
 
     /// Write a byte to an address in the VRAM.
     ///
     /// @param address the 16-bit address to write the byte to in VRAM
     /// @param value the byte to write to the given address
     ///
-    void write(uint16_t address, uint8_t value);
+    void write(NES_Address address, NES_Byte value);
 
     /// Set the mapper pointer to a new value.
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool set_mapper(Mapper *mapper);
+    inline void set_mapper(Mapper *mapper) { this->mapper = mapper; update_mirroring(); };
 
     /// Read a color index from the palette.
     ///
@@ -56,11 +58,11 @@ public:
     ///
     /// @return the index of the RGB tuple in the color array
     ///
-    uint8_t read_palette(uint8_t address) { return m_palette[address]; };
+    inline NES_Byte read_palette(NES_Byte address) { return palette[address]; };
 
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();
 
 };
 
-#endif // PICTUREBUS_H
+#endif // PICTURE_BUS_HPP

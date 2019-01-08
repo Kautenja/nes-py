@@ -5,14 +5,10 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef LOG_H
-#define LOG_H
+#ifndef LOG_HPP
+#define LOG_HPP
 
 #include <iostream>
-#include <string>
-#include <fstream>
-#include <memory>
-#include <cstring>
 
 #define debug_disabled true
 
@@ -20,8 +16,7 @@
     if (debug_disabled) {} \
     else std::cerr
 
-enum Level
-{
+enum Level {
     None,
     Error,
     Info,
@@ -29,4 +24,4 @@ enum Level
     CpuTrace
 };
 
-#endif // LOG_H
+#endif // LOG_HPP

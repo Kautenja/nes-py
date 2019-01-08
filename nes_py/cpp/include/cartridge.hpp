@@ -5,52 +5,50 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CARTRIDGE_H
-#define CARTRIDGE_H
+#ifndef CARTRIDGE_HPP
+#define CARTRIDGE_HPP
 
+#include "common.hpp"
 #include <vector>
 #include <string>
-#include <cstdint>
 
 /// A cartridge holding game ROM and a special hardware mapper emulation
 class Cartridge {
 
 private:
     /// the PRG ROM
-    std::vector<uint8_t> m_PRG_ROM;
+    std::vector<NES_Byte> prg_rom;
     /// the CHR ROM
-    std::vector<uint8_t> m_CHR_ROM;
+    std::vector<NES_Byte> chr_rom;
     /// the name table mirroring mode
-    uint8_t m_nameTableMirroring;
+    NES_Byte name_table_mirroring;
     /// the mapper ID number
-    uint8_t m_mapperNumber;
+    NES_Byte mapper_number;
     /// whether this cartridge uses extended RAM
-    bool m_extendedRAM;
-    /// whether this cartridge has CHR RAM
-    // bool m_chrRAM;
+    bool has_extended_ram;
 
 public:
     /// Initialize a new cartridge
-    Cartridge() : m_nameTableMirroring(0), m_mapperNumber(0), m_extendedRAM(false) { };
+    Cartridge() : name_table_mirroring(0), mapper_number(0), has_extended_ram(false) { };
+
+    /// Return the ROM data.
+    const inline std::vector<NES_Byte>& getROM() { return prg_rom; };
+
+    /// Return the VROM data.
+    const inline std::vector<NES_Byte>& getVROM() { return chr_rom; };
+
+    /// Return the mapper ID number.
+    inline NES_Byte getMapper() { return mapper_number; };
+
+    /// Return the name table mirroring mode.
+    inline NES_Byte getNameTableMirroring() { return name_table_mirroring; };
+
+    /// Return a boolean determining whether this cartridge uses extended RAM.
+    inline bool hasExtendedRAM() { return has_extended_ram; };
 
     /// Load a ROM file into the cartridge and build the corresponding mapper.
     void loadFromFile(std::string path);
 
-    /// Return the ROM data.
-    const std::vector<uint8_t>& getROM() { return m_PRG_ROM; };
-
-    /// Return the VROM data.
-    const std::vector<uint8_t>& getVROM() { return m_CHR_ROM; };
-
-    /// Return the mapper ID number.
-    uint8_t getMapper() { return m_mapperNumber; };
-
-    /// Return the name table mirroring mode.
-    uint8_t getNameTableMirroring() { return m_nameTableMirroring; };
-
-    /// Return a boolean determining whether this cartridge uses extended RAM.
-    bool hasExtendedRAM() { return m_extendedRAM; };
-
 };
 
-#endif // CARTRIDGE_H
+#endif // CARTRIDGE_HPP

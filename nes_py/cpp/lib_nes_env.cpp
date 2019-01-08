@@ -5,9 +5,9 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include "common.hpp"
 #include "emulator.hpp"
-#include <stdint.h>
-#include <cstring>
+#include <string>
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -39,10 +39,10 @@ extern "C" {
     }
 
     /// Return the pointer to the screen buffer
-    EXP uint32_t* Screen(Emulator* emu) { return emu->get_screen_buffer(); }
+    EXP NES_Pixel* Screen(Emulator* emu) { return emu->get_screen_buffer(); }
 
     /// Return the pointer to the memory buffer
-    EXP uint8_t* Memory(Emulator* emu) { return emu->get_memory_buffer(); }
+    EXP NES_Byte* Memory(Emulator* emu) { return emu->get_memory_buffer(); }
 
     /// Reset the emulator
     EXP void Reset(Emulator* emu) { emu->reset(); }

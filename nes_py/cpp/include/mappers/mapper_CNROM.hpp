@@ -5,17 +5,19 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERCNROM_H
-#define MAPPERCNROM_H
+#ifndef MAPPERCNROM_HPP
+#define MAPPERCNROM_HPP
+
+#include "common.hpp"
 #include "mapper.hpp"
 
 class MapperCNROM : public Mapper {
 
 private:
     /// whether there are 1 or 2 banks
-    bool m_oneBank;
+    bool is_one_bank;
     /// TODO: what is this value
-    uint16_t m_selectCHR;
+    NES_Address select_chr;
 
 public:
     /// Create a new mapper with a cartridge.
@@ -26,39 +28,39 @@ public:
 
     /// Read a byte from the PRG RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    uint8_t readPRG (uint16_t addr);
+    NES_Byte readPRG (NES_Address address);
 
     /// Write a byte to an address in the PRG RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (uint16_t addr, uint8_t value) { m_selectCHR = value & 0x3; };
+    inline void writePRG (NES_Address address, NES_Byte value) { select_chr = value & 0x3; };
 
     /// Read a byte from the CHR RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    uint8_t readCHR (uint16_t addr) { return m_cartridge.getVROM()[addr | (m_selectCHR << 13)]; };
+    inline NES_Byte readCHR (NES_Address address) { return cartridge.getVROM()[address | (select_chr << 13)]; };
 
     /// Write a byte to an address in the CHR RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writeCHR (uint16_t addr, uint8_t value);
+    void writeCHR (NES_Address address, NES_Byte value);
 
     /// Return the page pointer for the given address.
     ///
-    /// @param addr the address of the page pointer to get
+    /// @param address the address of the page pointer to get
     /// @return the page pointer at the given address
     ///
-    const uint8_t* getPagePtr(uint16_t addr);
+    const NES_Byte* getPagePtr(NES_Address address);
 
 };
 
-#endif // MAPPERCNROM_H
+#endif // MAPPERCNROM_HPP

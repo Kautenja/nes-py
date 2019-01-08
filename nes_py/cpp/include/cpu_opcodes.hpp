@@ -5,31 +5,33 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CPUOPCODES_H_INCLUDED
-#define CPUOPCODES_H_INCLUDED
+#ifndef CPUOPCODES_HPP
+#define CPUOPCODES_HPP
 
-const auto InstructionModeMask = 0x3;
+#include "common.hpp"
 
-const auto OperationMask = 0xe0;
-const auto OperationShift = 5;
+const auto INSTRUCTION_MODE_MASK = 0x3;
 
-const auto AddrModeMask = 0x1c;
-const auto AddrModeShift = 2;
+const auto OPERATION_MASK = 0xe0;
+const auto OPERATION_SHIFT = 5;
 
-const auto BranchInstructionMask = 0x1f;
-const auto BranchInstructionMaskResult = 0x10;
-const auto BranchConditionMask = 0x20;
-const auto BranchOnFlagShift = 6;
+const auto ADRESS_MODE_MASK = 0x1c;
+const auto ADDRESS_MODE_SHIFT = 2;
 
-const auto NMIVector = 0xfffa;
-const auto ResetVector = 0xfffc;
-const auto IRQVector = 0xfffe;
+const auto BRANCH_INSTRUCTION_MASK = 0x1f;
+const auto BRANCH_INSTRUCTION_MASK_RESULT = 0x10;
+const auto BRANCH_CONDITION_MASK = 0x20;
+const auto BRANCH_ON_FLAG_SHIFT = 6;
+
+const auto NMI_VECTOR = 0xfffa;
+const auto RESET_VECTOR = 0xfffc;
+const auto IRQ_VECTOR = 0xfffe;
 
 enum BranchOnFlag {
-    Negative,
-    Overflow,
-    Carry,
-    Zero
+    NEGATIVE,
+    OVERFLOW,
+    CARRY,
+    ZERO,
 };
 
 enum Operation1 {
@@ -44,14 +46,14 @@ enum Operation1 {
 };
 
 enum AddrMode1 {
-    IndexedIndirectX,
-    ZeroPage,
-    Immediate,
-    Absolute,
-    IndirectY,
-    IndexedX,
-    AbsoluteY,
-    AbsoluteX,
+    M1_INDEXED_INDIRECT_X,
+    M1_ZERO_PAGE,
+    M1_IMMEDIATE,
+    M1_ABSOLUTE,
+    M1_INDIRECT_Y,
+    M1_INDEXED_X,
+    M1_ABSOLUTE_Y,
+    M1_ABSOLUTE_X,
 };
 
 enum Operation2 {
@@ -66,12 +68,12 @@ enum Operation2 {
 };
 
 enum AddrMode2 {
-    Immediate_,
-    ZeroPage_,
-    Accumulator,
-    Absolute_,
-    Indexed         = 5,
-    AbsoluteIndexed = 7,
+    M2_IMMEDIATE,
+    M2_ZERO_PAGE,
+    M2_ACCUMULATOR,
+    M2_ABSOLUTE,
+    M2_INDEXED          = 5,
+    M2_ABSOLUTE_INDEXED = 7,
 };
 
 enum Operation0 {
@@ -82,6 +84,7 @@ enum Operation0 {
     CPX,
 };
 
+/// Implied mode opcodes
 enum OperationImplied {
     NOP = 0xea,
     BRK = 0x00,
@@ -118,8 +121,9 @@ enum OperationImplied {
     TSX = 0xba,
 };
 
-//0 implies unused opcode
-int OperationCycles[0x100] = {
+/// a mapping of opcodes to the number of cycles used by the opcode. 0 implies
+/// an unused opcode.
+const NES_Byte OPERATION_CYCLES[0x100] = {
     7, 6, 0, 0, 0, 3, 5, 0, 3, 2, 2, 0, 0, 4, 6, 0,
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
     6, 6, 0, 0, 3, 3, 5, 0, 4, 2, 2, 0, 4, 4, 6, 0,
@@ -138,4 +142,4 @@ int OperationCycles[0x100] = {
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
 };
 
-#endif // CPUOPCODES_H_INCLUDED
+#endif // CPUOPCODES_HPP

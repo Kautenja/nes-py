@@ -5,14 +5,13 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAIN_BUS_H
-#define MAIN_BUS_H
+#ifndef MAIN_BUS_HPP
+#define MAIN_BUS_HPP
 
+#include "common.hpp"
+#include "mapper.hpp"
 #include <vector>
 #include <map>
-#include <functional>
-#include "cartridge.hpp"
-#include "mapper.hpp"
 
 /// The IO registers on the main bus
 enum IORegisters {
@@ -31,58 +30,63 @@ enum IORegisters {
 
 /// The main bus for data to travel along the NES hardware
 class MainBus {
+
 private:
     /// The RAM on the main bus
-    std::vector<uint8_t> m_RAM;
+    std::vector<NES_Byte> ram;
     /// The extended RAM (if the mapper has extended RAM)
-    std::vector<uint8_t> m_extRAM;
+    std::vector<NES_Byte> extended_ram;
     /// a pointer to the mapper on the cartridge
-    Mapper* m_mapper;
+    Mapper* mapper;
     /// a map of IO registers to callback methods for writes
-    std::map<IORegisters, std::function<void(uint8_t)>> m_writeCallbacks;
+    std::map<IORegisters, std::function<void(NES_Byte)>> write_callbacks;
     /// a map of IO registers to callback methods for reads
-    std::map<IORegisters, std::function<uint8_t(void)>> m_readCallbacks;
+    std::map<IORegisters, std::function<NES_Byte(void)>> read_callbacks;
 
 public:
     /// Initialize a new main bus.
-    MainBus() : m_RAM(0x800, 0), m_mapper(nullptr) { };
+    MainBus() : ram(0x800, 0), mapper(nullptr) { };
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    uint8_t* get_memory_buffer() { return &m_RAM.front(); };
+    inline NES_Byte* get_memory_buffer() { return &ram.front(); };
 
     /// Read a byte from an address on the RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read in the RAM
+    /// @param address the 16-bit address of the byte to read in the RAM
     ///
     /// @return the byte located at the given address
     ///
-    uint8_t read(uint16_t addr);
+    NES_Byte read(NES_Address address);
 
     /// Write a byte to an address in the RAM.
     ///
-    /// @param addr the 16-bit address to write the byte to in RAM
+    /// @param address the 16-bit address to write the byte to in RAM
     /// @param value the byte to write to the given address
     ///
-    void write(uint16_t addr, uint8_t value);
+    void write(NES_Address address, NES_Byte value);
 
     /// Set the mapper pointer to a new value.
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    bool set_mapper(Mapper* mapper);
+    void set_mapper(Mapper* mapper);
 
     /// Set a callback for when writes occur.
-    bool set_write_callback(IORegisters reg, std::function<void(uint8_t)> callback);
+    inline void set_write_callback(IORegisters reg, std::function<void(NES_Byte)> callback) {
+        write_callbacks.emplace(reg, callback);
+    };
 
     /// Set a callback for when reads occur.
-    bool set_read_callback(IORegisters reg, std::function<uint8_t(void)> callback);
+    inline void set_read_callback(IORegisters reg, std::function<NES_Byte(void)> callback) {
+        read_callbacks.emplace(reg, callback);
+    };
 
     /// Return a pointer to the page in memory.
-    const uint8_t* get_page_pointer(uint8_t page);
+    const NES_Byte* get_page_pointer(NES_Byte page);
 
 };
 
-#endif // MAIN_BUS_H
+#endif // MAIN_BUS_HPP

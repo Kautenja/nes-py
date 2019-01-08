@@ -1,18 +1,18 @@
 //  Program:      nes-py
-//  File:         palette_colors.hpp
+//  File:         palette.hpp
 //  Description:  This file describes the color palette for RGB conversion
 //
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef PALETTE_COLORS_H
-#define PALETTE_COLORS_H
+#ifndef PALETTE_COLORS_HPP
+#define PALETTE_COLORS_HPP
 
-#include <cstdint>
+#include "common.hpp"
 
 // Colors in xRGB
 // source: http://www.thealmightyguru.com/Games/Hacking/Wiki/index.php/NES_Palette
-const uint32_t colors[] = {
+const NES_Pixel PALETTE[] = {
     0x7C7C7C, 0x0000FC, 0x0000BC, 0x4428BC, 0x940084, 0xA80020, 0xA81000, 0x881400,
     0x503000, 0x007800, 0x006800, 0x005800, 0x004058, 0x000000, 0x000000, 0x000000,
     0xBCBCBC, 0x0078F8, 0x0058F8, 0x6844FC, 0xD800CC, 0xE40058, 0xF83800, 0xE45C10,
@@ -23,4 +23,4 @@ const uint32_t colors[] = {
     0xF8D878, 0xD8F878, 0xB8F8B8, 0xB8F8D8, 0x00FCFC, 0xF8D8F8, 0x000000, 0x000000
 };
 
-#endif // PALETTE_COLORS_H
+#endif // PALETTE_COLORS_HPP

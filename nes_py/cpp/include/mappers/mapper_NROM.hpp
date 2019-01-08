@@ -5,20 +5,21 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERNROM_H
-#define MAPPERNROM_H
+#ifndef MAPPERNROM_HPP
+#define MAPPERNROM_HPP
 
+#include "common.hpp"
 #include "mapper.hpp"
 
 class MapperNROM : public Mapper {
 
 private:
     /// whether there are 1 or 2 banks
-    bool m_oneBank;
+    bool is_one_bank;
     /// whether this mapper uses character RAM
-    bool m_usesCharacterRAM;
+    bool has_character_ram;
     /// the character RAM on the mapper
-    std::vector<uint8_t> m_characterRAM;
+    std::vector<NES_Byte> character_ram;
 
 public:
     /// Create a new mapper with a cartridge.
@@ -29,39 +30,39 @@ public:
 
     /// Read a byte from the PRG RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    uint8_t readPRG (uint16_t addr);
+    NES_Byte readPRG (NES_Address address);
 
     /// Write a byte to an address in the PRG RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (uint16_t addr, uint8_t value);
+    void writePRG (NES_Address address, NES_Byte value);
 
     /// Read a byte from the CHR RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    uint8_t readCHR (uint16_t addr);
+    NES_Byte readCHR (NES_Address address);
 
     /// Write a byte to an address in the CHR RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writeCHR (uint16_t addr, uint8_t value);
+    void writeCHR (NES_Address address, NES_Byte value);
 
     /// Return the page pointer for the given address.
     ///
-    /// @param addr the address of the page pointer to get
+    /// @param address the address of the page pointer to get
     /// @return the page pointer at the given address
     ///
-    const uint8_t* getPagePtr(uint16_t addr);
+    const NES_Byte* getPagePtr(NES_Address address);
 
 };
 
-#endif // MAPPERNROM_H
+#endif // MAPPERNROM_HPP

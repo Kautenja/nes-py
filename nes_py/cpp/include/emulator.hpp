@@ -5,9 +5,10 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef EMULATOR_H
-#define EMULATOR_H
+#ifndef EMULATOR_HPP
+#define EMULATOR_HPP
 
+#include "common.hpp"
 #include "cartridge.hpp"
 #include "controller.hpp"
 #include "cpu.hpp"
@@ -15,13 +16,12 @@
 #include "main_bus.hpp"
 #include "mapper.hpp"
 #include "picture_bus.hpp"
-#include <stdint.h>
 #include <string>
 
 /// The width of the NES screen in pixels
-const int NES_VIDEO_WIDTH = ScanlineVisibleDots;
+const int NES_VIDEO_WIDTH = SCANLINE_VISIBLE_DOTS;
 /// The height of the NES screen in pixels
-const int NES_VIDEO_HEIGHT = VisibleScanlines;
+const int NES_VIDEO_HEIGHT = VISIBLE_SCANLINES;
 /// The number of cycles in approximately 1 frame
 const int STEPS_PER_FRAME = 29781;
 
@@ -29,8 +29,6 @@ const int STEPS_PER_FRAME = 29781;
 class Emulator {
 
 private:
-    /// the path to the ROM for this environment
-    std::string rom_path;
     /// the virtual cartridge with ROM and mapper data
     Cartridge cartridge;
     /// a pointer to the mapper on the cartridge
@@ -57,29 +55,29 @@ private:
     PPU backup_ppu;
 
     /// Skip DMA cycle and perform a DMA copy.
-    void DMA(uint8_t page);
+    void DMA(NES_Byte page);
 
 public:
     /// Initialize a new emulator with a path to a ROM file.
     ///
-    /// @param path the path to the ROM for the emulator to run
+    /// @param rom_path the path to the ROM for the emulator to run
     ///
-    Emulator(std::string path);
+    Emulator(std::string rom_path);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///
     /// @return a 32-bit pointer to the screen buffer's first address
     ///
-    uint32_t* get_screen_buffer() { return ppu.get_screen_buffer(); };
+    inline NES_Pixel* get_screen_buffer() { return ppu.get_screen_buffer(); };
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    uint8_t* get_memory_buffer() { return bus.get_memory_buffer(); };
+    inline NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
 
     /// Load the ROM into the NES.
-    void reset() { cpu.reset(bus); ppu.reset(); };
+    inline void reset() { cpu.reset(bus); ppu.reset(); };
 
     /// Perform a discrete "step" of the NES by rendering 1 frame.
     ///
@@ -106,4 +104,4 @@ public:
 
 };
 
-#endif // EMULATOR_H
+#endif // EMULATOR_HPP

@@ -8,33 +8,25 @@
 #include "emulator.hpp"
 #include "log.hpp"
 
-Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
-    // raise an error if IO callback setup fails
-    if (
-        !bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.getStatus();}) ||
-        !bus.set_read_callback(PPUDATA, [&](void) {return ppu.getData(picture_bus);}) ||
-        !bus.set_read_callback(JOY1, [&](void) {return controller1.read();}) ||
-        !bus.set_read_callback(JOY2, [&](void) {return controller2.read();}) ||
-        !bus.set_read_callback(OAMDATA, [&](void) {return ppu.getOAMData();})
-    ) {
-        LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
-    }
-    // raise an error if IO callback setup fails
-    if (
-        !bus.set_write_callback(PPUCTRL, [&](uint8_t b) {ppu.control(b);}) ||
-        !bus.set_write_callback(PPUMASK, [&](uint8_t b) {ppu.setMask(b);}) ||
-        !bus.set_write_callback(OAMADDR, [&](uint8_t b) {ppu.setOAMAddress(b);}) ||
-        !bus.set_write_callback(PPUADDR, [&](uint8_t b) {ppu.setDataAddress(b);}) ||
-        !bus.set_write_callback(PPUSCROL, [&](uint8_t b) {ppu.setScroll(b);}) ||
-        !bus.set_write_callback(PPUDATA, [&](uint8_t b) {ppu.setData(picture_bus, b);}) ||
-        !bus.set_write_callback(OAMDMA, [&](uint8_t b) {DMA(b);}) ||
-        !bus.set_write_callback(JOY1, [&](uint8_t b) {controller1.strobe(b); controller2.strobe(b);}) ||
-        !bus.set_write_callback(OAMDATA, [&](uint8_t b) {ppu.setOAMData(b);})
-    ) {
-        LOG(Error) << "Critical error: Failed to set I/O callbacks" << std::endl;
-    }
+Emulator::Emulator(std::string rom_path) {
+    // set the read callbacks
+    bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.get_status();});
+    bus.set_read_callback(PPUDATA, [&](void) {return ppu.get_data(picture_bus);});
+    bus.set_read_callback(JOY1, [&](void) {return controller1.read();});
+    bus.set_read_callback(JOY2, [&](void) {return controller2.read();});
+    bus.set_read_callback(OAMDATA, [&](void) {return ppu.get_OAM_data();});
+    // set the write callbacks
+    bus.set_write_callback(PPUCTRL, [&](NES_Byte b) {ppu.control(b);});
+    bus.set_write_callback(PPUMASK, [&](NES_Byte b) {ppu.set_mask(b);});
+    bus.set_write_callback(OAMADDR, [&](NES_Byte b) {ppu.set_OAM_address(b);});
+    bus.set_write_callback(PPUADDR, [&](NES_Byte b) {ppu.set_data_address(b);});
+    bus.set_write_callback(PPUSCROL, [&](NES_Byte b) {ppu.set_scroll(b);});
+    bus.set_write_callback(PPUDATA, [&](NES_Byte b) {ppu.set_data(picture_bus, b);});
+    bus.set_write_callback(OAMDMA, [&](NES_Byte b) {DMA(b);});
+    bus.set_write_callback(JOY1, [&](NES_Byte b) {controller1.strobe(b); controller2.strobe(b);});
+    bus.set_write_callback(OAMDATA, [&](NES_Byte b) {ppu.set_OAM_data(b);});
     // set the interrupt callback for the PPU
-    ppu.setInterruptCallback([&](){ cpu.interrupt(bus, CPU::NMI); });
+    ppu.set_interrupt_callback([&](){ cpu.interrupt(bus, CPU::NMI_INTERRUPT); });
     // load the ROM from disk, expect that the Python code has validated it
     cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM
@@ -43,11 +35,11 @@ Emulator::Emulator(std::string path) : rom_path(path), cpu(), ppu() {
     picture_bus.set_mapper(mapper);
 }
 
-void Emulator::DMA(uint8_t page) {
+void Emulator::DMA(NES_Byte page) {
     // skip the DMA cycles on the CPU
-    cpu.skipDMACycles();
+    cpu.skip_DMA_cycles();
     // do the DMA page change on the PPU
-    ppu.doDMA(bus.get_page_pointer(page));
+    ppu.do_DMA(bus.get_page_pointer(page));
 }
 
 void Emulator::step(unsigned char action) {

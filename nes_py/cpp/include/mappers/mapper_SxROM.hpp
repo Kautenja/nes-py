@@ -5,38 +5,45 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef MAPPERSXROM_H
-#define MAPPERSXROM_H
+#ifndef MAPPERSXROM_HPP
+#define MAPPERSXROM_HPP
 
+#include "common.hpp"
 #include "mapper.hpp"
 
 class MapperSxROM : public Mapper {
 
 private:
     /// The mirroring callback on the PPU
-    std::function<void(void)> m_mirroringCallback;
+    std::function<void(void)> mirroring_callback;
     /// the mirroring mode on the device
-    NameTableMirroring m_mirroing;
+    NameTableMirroring mirroing;
     /// whether the cartridge uses character RAM
-    bool m_usesCharacterRAM;
+    bool has_character_ram;
     /// the mode for CHR ROM
-    int m_modeCHR;
+    int mode_chr;
     /// the mode for PRG ROM
-    int m_modePRG;
+    int mode_prg;
     /// a temporary register
-    uint8_t m_tempRegister;
+    NES_Byte temp_register;
     /// a write counter
-    int m_writeCounter;
-    /// TODO: what are these variables
-    uint8_t m_regPRG;
-    uint8_t m_regCHR0;
-    uint8_t m_regCHR1;
-    const uint8_t* m_firstBankPRG;
-    const uint8_t* m_secondBankPRG;
-    const uint8_t* m_firstBankCHR;
-    const uint8_t* m_secondBankCHR;
+    int write_counter;
+    /// the PRG register
+    NES_Byte register_prg;
+    /// The first CHR register
+    NES_Byte register_chr0;
+    /// The second CHR register
+    NES_Byte register_chr1;
+    /// The first PRG bank
+    const NES_Byte* first_bank_prg;
+    /// The second PRG bank
+    const NES_Byte* second_bank_prg;
+    /// The first CHR bank
+    const NES_Byte* first_bank_chr;
+    /// The second CHR bank
+    const NES_Byte* second_bank_chr;
     /// The character RAM on the cartridge
-    std::vector<uint8_t> m_characterRAM;
+    std::vector<NES_Byte> character_ram;
 
     /// TODO: what does this do
     void calculatePRGPointers();
@@ -45,47 +52,48 @@ public:
     /// Create a new mapper with a cartridge.
     ///
     /// @param cart a reference to a cartridge for the mapper to access
+    /// @param mirroring_cb the callback to change mirroring modes on the PPU
     ///
     MapperSxROM(Cartridge& cart, std::function<void(void)> mirroring_cb);
 
     /// Read a byte from the PRG RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    uint8_t readPRG (uint16_t addr);
+    NES_Byte readPRG (NES_Address address);
 
     /// Write a byte to an address in the PRG RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (uint16_t addr, uint8_t value);
+    void writePRG (NES_Address address, NES_Byte value);
 
     /// Read a byte from the CHR RAM.
     ///
-    /// @param addr the 16-bit address of the byte to read
+    /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    uint8_t readCHR (uint16_t addr);
+    NES_Byte readCHR (NES_Address address);
 
     /// Write a byte to an address in the CHR RAM.
     ///
-    /// @param addr the 16-bit address to write to
+    /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writeCHR (uint16_t addr, uint8_t value);
+    void writeCHR (NES_Address address, NES_Byte value);
 
     /// Return the page pointer for the given address.
     ///
-    /// @param addr the address of the page pointer to get
+    /// @param address the address of the page pointer to get
     /// @return the page pointer at the given address
     ///
-    const uint8_t* getPagePtr(uint16_t addr);
+    const NES_Byte* getPagePtr(NES_Address address);
 
     /// Return the name table mirroring mode of this mapper.
-    NameTableMirroring getNameTableMirroring() { return m_mirroing; };
+    inline NameTableMirroring getNameTableMirroring() { return mirroing; };
 
 };
 
-#endif // MAPPERSXROM_H
+#endif // MAPPERSXROM_HPP

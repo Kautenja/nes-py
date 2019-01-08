@@ -11,7 +11,6 @@
 #include "common.hpp"
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
-#include "palette_colors.hpp"
 
 /// The number of cycles per scanline
 const int SCANLINE_CYCLE_LENGTH = 341;

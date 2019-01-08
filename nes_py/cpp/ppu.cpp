@@ -6,8 +6,8 @@
 //
 
 #include "ppu.hpp"
+#include "palette.hpp"
 #include "log.hpp"
-#include <cstring>
 
 void PPU::reset() {
     m_longSprites = m_generateInterrupt = m_greyscaleMode = m_vblank = false;
@@ -167,7 +167,7 @@ void PPU::cycle(PictureBus& m_bus) {
                 else if (!bgOpaque && !sprOpaque)
                     paletteAddr = 0;
 
-                screen_buffer[y][x] = colors[m_bus.read_palette(paletteAddr)];
+                screen_buffer[y][x] = PALETTE[m_bus.read_palette(paletteAddr)];
 
             }
             else if (m_cycle == SCANLINE_VISIBLE_DOTS + 1 && m_showBackground) {

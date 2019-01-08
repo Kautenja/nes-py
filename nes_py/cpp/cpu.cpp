@@ -10,7 +10,7 @@
 #include "log.hpp"
 
 
-bool CPU::execute_implied(MainBus &bus, NES_Byte opcode) {
+bool CPU::implied(MainBus &bus, NES_Byte opcode) {
     switch (static_cast<OperationImplied>(opcode)) {
         case NOP:
             break;
@@ -129,7 +129,7 @@ bool CPU::execute_implied(MainBus &bus, NES_Byte opcode) {
     return true;
 }
 
-bool CPU::execute_branch(MainBus &bus, NES_Byte opcode) {
+bool CPU::branch(MainBus &bus, NES_Byte opcode) {
     if ((opcode & BRANCH_INSTRUCTION_MASK) == BRANCH_INSTRUCTION_MASK_RESULT) {
         //branch is initialized to the condition required (for the flag specified later)
         bool branch = opcode & BRANCH_CONDITION_MASK;
@@ -167,7 +167,7 @@ bool CPU::execute_branch(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
-bool CPU::execute_type0(MainBus &bus, NES_Byte opcode) {
+bool CPU::type0(MainBus &bus, NES_Byte opcode) {
     if ((opcode & INSTRUCTION_MODE_MASK) == 0x0) {
         NES_Address location = 0;
         switch (static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT)) {
@@ -230,7 +230,7 @@ bool CPU::execute_type0(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
-bool CPU::execute_type1(MainBus &bus, NES_Byte opcode) {
+bool CPU::type1(MainBus &bus, NES_Byte opcode) {
     if ((opcode & INSTRUCTION_MODE_MASK) == 0x1) {
         NES_Address location = 0; //Location of the operand, could be in RAM
         auto op = static_cast<Operation1>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
@@ -340,7 +340,7 @@ bool CPU::execute_type1(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
-bool CPU::execute_type2(MainBus &bus, NES_Byte opcode) {
+bool CPU::type2(MainBus &bus, NES_Byte opcode) {
     if ((opcode & INSTRUCTION_MODE_MASK) == 2) {
         NES_Address location = 0;
         auto op = static_cast<Operation2>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
@@ -495,42 +495,22 @@ void CPU::interrupt(MainBus &bus, InterruptType type) {
 }
 
 void CPU::step(MainBus &bus) {
+    // increment the number of cycles
     ++cycles;
-
+    // if in a skip cycle, return
     if (skip_cycles-- > 1)
         return;
-
+    // reset the number of skip cycles to 0
     skip_cycles = 0;
-
-    // int psw =    flags.bits.N << 7 |
-    //              flags.bits.V << 6 |
-    //                1 << 5 |
-    //              flags.bits.D << 3 |
-    //              flags.bits.I << 2 |
-    //              flags.bits.Z << 1 |
-    //              flags.bits.C;
-    // std::cout << std::hex << std::setfill('0') << std::uppercase
-    //           << std::setw(4) << +register_PC
-    //           << "  "
-    //           << std::setw(2) << +bus.read(register_PC)
-    //           << "  "
-    //           << "A:"   << std::setw(2) << +register_A << " "
-    //           << "X:"   << std::setw(2) << +register_X << " "
-    //           << "Y:"   << std::setw(2) << +register_Y << " "
-    //           << "P:"   << std::setw(2) << psw << " "
-    //           << "SP:"  << std::setw(2) << +register_SP  << /*std::endl;*/" "
-    //           << "CYC:" << std::setw(3) << std::setfill(' ') << std::dec << ((cycles - 1) * 3) % 341
-    //           << std::endl;
-
-    NES_Byte opcode = bus.read(register_PC++);
-    auto CycleLength = OPERATION_CYCLES[opcode];
-
+    // read the opcode from the bus and lookup the number of cycles
+    NES_Byte op = bus.read(register_PC++);
+    // lookup the number of cycles required for this operation
+    auto cycle_length = OPERATION_CYCLES[op];
     // Using short-circuit evaluation, call the other function only if the
     // first failed. ExecuteImplied must be called first and ExecuteBranch
     // must be before ExecuteType0
-    if (CycleLength && (execute_implied(bus, opcode) || execute_branch(bus, opcode) ||
-                    execute_type1(bus, opcode) || execute_type2(bus, opcode) || execute_type0(bus, opcode)))
-        skip_cycles += CycleLength;
+    if (implied(bus, op) || branch(bus, op) || type1(bus, op) || type2(bus, op) || type0(bus, op))
+        skip_cycles += cycle_length;
     else
-        std::cout << "Unrecognized opcode: " << std::hex << +opcode << std::endl;
+        std::cout << "failed to execute opcode: " << std::hex << +op << std::endl;
 }

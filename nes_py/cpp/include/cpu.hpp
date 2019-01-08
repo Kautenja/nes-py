@@ -106,7 +106,7 @@ private:
     /// @param opcode the opcode of the operation to perform
     /// @return true if the instruction succeeds
     ///
-    bool execute_implied(MainBus &bus, NES_Byte opcode);
+    bool implied(MainBus &bus, NES_Byte opcode);
 
     /// Execute a branch instruction.
     ///
@@ -114,7 +114,7 @@ private:
     /// @param opcode the opcode of the operation to perform
     /// @return true if the instruction succeeds
     ///
-    bool execute_branch(MainBus &bus, NES_Byte opcode);
+    bool branch(MainBus &bus, NES_Byte opcode);
 
     /// Execute a type 0 instruction.
     ///
@@ -122,7 +122,7 @@ private:
     /// @param opcode the opcode of the operation to perform
     /// @return true if the instruction succeeds
     ///
-    bool execute_type0(MainBus &bus, NES_Byte opcode);
+    bool type0(MainBus &bus, NES_Byte opcode);
 
     /// Execute a type 1 instruction.
     ///
@@ -130,7 +130,7 @@ private:
     /// @param opcode the opcode of the operation to perform
     /// @return true if the instruction succeeds
     ///
-    bool execute_type1(MainBus &bus, NES_Byte opcode);
+    bool type1(MainBus &bus, NES_Byte opcode);
 
     /// Execute a type 2 instruction.
     ///
@@ -138,7 +138,7 @@ private:
     /// @param opcode the opcode of the operation to perform
     /// @return true if the instruction succeeds
     ///
-    bool execute_type2(MainBus &bus, NES_Byte opcode);
+    bool type2(MainBus &bus, NES_Byte opcode);
 
     /// Reset the emulator using the given starting address.
     ///

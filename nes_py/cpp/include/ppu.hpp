@@ -12,25 +12,26 @@
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
 
-/// The number of cycles per scanline
-const int SCANLINE_CYCLE_LENGTH = 341;
-/// The last cycle of a scan line
-const int SCANLINE_END_CYCLE = 340;
 /// The number of visible scan lines (i.e., the height of the screen)
 const int VISIBLE_SCANLINES = 240;
 /// The number of visible dots per scan line (i.e., the width of the screen)
 const int SCANLINE_VISIBLE_DOTS = 256;
-/// The last memory frame of a scanline
+/// The number of cycles per scanline
+const int SCANLINE_CYCLE_LENGTH = 341;
+/// The last cycle of a scan line
+const int SCANLINE_END_CYCLE = 340;
+/// The last scanline per frame
 const int FRAME_END_SCANLINE = 261;
 
-/// The picture processing unit for the NES
+/// The Picture Processing Unit (PPU) for the NES
 class PPU {
 
 private:
+    /// The callback to fire when entering vertical blanking mode
     std::function<void(void)> vblank_callback;
-
+    /// The OAM memory (sprites)
     std::vector<NES_Byte> sprite_memory;
-
+    /// OAM memory (sprites) for the next scanline
     std::vector<NES_Byte> scanline_sprites;
 
     /// The current pipeline state of the PPU
@@ -41,11 +42,16 @@ private:
         VERTICAL_BLANK
     } pipeline_state;
 
+    /// The number of cycles left in the frame
     int cycles;
+    /// the current scanline of the frame
     int scanline;
+    /// whether the PPU is on an even frame
     bool is_even_frame;
 
+    /// whether the PPU is in vertical blanking mode
     bool is_vblank;
+    /// whether sprite 0 has been hit (i.e., collision detection)
     bool is_sprite_zero_hit;
 
     // Registers
@@ -60,12 +66,18 @@ private:
 
     // Setup flags and variables
 
+    /// TODO: doc
     bool is_long_sprites;
+    /// whether the PPU is in the interrupt handler
     bool is_interrupting;
 
+    /// whether the PPU is showing sprites
     bool is_showing_sprites;
+    /// whether the PPU is showing background pixels
     bool is_showing_background;
+    /// whether the PPU is hiding sprites along the edges
     bool is_hiding_edge_sprites;
+    /// whether the PPU is hiding the background along the edges
     bool is_hiding_edge_background;
 
     enum CharacterPage {
@@ -85,14 +97,14 @@ private:
     /// @param address the address to read from OAM memory
     /// @return the byte at the given address in OAM memory
     ///
-    inline NES_Byte readOAM(NES_Byte address) { return sprite_memory[address]; };
+    inline NES_Byte read_OAM(NES_Byte address) { return sprite_memory[address]; };
 
     /// Write a byte to OAM memory.
     ///
     /// @param address the address to write to in OAM memory
     /// @param value the byte to write to the given address
     ///
-    inline void writeOAM(NES_Byte address, NES_Byte value) { sprite_memory[address] = value; };
+    inline void write_OAM(NES_Byte address, NES_Byte value) { sprite_memory[address] = value; };
 
 public:
     /// Initialize a new PPU
@@ -126,8 +138,8 @@ public:
 
     NES_Byte getStatus();
     NES_Byte getData(PictureBus& bus);
-    NES_Byte getOAMData() { return readOAM(sprite_data_address); };
-    void setOAMData(NES_Byte value) { writeOAM(sprite_data_address++, value); };
+    NES_Byte getOAMData() { return read_OAM(sprite_data_address); };
+    void setOAMData(NES_Byte value) { write_OAM(sprite_data_address++, value); };
 
     /// Return a pointer to the screen buffer.
     NES_Pixel* get_screen_buffer() { return *screen; };

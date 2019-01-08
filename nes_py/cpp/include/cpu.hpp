@@ -100,14 +100,45 @@ private:
         if ((a & 0xff00) != (b & 0xff00)) skip_cycles += inc;
     };
 
-    //Instructions are split into five sets to make decoding easier.
-    //These functions return true if they succeed
+    /// Execute an implied mode instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool execute_implied(MainBus &bus, NES_Byte opcode);
 
-    bool executeImplied(MainBus &bus, NES_Byte opcode);
-    bool executeBranch(MainBus &bus, NES_Byte opcode);
-    bool executeType0(MainBus &bus, NES_Byte opcode);
-    bool executeType1(MainBus &bus, NES_Byte opcode);
-    bool executeType2(MainBus &bus, NES_Byte opcode);
+    /// Execute a branch instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool execute_branch(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a type 0 instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool execute_type0(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a type 1 instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool execute_type1(MainBus &bus, NES_Byte opcode);
+
+    /// Execute a type 2 instruction.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool execute_type2(MainBus &bus, NES_Byte opcode);
 
     /// Reset the emulator using the given starting address.
     ///
@@ -126,6 +157,12 @@ public:
     /// Initialize a new CPU.
     CPU() { };
 
+    /// Reset using the given main bus to lookup a starting address.
+    ///
+    /// @param bus the main bus of the NES emulator
+    ///
+    void reset(MainBus &bus);
+
     /// Interrupt the CPU.
     ///
     /// @param bus the main bus of the machine
@@ -135,12 +172,6 @@ public:
     ///       with Execute, further work needed
     ///
     void interrupt(MainBus &bus, InterruptType type);
-
-    /// Reset using the given main bus to lookup a starting address.
-    ///
-    /// @param bus the main bus of the NES emulator
-    ///
-    void reset(MainBus &bus);
 
     /// Perform a full CPU cycle using and storing data in the given bus.
     ///

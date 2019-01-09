@@ -1,0 +1,32 @@
+"""The compilation script for this project using SCons."""
+from os import environ
+
+
+# create a separate build directory
+VariantDir('build', 'src', duplicate=0)
+
+
+#  the compiler and linker flags for the C++ environment
+FLAGS = [
+    '-std=c++1y',
+    '-O2',
+    '-march=native',
+    '-pipe',
+]
+
+
+# Create the C++ environment
+ENV = Environment(
+    ENV=environ,
+    CXX='clang++',
+    CPPFLAGS=['-Wno-unused-value'],
+    CXXFLAGS=FLAGS,
+    LINKFLAGS=FLAGS,
+    CPPPATH=['#include'],
+)
+
+
+# Locate all the C++ source files
+SRC = Glob('build/*.cpp') + Glob('build/*/*.cpp')
+# Create a shared library (it will add "lib" to the front automatically)
+ENV.SharedLibrary('_nes_env.so', SRC)

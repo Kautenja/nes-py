@@ -11,7 +11,8 @@ all: test deployment
 
 # build the LaiNES CPP code
 lib_nes_env:
-	scons
+	scons -C nes_py/nes
+	mv nes_py/nes/lib_nes_env*.so nes_py
 
 # run the Python test suite
 test: lib_nes_env
@@ -21,13 +22,20 @@ test: lib_nes_env
 # MARK: Deployment
 #
 
-# clean the build directory
-clean:
+clean_dist:
 	rm -rf build/ dist/ .eggs/ *.egg-info/ || true
-	rm -rf nes_py/cpp/build || true
-	rm nes_py/lib_nes_env.so || true
+
+clean_python_build:
 	find . -name "*.pyc" -delete
 	find . -name "__pycache__" -delete
+
+clean_cpp_build:
+	find . -name ".sconsign.dblite" -delete
+	find . -name "build" | rm -rf
+	find . -name "lib_nes_env.so" -delete
+
+# clean the build directory
+clean: clean_dist clean_python_build clean_cpp_build
 
 # build the deployment package
 deployment: clean

@@ -75,6 +75,12 @@ public:
     ///
     inline NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
 
+    /// Return a pointer to the first port's joypad buffer.
+    inline NES_Byte* get_controller1() { return controller1.get_joypad_buffer(); };
+
+    /// Return a pointer to the second port's joypad buffer.
+    inline NES_Byte* get_controller2() { return controller2.get_joypad_buffer(); };
+
     /// Load the ROM into the NES.
     inline void reset() { cpu.reset(bus); ppu.reset(); };
 

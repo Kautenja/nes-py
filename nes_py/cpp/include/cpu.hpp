@@ -12,21 +12,6 @@
 #include "cpu_opcodes.hpp"
 #include "main_bus.hpp"
 
-/// A structure for working with the flags register
-typedef union {
-    struct {
-        bool N : 1,
-             V : 1,
-             ONE : 1,
-             B : 1,
-             D : 1,
-             I : 1,
-             Z : 1,
-             C : 1;
-    } bits;
-    NES_Byte byte;
-} Flags;
-
 /// The MOS6502 CPU for the Nintendo Entertainment System (NES)
 class CPU {
 
@@ -47,7 +32,7 @@ private:
     NES_Byte register_Y;
 
     /// The flags register
-    Flags flags;
+    CPU_Flags flags;
 
     /// The number of cycles to skip
     int skip_cycles;

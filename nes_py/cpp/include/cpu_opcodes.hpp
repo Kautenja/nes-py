@@ -121,6 +121,21 @@ enum OperationImplied {
     TSX = 0xba,
 };
 
+/// A structure for working with the flags register
+typedef union {
+    struct {
+        bool N : 1,
+             V : 1,
+             ONE : 1,
+             B : 1,
+             D : 1,
+             I : 1,
+             Z : 1,
+             C : 1;
+    } bits;
+    NES_Byte byte;
+} CPU_Flags;
+
 /// a mapping of opcodes to the number of cycles used by the opcode. 0 implies
 /// an unused opcode.
 const NES_Byte OPERATION_CYCLES[0x100] = {

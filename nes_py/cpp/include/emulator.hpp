@@ -18,17 +18,13 @@
 #include "picture_bus.hpp"
 #include <string>
 
-/// The width of the NES screen in pixels
-const int NES_VIDEO_WIDTH = SCANLINE_VISIBLE_DOTS;
-/// The height of the NES screen in pixels
-const int NES_VIDEO_HEIGHT = VISIBLE_SCANLINES;
-/// The number of cycles in 1 frame
-const int CYCLES_PER_FRAME = 29781;
-
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
 
 private:
+    /// The number of cycles in 1 frame
+    const static int CYCLES_PER_FRAME = 29781;
+
     /// the virtual cartridge with ROM and mapper data
     Cartridge cartridge;
     /// a pointer to the mapper on the cartridge
@@ -58,6 +54,11 @@ private:
     void DMA(NES_Byte page);
 
 public:
+    /// The width of the NES screen in pixels
+    const static int WIDTH = SCANLINE_VISIBLE_DOTS;
+    /// The height of the NES screen in pixels
+    const static int HEIGHT = VISIBLE_SCANLINES;
+
     /// Initialize a new emulator with a path to a ROM file.
     ///
     /// @param rom_path the path to the ROM for the emulator to run

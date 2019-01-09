@@ -24,10 +24,10 @@
 // definitions of functions for the Python interface to access
 extern "C" {
     /// Return the width of the NES.
-    EXP unsigned GetNESWidth() { return NES_VIDEO_WIDTH; }
+    EXP unsigned GetNESWidth() { return Emulator::WIDTH; }
 
     /// Return the height of the NES.
-    EXP unsigned GetNESHeight() { return NES_VIDEO_HEIGHT; }
+    EXP unsigned GetNESHeight() { return Emulator::HEIGHT; }
 
     /// Initialize a new emulator and return a pointer to it
     EXP Emulator* Initialize(wchar_t* path) {

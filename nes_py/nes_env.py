@@ -72,11 +72,6 @@ SCREEN_TENSOR = ctypes.c_byte * np.prod(SCREEN_SHAPE_32_BIT)
 RAM_VECTOR = ctypes.c_byte * 0x800
 
 
-# the magic bytes expected at the first four bytes of the iNES ROM header.
-# It spells "NES<END>"
-MAGIC = bytearray([0x4E, 0x45, 0x53, 0x1A])
-
-
 class NESEnv(gym.Env):
     """An NES environment based on the LaiNES emulator."""
 

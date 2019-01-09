@@ -46,7 +46,8 @@ void Emulator::step(unsigned char action) {
     // write the controller state to player 1
     controller1.write_buttons(action);
     // approximate a frame
-    for (int i = 0; i < STEPS_PER_FRAME; i++) {
+    for (int i = 0; i < CYCLES_PER_FRAME; i++) {
+        // 3 PPU steps per CPU step
         ppu.cycle(picture_bus);
         ppu.cycle(picture_bus);
         ppu.cycle(picture_bus);

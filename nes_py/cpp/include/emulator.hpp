@@ -22,8 +22,8 @@
 const int NES_VIDEO_WIDTH = SCANLINE_VISIBLE_DOTS;
 /// The height of the NES screen in pixels
 const int NES_VIDEO_HEIGHT = VISIBLE_SCANLINES;
-/// The number of cycles in approximately 1 frame
-const int STEPS_PER_FRAME = 29781;
+/// The number of cycles in 1 frame
+const int CYCLES_PER_FRAME = 29781;
 
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {

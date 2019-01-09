@@ -24,10 +24,10 @@
 // definitions of functions for the Python interface to access
 extern "C" {
     /// Return the width of the NES.
-    EXP int GetWidth() { return Emulator::WIDTH; }
+    EXP int Width() { return Emulator::WIDTH; }
 
     /// Return the height of the NES.
-    EXP int GetHeight() { return Emulator::HEIGHT; }
+    EXP int Height() { return Emulator::HEIGHT; }
 
     /// Initialize a new emulator and return a pointer to it
     EXP Emulator* Initialize(wchar_t* path) {

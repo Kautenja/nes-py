@@ -24,12 +24,12 @@ except IndexError:
     raise OSError('missing static lib_nes_env*.so library!')
 
 
-# setup the argument and return types for GetWidth
-_LIB.GetWidth.argtypes = None
-_LIB.GetWidth.restype = ctypes.c_uint
-# setup the argument and return types for GetHeight
-_LIB.GetHeight.argtypes = None
-_LIB.GetHeight.restype = ctypes.c_uint
+# setup the argument and return types for Width
+_LIB.Width.argtypes = None
+_LIB.Width.restype = ctypes.c_uint
+# setup the argument and return types for Height
+_LIB.Height.argtypes = None
+_LIB.Height.restype = ctypes.c_uint
 # setup the argument and return types for Initialize
 _LIB.Initialize.argtypes = [ctypes.c_wchar_p]
 _LIB.Initialize.restype = ctypes.c_void_p
@@ -57,9 +57,9 @@ _LIB.Close.restype = None
 
 
 # height in pixels of the NES screen
-SCREEN_HEIGHT = _LIB.GetHeight()
+SCREEN_HEIGHT = _LIB.Height()
 # width in pixels of the NES screen
-SCREEN_WIDTH = _LIB.GetWidth()
+SCREEN_WIDTH = _LIB.Width()
 # shape of the screen as 24-bit RGB (standard for NumPy)
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 # shape of the screen as 32-bit RGB (C++ memory arrangement)

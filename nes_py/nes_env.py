@@ -146,12 +146,12 @@ class NESEnv(gym.Env):
         # setup a done flag
         self.done = True
         # setup the controllers, screen, and RAM buffers
-        self.controller1 = self._setup_controller(1)
-        self.controller2 = self._setup_controller(2)
-        self.screen = self._setup_screen()
-        self.ram = self._setup_ram()
+        self.controller1 = self._controller_buffer(1)
+        self.controller2 = self._controller_buffer(2)
+        self.screen = self._screen_buffer()
+        self.ram = self._ram_buffer()
 
-    def _setup_screen(self):
+    def _screen_buffer(self):
         """Setup the screen buffer from the C++ code."""
         # get the address of the screen
         address = _LIB.Screen(self._env)
@@ -168,7 +168,7 @@ class NESEnv(gym.Env):
         # remove the 0th axis (padding from storing colors in 32 bit)
         return screen[:, :, 1:]
 
-    def _setup_ram(self):
+    def _ram_buffer(self):
         """Setup the RAM buffer from the C++ code."""
         # get the address of the RAM
         address = _LIB.Memory(self._env)
@@ -177,7 +177,7 @@ class NESEnv(gym.Env):
         # create a NumPy array from the buffer
         return np.frombuffer(buffer_, dtype='uint8')
 
-    def _setup_controller(self, port):
+    def _controller_buffer(self, port):
         """
         Find the pointer to a controller and setup a NumPy buffer.
 

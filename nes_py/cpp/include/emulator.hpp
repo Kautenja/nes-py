@@ -78,7 +78,7 @@ public:
     /// Load the ROM into the NES.
     inline void reset() { cpu.reset(bus); ppu.reset(); };
 
-    /// Perform a discrete "step" of the NES by rendering 1 frame.
+    /// Perform a step on the emulator, i.e., a single frame.
     ///
     /// @param action the controller bitmap of which buttons to press.
     ///

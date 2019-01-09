@@ -27,8 +27,6 @@ private:
 
     /// the virtual cartridge with ROM and mapper data
     Cartridge cartridge;
-    /// a pointer to the mapper on the cartridge
-    Mapper* mapper;
     /// the 2 controllers on the emulator
     Controller controller1, controller2;
 
@@ -95,7 +93,7 @@ public:
     /// 1: B
     /// 0: A
     ///
-    void step(unsigned char action);
+    void step(NES_Byte action);
 
     /// Create a backup state on the emulator
     void backup();

@@ -30,7 +30,8 @@ Emulator::Emulator(std::string rom_path) {
     // load the ROM from disk, expect that the Python code has validated it
     cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM
-    mapper = Mapper::create(cartridge, [&](){ picture_bus.update_mirroring(); });
+    Mapper* mapper(Mapper::create(cartridge, [&](){ picture_bus.update_mirroring(); }));
+    // give the IO buses a pointer to the mapper
     bus.set_mapper(mapper);
     picture_bus.set_mapper(mapper);
 }
@@ -42,7 +43,7 @@ void Emulator::DMA(NES_Byte page) {
     ppu.do_DMA(bus.get_page_pointer(page));
 }
 
-void Emulator::step(unsigned char action) {
+void Emulator::step(NES_Byte action) {
     // write the controller state to player 1
     controller1.write_buttons(action);
     // approximate a frame

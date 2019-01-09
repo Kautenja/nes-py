@@ -24,10 +24,10 @@
 // definitions of functions for the Python interface to access
 extern "C" {
     /// Return the width of the NES.
-    EXP unsigned GetNESWidth() { return Emulator::WIDTH; }
+    EXP int GetWidth() { return Emulator::WIDTH; }
 
     /// Return the height of the NES.
-    EXP unsigned GetNESHeight() { return Emulator::HEIGHT; }
+    EXP int GetHeight() { return Emulator::HEIGHT; }
 
     /// Initialize a new emulator and return a pointer to it
     EXP Emulator* Initialize(wchar_t* path) {
@@ -48,7 +48,7 @@ extern "C" {
     EXP void Reset(Emulator* emu) { emu->reset(); }
 
     /// Perform a discrete step in the emulator (i.e., 1 frame)
-    EXP void Step(Emulator* emu, unsigned char action) { emu->step(action); }
+    EXP void Step(Emulator* emu, NES_Byte action) { emu->step(action); }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
     EXP void Backup(Emulator* emu) { emu->backup(); }

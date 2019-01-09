@@ -14,19 +14,18 @@ NES_Byte PictureBus::read(NES_Address address) {
     }
     // Name tables up to 0x3000, then mirrored up to 0x3ff
     else if (address < 0x3eff) {
-        auto index = address & 0x3ff;
         // NT0
         if (address < 0x2400)
-            return ram[name_tables[0] + index];
+            return ram[name_tables[0] + (address & 0x3ff)];
         // NT1
         else if (address < 0x2800)
-            return ram[name_tables[1] + index];
+            return ram[name_tables[1] + (address & 0x3ff)];
         // NT2
         else if (address < 0x2c00)
-            return ram[name_tables[2] + index];
+            return ram[name_tables[2] + (address & 0x3ff)];
         // NT3
         else
-            return ram[name_tables[3] + index];
+            return ram[name_tables[3] + (address & 0x3ff)];
     }
     else if (address < 0x3fff) {
         return palette[address & 0x1f];
@@ -34,26 +33,24 @@ NES_Byte PictureBus::read(NES_Address address) {
     return 0;
 }
 
-
 void PictureBus::write(NES_Address address, NES_Byte value) {
     if (address < 0x2000) {
         mapper->writeCHR(address, value);
     }
     // Name tables up to 0x3000, then mirrored up to 0x3ff
     else if (address < 0x3eff)  {
-        auto index = address & 0x3ff;
         // NT0
         if (address < 0x2400)
-            ram[name_tables[0] + index] = value;
+            ram[name_tables[0] + (address & 0x3ff)] = value;
         // NT1
         else if (address < 0x2800)
-            ram[name_tables[1] + index] = value;
+            ram[name_tables[1] + (address & 0x3ff)] = value;
         // NT2
         else if (address < 0x2c00)
-            ram[name_tables[2] + index] = value;
+            ram[name_tables[2] + (address & 0x3ff)] = value;
         // NT3
         else
-            ram[name_tables[3] + index] = value;
+            ram[name_tables[3] + (address & 0x3ff)] = value;
     }
     else if (address < 0x3fff) {
         if (address == 0x3f10)

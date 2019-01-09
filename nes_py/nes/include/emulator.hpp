@@ -85,26 +85,12 @@ public:
     inline void reset() { cpu.reset(bus); ppu.reset(); };
 
     /// Perform a step on the emulator, i.e., a single frame.
-    ///
-    /// @param action the controller bitmap of which buttons to press.
-    ///
-    /// The bitmap uses 1 for "pressed" and 0 for "not pressed".
-    /// It uses the following mapping of bits to buttons:
-    /// 7: RIGHT
-    /// 6: LEFT
-    /// 5: DOWN
-    /// 4: UP
-    /// 3: START
-    /// 2: SELECT
-    /// 1: B
-    /// 0: A
-    ///
-    void step(NES_Byte action);
+    void step();
 
-    /// Create a backup state on the emulator
+    /// Create a backup state on the emulator.
     void backup();
 
-    /// Restore the backup state on the emulator
+    /// Restore the backup state on the emulator.
     void restore();
 
 };

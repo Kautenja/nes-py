@@ -178,7 +178,7 @@ public:
     ///
     /// @param bus the bus to read and write data from / to
     ///
-    void step(MainBus &bus);
+    void cycle(MainBus &bus);
 
     /// Skip DMA cycles.
     ///

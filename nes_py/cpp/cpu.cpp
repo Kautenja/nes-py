@@ -493,7 +493,7 @@ void CPU::interrupt(MainBus &bus, InterruptType type) {
     skip_cycles += 7;
 }
 
-void CPU::step(MainBus &bus) {
+void CPU::cycle(MainBus &bus) {
     // increment the number of cycles
     ++cycles;
     // if in a skip cycle, return

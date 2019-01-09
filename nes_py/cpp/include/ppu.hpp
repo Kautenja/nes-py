@@ -110,9 +110,6 @@ public:
     /// Perform a single cycle on the PPU.
     void cycle(PictureBus& bus);
 
-    /// Perform the number of PPU cycles that fit into a clock cycle (3).
-    inline void step(PictureBus& bus) { cycle(bus); cycle(bus); cycle(bus); };
-
     /// Reset the PPU.
     void reset();
 

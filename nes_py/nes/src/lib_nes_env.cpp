@@ -38,6 +38,12 @@ extern "C" {
         return new Emulator(rom_path);
     }
 
+    /// Return a pointer to the first port's joypad buffer.
+    EXP NES_Byte* Controller1(Emulator* emu) { return emu->get_controller1(); }
+
+    /// Return a pointer to the first port's joypad buffer.
+    EXP NES_Byte* Controller2(Emulator* emu) { return emu->get_controller2(); }
+
     /// Return the pointer to the screen buffer
     EXP NES_Pixel* Screen(Emulator* emu) { return emu->get_screen_buffer(); }
 
@@ -48,7 +54,7 @@ extern "C" {
     EXP void Reset(Emulator* emu) { emu->reset(); }
 
     /// Perform a discrete step in the emulator (i.e., 1 frame)
-    EXP void Step(Emulator* emu, NES_Byte action) { emu->step(action); }
+    EXP void Step(Emulator* emu) { emu->step(); }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
     EXP void Backup(Emulator* emu) { emu->backup(); }

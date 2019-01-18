@@ -33,6 +33,12 @@ _LIB.Height.restype = ctypes.c_uint
 # setup the argument and return types for Initialize
 _LIB.Initialize.argtypes = [ctypes.c_wchar_p]
 _LIB.Initialize.restype = ctypes.c_void_p
+# setup the argument and return types for Controller1
+_LIB.Controller1.argtypes = [ctypes.c_void_p]
+_LIB.Controller1.restype = ctypes.c_void_p
+# setup the argument and return types for Controller2
+_LIB.Controller2.argtypes = [ctypes.c_void_p]
+_LIB.Controller2.restype = ctypes.c_void_p
 # setup the argument and return types for Screen
 _LIB.Screen.argtypes = [ctypes.c_void_p]
 _LIB.Screen.restype = ctypes.c_void_p
@@ -43,7 +49,7 @@ _LIB.Memory.restype = ctypes.c_void_p
 _LIB.Reset.argtypes = [ctypes.c_void_p]
 _LIB.Reset.restype = None
 # setup the argument and return types for Step
-_LIB.Step.argtypes = [ctypes.c_void_p, ctypes.c_ubyte]
+_LIB.Step.argtypes = [ctypes.c_void_p]
 _LIB.Step.restype = None
 # setup the argument and return types for Backup
 _LIB.Backup.argtypes = [ctypes.c_void_p]
@@ -70,6 +76,10 @@ SCREEN_TENSOR = ctypes.c_byte * np.prod(SCREEN_SHAPE_32_BIT)
 
 # create a type for the RAM vector from C++
 RAM_VECTOR = ctypes.c_byte * 0x800
+
+
+# create a type for the controller buffers from C++
+CONTROLLER_VECTOR = ctypes.c_byte * 1
 
 
 class NESEnv(gym.Env):
@@ -135,13 +145,13 @@ class NESEnv(gym.Env):
         self._has_backup = False
         # setup a done flag
         self.done = True
-        # setup the NumPy buffers for the screen and RAM
-        self.screen = None
-        self._setup_screen()
-        self.ram = None
-        self._setup_ram()
+        # setup the controllers, screen, and RAM buffers
+        self.controller1 = self._controller_buffer(1)
+        self.controller2 = self._controller_buffer(2)
+        self.screen = self._screen_buffer()
+        self.ram = self._ram_buffer()
 
-    def _setup_screen(self):
+    def _screen_buffer(self):
         """Setup the screen buffer from the C++ code."""
         # get the address of the screen
         address = _LIB.Screen(self._env)
@@ -156,18 +166,34 @@ class NESEnv(gym.Env):
             # invert the little-endian BGRx channels to big-endian xRGB
             screen = screen[:, :, ::-1]
         # remove the 0th axis (padding from storing colors in 32 bit)
-        screen = screen[:, :, 1:]
-        # store the instance to screen
-        self.screen = screen
+        return screen[:, :, 1:]
 
-    def _setup_ram(self):
+    def _ram_buffer(self):
         """Setup the RAM buffer from the C++ code."""
         # get the address of the RAM
         address = _LIB.Memory(self._env)
         # create a buffer from the contents of the address location
         buffer_ = ctypes.cast(address, ctypes.POINTER(RAM_VECTOR)).contents
         # create a NumPy array from the buffer
-        self.ram = np.frombuffer(buffer_, dtype='uint8')
+        return np.frombuffer(buffer_, dtype='uint8')
+
+    def _controller_buffer(self, port):
+        """
+        Find the pointer to a controller and setup a NumPy buffer.
+
+        Args:
+            port: the port of the controller to setup
+
+        Returns:
+            a NumPy buffer with the controller's binary data
+
+        """
+        # get the address of the controller
+        address = getattr(_LIB, 'Controller{}'.format(port))(self._env)
+        # create a memory buffer using the ctypes pointer for this vector
+        buffer_ = ctypes.cast(address, ctypes.POINTER(CONTROLLER_VECTOR)).contents
+        # create a NumPy buffer from the binary data and return it
+        return np.frombuffer(buffer_, dtype='uint8')
 
     def _frame_advance(self, action):
         """
@@ -180,7 +206,10 @@ class NESEnv(gym.Env):
             None
 
         """
-        _LIB.Step(self._env, action)
+        # set the action on the controller
+        self.controller1[:] = action
+        # perform a step on the emulator
+        _LIB.Step(self._env)
 
     def _backup(self):
         """Backup the NES state in the emulator."""
@@ -239,8 +268,10 @@ class NESEnv(gym.Env):
         # if the environment is done, raise an error
         if self.done:
             raise ValueError('cannot step in a done environment! call `reset`')
+        # set the action on the controller
+        self.controller1[:] = action
         # pass the action to the emulator as an unsigned byte
-        _LIB.Step(self._env, action)
+        _LIB.Step(self._env)
         # get the reward for this step
         reward = self._get_reward()
         # get the done flag for this step

@@ -25,6 +25,9 @@ public:
     /// Initialize a new controller.
     Controller() : is_strobe(true), joypad_buttons(0), joypad_bits(0) { };
 
+    /// Return a pointer to the joypad buffer.
+    inline NES_Byte* get_joypad_buffer() { return &joypad_buttons; };
+
     /// Write buttons to the virtual controller.
     ///
     /// @param buttons the button bitmap to write to the controller

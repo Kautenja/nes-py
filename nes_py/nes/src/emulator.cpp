@@ -43,10 +43,8 @@ void Emulator::DMA(NES_Byte page) {
     ppu.do_DMA(bus.get_page_pointer(page));
 }
 
-void Emulator::step(NES_Byte action) {
-    // write the controller state to player 1
-    controller1.write_buttons(action);
-    // approximate a frame
+void Emulator::step() {
+    // render a single frame on the emulator
     for (int i = 0; i < CYCLES_PER_FRAME; i++) {
         // 3 PPU steps per CPU step
         ppu.cycle(picture_bus);

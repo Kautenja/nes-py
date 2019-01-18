@@ -24,10 +24,14 @@
 // definitions of functions for the Python interface to access
 extern "C" {
     /// Return the width of the NES.
-    EXP int Width() { return Emulator::WIDTH; }
+    EXP int Width() {
+        return Emulator::WIDTH;
+    }
 
     /// Return the height of the NES.
-    EXP int Height() { return Emulator::HEIGHT; }
+    EXP int Height() {
+        return Emulator::HEIGHT;
+    }
 
     /// Initialize a new emulator and return a pointer to it
     EXP Emulator* Initialize(wchar_t* path) {
@@ -39,28 +43,44 @@ extern "C" {
     }
 
     /// Return a pointer to a controller on the machine
-    EXP NES_Byte* Controller(Emulator* emu, int slot) { return emu->get_controller(slot); }
+    EXP NES_Byte* Controller(Emulator* emu, int port) {
+        return emu->get_controller(port);
+    }
 
     /// Return the pointer to the screen buffer
-    EXP NES_Pixel* Screen(Emulator* emu) { return emu->get_screen_buffer(); }
+    EXP NES_Pixel* Screen(Emulator* emu) {
+        return emu->get_screen_buffer();
+    }
 
     /// Return the pointer to the memory buffer
-    EXP NES_Byte* Memory(Emulator* emu) { return emu->get_memory_buffer(); }
+    EXP NES_Byte* Memory(Emulator* emu) {
+        return emu->get_memory_buffer();
+    }
 
     /// Reset the emulator
-    EXP void Reset(Emulator* emu) { emu->reset(); }
+    EXP void Reset(Emulator* emu) {
+        emu->reset();
+    }
 
     /// Perform a discrete step in the emulator (i.e., 1 frame)
-    EXP void Step(Emulator* emu) { emu->step(); }
+    EXP void Step(Emulator* emu) {
+        emu->step();
+    }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP void Backup(Emulator* emu) { emu->backup(); }
+    EXP void Backup(Emulator* emu) {
+        emu->backup();
+    }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP void Restore(Emulator* emu) { emu->restore(); }
+    EXP void Restore(Emulator* emu) {
+        emu->restore();
+    }
 
     /// Close the emulator, i.e., purge it from memory
-    EXP void Close(Emulator* emu) { delete emu; }
+    EXP void Close(Emulator* emu) {
+        delete emu;
+    }
 
 }
 

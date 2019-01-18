@@ -12,8 +12,8 @@ Emulator::Emulator(std::string rom_path) {
     // set the read callbacks
     bus.set_read_callback(PPUSTATUS, [&](void) {return ppu.get_status();});
     bus.set_read_callback(PPUDATA, [&](void) {return ppu.get_data(picture_bus);});
-    bus.set_read_callback(JOY1, [&](void) {return controller1.read();});
-    bus.set_read_callback(JOY2, [&](void) {return controller2.read();});
+    bus.set_read_callback(JOY1, [&](void) {return controllers[0].read();});
+    bus.set_read_callback(JOY2, [&](void) {return controllers[1].read();});
     bus.set_read_callback(OAMDATA, [&](void) {return ppu.get_OAM_data();});
     // set the write callbacks
     bus.set_write_callback(PPUCTRL, [&](NES_Byte b) {ppu.control(b);});
@@ -23,7 +23,7 @@ Emulator::Emulator(std::string rom_path) {
     bus.set_write_callback(PPUSCROL, [&](NES_Byte b) {ppu.set_scroll(b);});
     bus.set_write_callback(PPUDATA, [&](NES_Byte b) {ppu.set_data(picture_bus, b);});
     bus.set_write_callback(OAMDMA, [&](NES_Byte b) {DMA(b);});
-    bus.set_write_callback(JOY1, [&](NES_Byte b) {controller1.strobe(b); controller2.strobe(b);});
+    bus.set_write_callback(JOY1, [&](NES_Byte b) {controllers[0].strobe(b); controllers[1].strobe(b);});
     bus.set_write_callback(OAMDATA, [&](NES_Byte b) {ppu.set_OAM_data(b);});
     // set the interrupt callback for the PPU
     ppu.set_interrupt_callback([&](){ cpu.interrupt(bus, CPU::NMI_INTERRUPT); });

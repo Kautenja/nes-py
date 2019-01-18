@@ -33,12 +33,9 @@ _LIB.Height.restype = ctypes.c_uint
 # setup the argument and return types for Initialize
 _LIB.Initialize.argtypes = [ctypes.c_wchar_p]
 _LIB.Initialize.restype = ctypes.c_void_p
-# setup the argument and return types for Controller1
-_LIB.Controller1.argtypes = [ctypes.c_void_p]
-_LIB.Controller1.restype = ctypes.c_void_p
-# setup the argument and return types for Controller2
-_LIB.Controller2.argtypes = [ctypes.c_void_p]
-_LIB.Controller2.restype = ctypes.c_void_p
+# setup the argument and return types for Controller
+_LIB.Controller.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+_LIB.Controller.restype = ctypes.c_void_p
 # setup the argument and return types for Screen
 _LIB.Screen.argtypes = [ctypes.c_void_p]
 _LIB.Screen.restype = ctypes.c_void_p
@@ -146,8 +143,7 @@ class NESEnv(gym.Env):
         # setup a done flag
         self.done = True
         # setup the controllers, screen, and RAM buffers
-        self.controller1 = self._controller_buffer(1)
-        self.controller2 = self._controller_buffer(2)
+        self.controllers = [self._controller_buffer(port) for port in range(2)]
         self.screen = self._screen_buffer()
         self.ram = self._ram_buffer()
 
@@ -189,7 +185,7 @@ class NESEnv(gym.Env):
 
         """
         # get the address of the controller
-        address = getattr(_LIB, 'Controller{}'.format(port))(self._env)
+        address = _LIB.Controller(self._env, port)
         # create a memory buffer using the ctypes pointer for this vector
         buffer_ = ctypes.cast(address, ctypes.POINTER(CONTROLLER_VECTOR)).contents
         # create a NumPy buffer from the binary data and return it
@@ -207,7 +203,7 @@ class NESEnv(gym.Env):
 
         """
         # set the action on the controller
-        self.controller1[:] = action
+        self.controllers[0][:] = action
         # perform a step on the emulator
         _LIB.Step(self._env)
 
@@ -269,7 +265,7 @@ class NESEnv(gym.Env):
         if self.done:
             raise ValueError('cannot step in a done environment! call `reset`')
         # set the action on the controller
-        self.controller1[:] = action
+        self.controllers[0][:] = action
         # pass the action to the emulator as an unsigned byte
         _LIB.Step(self._env)
         # get the reward for this step

@@ -392,6 +392,10 @@ class NESEnv(gym.Env):
 
         return keys_to_action
 
+    def get_action_meanings(self):
+        """Return a list of actions meanings."""
+        return ['NOOP']
+
 
 # explicitly define the outward facing API of this module
 __all__ = [NESEnv.__name__]

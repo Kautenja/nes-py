@@ -1,6 +1,5 @@
 """An environment wrapper to convert binary to discrete action space."""
 import gym
-import numpy as np
 
 
 class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
@@ -16,7 +15,7 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
         'select': 0b00000100,
         'B':      0b00000010,
         'A':      0b00000001,
-        'NOP':    0b00000000,
+        'NOOP':    0b00000000,
     }
 
     def __init__(self, env, actions):
@@ -37,6 +36,7 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
         self.action_space = gym.spaces.Discrete(len(actions))
         # create the action map from the list of discrete actions
         self._action_map = {}
+        self._action_meanings = {}
         # iterate over all the actions (as button lists)
         for action, button_list in enumerate(actions):
             # the value of this action's bitmap
@@ -46,6 +46,7 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
                 byte_action |= self._button_map[button]
             # set this action maps value to the byte action value
             self._action_map[action] = byte_action
+            self._action_meanings[action] = ' '.join(button_list)
 
     def step(self, action):
         """
@@ -85,6 +86,11 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
             keys_to_action[keys] = action
 
         return keys_to_action
+
+    def get_action_meanings(self):
+        """Return a list of actions meanings."""
+        actions = sorted(self._action_meanings.keys())
+        return [self._action_meanings[action] for action in actions]
 
 
 # explicitly define the outward facing API of this module

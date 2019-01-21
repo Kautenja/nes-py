@@ -133,7 +133,7 @@ class NESEnv(gym.Env):
             msg = 'ROM has an unsupported mapper number {}.'
             raise ValueError(msg.format(rom.mapper))
         # create a dedicated random number generator for the environment
-        self._rng = np.random.RandomState()
+        self.np_random = np.random.RandomState()
         # store the ROM path
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
@@ -238,7 +238,7 @@ class NESEnv(gym.Env):
         if seed is None:
             return []
         # set the random number seed for the NumPy random number generator
-        self._rng.seed(seed)
+        self.np_random.seed(seed)
         # return the list of seeds used by RNG(s) in the environment
         return [seed]
 

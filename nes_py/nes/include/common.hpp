@@ -8,6 +8,7 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
+// resolve an issue with MSVC overflow during compilation (Windows)
 #define _CRT_DECLARE_NONSTDC_NAMES 0
 #include <stdint.h>
 

@@ -8,6 +8,7 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
+#define _CRT_DECLARE_NONSTDC_NAMES 0
 #include <stdint.h>
 
 /// A shortcut for a byte

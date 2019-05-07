@@ -6,33 +6,22 @@ http://tuxnes.sourceforge.net/nesmapper.txt
 """
 from unittest import TestCase
 from .rom_file_abs_path import rom_file_abs_path
-
-
-class ShouldImportROM(TestCase):
-    def test(self):
-        try:
-            from .._rom import ROM
-            self.assertIsInstance(ROM, object)
-        except ImportError:
-            self.fail('failed to import ROM from nes_py.cartridge.rom')
+from nes_py._rom import ROM
 
 
 class ShouldNotCreateInstanceOfROMWithoutPath(TestCase):
     def test(self):
-        from .._rom import ROM
         self.assertRaises(TypeError, ROM)
 
 
 class ShouldNotCreateInstanceOfROMWithInvaldPath(TestCase):
     def test(self):
-        from .._rom import ROM
         self.assertRaises(TypeError, lambda: ROM(5))
         self.assertRaises(ValueError, lambda: ROM('not a path'))
 
 
 class ShouldNotCreateInstanceOfROMWithInvaldROMFile(TestCase):
     def test(self):
-        from .._rom import ROM
         empty = rom_file_abs_path('empty.nes')
         self.assertRaises(ValueError, lambda: ROM(empty))
 
@@ -101,7 +90,6 @@ class ShouldReadROMHeaderTestCase(object):
 
     def setUp(self):
         """Perform setup before each test."""
-        from .._rom import ROM
         rom_path = rom_file_abs_path(self.rom_name)
         self.rom = ROM(rom_path)
 

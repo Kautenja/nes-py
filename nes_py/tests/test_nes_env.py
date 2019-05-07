@@ -1,58 +1,45 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
+import gym
+import numpy as np
 from .rom_file_abs_path import rom_file_abs_path
-
-
-class ShouldImportNESEnv(TestCase):
-    def test(self):
-        try:
-            from ..nes_env import NESEnv
-        except ImportError:
-            self.fail('failed to import NESEnv from nes_py.nes_env')
+from nes_py.nes_env import NESEnv
 
 
 class ShouldRaiseTypeErrorOnInvalidROMPathType(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
         self.assertRaises(TypeError, NESEnv, 0)
 
 
 class ShouldRaiseValueErrorOnMissingNonexistentROMFile(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
         path = rom_file_abs_path('missing.nes')
         self.assertRaises(ValueError, NESEnv, path)
 
 
 class ShouldRaiseValueErrorOnNonexistentFile(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
         self.assertRaises(ValueError, NESEnv, 'not_a_file.nes')
 
 
 class ShouldRaiseValueErrorOnNoniNES_ROMPath(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
         self.assertRaises(ValueError, NESEnv, rom_file_abs_path('blank'))
 
 
 class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
         self.assertRaises(ValueError, NESEnv, rom_file_abs_path('empty.nes'))
 
 
 class ShouldRaiseErrorOnStepBeforeReset(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
         env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
         self.assertRaises(ValueError, env.step, 0)
 
 
 class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
-        from ..nes_env import NESEnv
-        import gym
         env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
         self.assertIsInstance(env, gym.Env)
         env.close()
@@ -60,7 +47,6 @@ class ShouldCreateInstanceOfNESEnv(TestCase):
 
 def create_smb1_instance():
     """Return a new SMB1 instance."""
-    from ..nes_env import NESEnv
     return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
 
 
@@ -88,7 +74,6 @@ class ShouldResetAndCloseEnv(TestCase):
 
 class ShouldStepEnv(TestCase):
     def test(self):
-        import numpy as np
         env = create_smb1_instance()
         done = True
         for _ in range(500):
@@ -118,7 +103,6 @@ class ShouldStepEnv(TestCase):
 
 class ShouldStepEnvBackupRestore(TestCase):
     def test(self):
-        import numpy as np
         done = True
         env = create_smb1_instance()
 

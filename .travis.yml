@@ -16,7 +16,7 @@ matrix:
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
 # all three OSes agree about 'pip3'
 install:
-  - pip3 install --upgrade pip
+  # - pip3 install --upgrade pip
   - pip3 install scons || pip3 install scons --user
   - pip3 install -r requirements.txt
 # 'python' points to 2.7 on macOS but points to 3.7 on Linux and Windows

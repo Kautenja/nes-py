@@ -26,7 +26,6 @@ script:
   - scons -C nes_py/nes
   - mv nes_py/nes/lib_nes_env*.so nes_py
   - python3 -m unittest discover . || python -m unittest discover .
-  - python3 setup.py test || python setup.py test
   - python3 setup.py sdist bdist_wheel || python setup.py sdist bdist_wheel
 notifications:
   email: false

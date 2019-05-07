@@ -30,11 +30,6 @@ LIB_NES_ENV = Extension(LIB_NAME,
 )
 
 
-def test_suite():
-    """Return the test suite for the package."""
-    return defaultTestLoader.discover('.')
-
-
 setup(
     name='nes_py',
     version='7.0.0',
@@ -80,5 +75,4 @@ setup(
             'nes_py = nes_py.app.cli:main',
         ],
     },
-    # test_suite='setup.test_suite',
 )

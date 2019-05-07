@@ -16,6 +16,9 @@ matrix:
       language: shell # 'language: python' is an error on Travis CI Windows
       before_install: choco install python
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      script:
+        - python setup.py test
+        - python setup.py sdist
 # all three OSes agree about 'pip3'
 install:
   # - pip3 install --upgrade pip

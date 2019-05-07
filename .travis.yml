@@ -5,10 +5,12 @@ matrix:
     - name: "Python 3.7 on Xenial Linux"
       python: 3.7 # this works for Linux but is ignored on macOS or Windows
       dist: xenial # required for Python >= 3.7
+      before_install: pip3 install scons
     - name: "Python 3.7.2 on macOS"
       os: osx
       osx_image: xcode10.2 # Python 3.7.2 running on macOS 10.14.3
       language: shell # 'language: python' is an error on Travis CI macOS
+      before_install: brew install scons
     - name: "Python 3.7.3 on Windows"
       os: windows # Windows 10.0.17134 N/A Build 17134
       language: shell # 'language: python' is an error on Travis CI Windows
@@ -17,7 +19,6 @@ matrix:
 # all three OSes agree about 'pip3'
 install:
   # - pip3 install --upgrade pip
-  - pip3 install scons || pip3 install scons --user
   - pip3 install -r requirements.txt
 # 'python' points to 2.7 on macOS but points to 3.7 on Linux and Windows
 # 'python3' is a 'command not found' error on Windows

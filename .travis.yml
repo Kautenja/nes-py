@@ -1,11 +1,12 @@
 ---
-sudo: required
+dist: xenial   # required for Python >= 3.7
 language: python
 cache: pip
 python:
-  - '2.7'
   - '3.5'
   - '3.6'
+  - '3.7'
+  - '3.8-dev'
 os:
   - linux
   # - osx

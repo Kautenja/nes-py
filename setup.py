@@ -21,12 +21,7 @@ SOURCES = glob('nes_py/nes/src/*.cpp') + glob('nes_py/nes/src/mappers/*.cpp')
 # headers with sdist
 INCLUDE_DIRS = ['nes_py/nes/include']
 # Build arguments to pass to the compiler
-EXTRA_COMPILE_ARGS = [
-    '-std=c++1y',
-    '-march=native',
-    '-pipe',
-    '-O2',
-]
+EXTRA_COMPILE_ARGS = ['-std=c++1y', '-march=native', '-pipe', '-O2']
 # The official extension using the name, source, headers, and build args
 LIB_NES_ENV = Extension(LIB_NAME,
     sources=SOURCES,
@@ -35,15 +30,10 @@ LIB_NES_ENV = Extension(LIB_NAME,
 )
 
 
-
 def test_suite():
     """Return the test suite for the package."""
-    # create a test loader
-    test_loader = TestLoader()
-    # automatically find test packages in the nes_py package
-    test_suite = test_loader.discover('.')
-
-    return test_suite
+    # create a test loader and find tests in this root directory
+    return TestLoader().discover('.')
 
 
 setup(

@@ -14,8 +14,13 @@ matrix:
       language: shell # 'language: python' is an error on Travis CI Windows
       before_install: choco install python
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+install: pip3 install --upgrade pip  # all three OSes agree about 'pip3'
+# 'python' points to Python 2.7 on macOS but points to Python 3.7 on Linux and Windows
+# 'python3' is a 'command not found' error on Windows but 'py' works on Windows only
 script:
-  - python3 -m unittest discover .
-  - python3 setup.py sdist bdist_wheel
+  - scons -C nes_py/nes
+  - mv nes_py/nes/lib_nes_env*.so nes_py
+  - python3 -m unittest discover . || python -m unittest discover .
+  - python3 setup.py sdist bdist_wheel || python setup.py sdist bdist_wheel
 notifications:
   email: false

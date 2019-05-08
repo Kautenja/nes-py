@@ -74,5 +74,4 @@ setup(
             'nes_py = nes_py.app.cli:main',
         ],
     },
-    test_suite='nes_py',
 )

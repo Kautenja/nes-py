@@ -6,9 +6,12 @@ matrix:
       python: 3.7 # this works for Linux but is ignored on macOS or Windows
       dist: xenial # required for Python >= 3.7
       before_install: pip3 install scons
-    - name: "Python 3.7.2 on macOS"
+    - name: "Python 3.7 on macOS"
       os: osx
-      osx_image: xcode10.2 # Python 3.7.2 running on macOS 10.14.3
+      osx_image:
+        - xcode10.2 # Python 3.7.2 running on macOS 10.14.3
+        - xcode10.1 # Python 3.7.2 running on macOS 10.13
+        - xcode9.4.1 # Python 3.7.2 running on macOS 10.13
       language: shell # 'language: python' is an error on Travis CI macOS
       before_install: brew install scons
     - name: "Python 3.7.3 on Windows"
@@ -24,12 +27,10 @@ matrix:
 install:
   # - pip3 install --upgrade pip
   - pip3 install -r requirements.txt
-# 'python' points to 2.7 on macOS but points to 3.7 on Linux and Windows
-# 'python3' is a 'command not found' error on Windows
 script:
   - scons -C nes_py/nes
   - mv nes_py/nes/lib_nes_env*.so nes_py
-  - python3 -m unittest discover . || python -m unittest discover .
-  - python3 setup.py sdist bdist_wheel || python setup.py sdist bdist_wheel
+  - python3 -m unittest discover .
+  - python3 setup.py sdist bdist_wheel
 notifications:
   email: false

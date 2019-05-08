@@ -8,6 +8,14 @@ matrix:
     - name: "Python 3.6 on Ubuntu 14.04"
       python: 3.6
       before_install: pip3 install scons
+    - name: "Python 3.5 on Ubuntu 16.04"
+      python: 3.5
+      dist: xenial
+      before_install: pip3 install scons
+    - name: "Python 3.6 on Ubuntu 16.04"
+      python: 3.6
+      dist: xenial
+      before_install: pip3 install scons
     - name: "Python 3.7 on Ubuntu 16.04"
       python: 3.7
       dist: xenial # required for Python >= 3.7

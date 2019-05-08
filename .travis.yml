@@ -17,8 +17,9 @@ matrix:
       before_install: choco install python
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
       script:
-        - python setup.py test
         - python setup.py sdist
+        - python setup.py install
+        - python scripts/run.py
 # all three OSes agree about 'pip3'
 install:
   # - pip3 install --upgrade pip

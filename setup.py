@@ -1,6 +1,5 @@
 """The setup script for installing and distributing the nes-py package."""
 from glob import glob
-from unittest import defaultTestLoader
 from setuptools import setup, find_packages, Extension
 
 
@@ -28,11 +27,6 @@ LIB_NES_ENV = Extension(LIB_NAME,
     include_dirs=INCLUDE_DIRS,
     extra_compile_args=EXTRA_COMPILE_ARGS,
 )
-
-
-def test_suite():
-    """Return the test suite for the package."""
-    return defaultTestLoader.discover('.')
 
 
 setup(
@@ -80,5 +74,5 @@ setup(
             'nes_py = nes_py.app.cli:main',
         ],
     },
-    test_suite='setup.test_suite',
+    test_suite='nes_py',
 )

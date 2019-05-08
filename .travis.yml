@@ -20,11 +20,6 @@ matrix:
       python: 3.7
       dist: xenial
       before_install: pip3 install scons
-    - name: "Python 3.7 on macOS 10.13 (Xcode 10.1)"
-      os: osx
-      osx_image: xcode10.1
-      language: shell
-      before_install: brew install scons
     - name: "Python 3.7 on macOS 10.14 (Xcode 10.2)"
       os: osx
       osx_image: xcode10.2

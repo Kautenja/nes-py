@@ -62,9 +62,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'gym>=0.10.9',
-        'matplotlib>=2.0.2',
         'numpy>=1.12.1',
-        'opencv-python>=3.4.0.12',
         'pyglet>=1.3.2',
         'tqdm>=4.19.5',
     ],

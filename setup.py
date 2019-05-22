@@ -59,7 +59,7 @@ setup(
     license='MIT',
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[LIB_NES_ENV],
-    zip_safe=False,
+    zip_safe=True,
     install_requires=[
         'gym>=0.10.9',
         'numpy>=1.12.1',

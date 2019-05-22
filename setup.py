@@ -65,7 +65,6 @@ setup(
         'matplotlib>=2.0.2',
         'numpy>=1.12.1',
         'opencv-python>=3.4.0.12',
-        'pygame>=1.9.3',
         'pyglet>=1.3.2',
         'tqdm>=4.19.5',
     ],

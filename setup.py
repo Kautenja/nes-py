@@ -20,12 +20,7 @@ SOURCES = glob('nes_py/nes/src/*.cpp') + glob('nes_py/nes/src/mappers/*.cpp')
 # headers with sdist
 INCLUDE_DIRS = ['nes_py/nes/include']
 # Build arguments to pass to the compiler
-EXTRA_COMPILE_ARGS = [
-    '-std=c++1y',
-    '-march=native',
-    '-pipe',
-    '-O2',
-]
+EXTRA_COMPILE_ARGS = ['-std=c++1y', '-march=native', '-pipe', '-O2']
 # The official extension using the name, source, headers, and build args
 LIB_NES_ENV = Extension(LIB_NAME,
     sources=SOURCES,
@@ -36,7 +31,7 @@ LIB_NES_ENV = Extension(LIB_NAME,
 
 setup(
     name='nes_py',
-    version='6.2.2',
+    version='7.0.1',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README,
     long_description_content_type='text/markdown',
@@ -45,13 +40,15 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: POSIX :: Linux',
+        'Operating System :: Microsoft :: Windows',
         'Programming Language :: C++',
-        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Emulators',
@@ -65,10 +62,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'gym>=0.10.9',
-        'matplotlib>=2.0.2',
         'numpy>=1.12.1',
-        'opencv-python>=3.4.0.12',
-        'pygame>=1.9.3',
         'pyglet>=1.3.2',
         'tqdm>=4.19.5',
     ],

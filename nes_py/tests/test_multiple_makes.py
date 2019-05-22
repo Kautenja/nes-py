@@ -3,7 +3,7 @@ from multiprocessing import Process
 from threading import Thread
 from unittest import TestCase
 from .rom_file_abs_path import rom_file_abs_path
-from ..nes_env import NESEnv
+from nes_py.nes_env import NESEnv
 
 
 def play(steps):

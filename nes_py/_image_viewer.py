@@ -100,10 +100,12 @@ class ImageViewer(object):
             vsync=False,
             resizable=True,
         )
+
         # add keyboard event monitors if enabled
         if self.monitor_keyboard:
             self._window.event(self.on_key_press)
             self._window.event(self.on_key_release)
+            self._window.set_exclusive_keyboard()
 
     def close(self):
         """Close the window."""

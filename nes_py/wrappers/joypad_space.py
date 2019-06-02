@@ -1,4 +1,5 @@
 """An environment wrapper to convert binary to discrete action space."""
+import gym
 from gym import Env
 from gym import Wrapper
 

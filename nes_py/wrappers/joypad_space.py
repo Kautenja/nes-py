@@ -1,8 +1,9 @@
 """An environment wrapper to convert binary to discrete action space."""
-import gym
+from gym import Env
+from gym import Wrapper
 
 
-class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
+class JoypadSpace(Wrapper):
     """An environment wrapper to convert binary to discrete action space."""
 
     # a mapping of buttons to binary values
@@ -15,23 +16,28 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
         'select': 0b00000100,
         'B':      0b00000010,
         'A':      0b00000001,
-        'NOOP':    0b00000000,
+        'NOOP':   0b00000000,
     }
 
-    def __init__(self, env, actions):
+    @classmethod
+    def buttons(cls) -> list:
+        """Return the buttons that can be used as actions."""
+        return list(cls._button_map.keys())
+
+    def __init__(self, env: Env, actions: list):
         """
         Initialize a new binary to discrete action space wrapper.
 
         Args:
-            env (gym.Env): the environment to wrap
-            actions (list): an ordered list of actions (as lists of buttons).
+            env: the environment to wrap
+            actions: an ordered list of actions (as lists of buttons).
                 The index of each button list is its discrete coded value
 
         Returns:
             None
 
         """
-        super(BinarySpaceToDiscreteSpaceEnv, self).__init__(env)
+        super().__init__(env)
         # create the new action space
         self.action_space = gym.spaces.Discrete(len(actions))
         # create the action map from the list of discrete actions
@@ -94,4 +100,4 @@ class BinarySpaceToDiscreteSpaceEnv(gym.Wrapper):
 
 
 # explicitly define the outward facing API of this module
-__all__ = [BinarySpaceToDiscreteSpaceEnv.__name__]
+__all__ = [JoypadSpace.__name__]

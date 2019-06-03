@@ -19,7 +19,7 @@ const int SCANLINE_VISIBLE_DOTS = 256;
 /// The number of cycles per scanline
 const int SCANLINE_CYCLE_LENGTH = 341;
 /// The last cycle of a scan line
-const int SCANLINE_END_CYCLE = 340;
+const int SCANLINE_END_CYCLE = 341;
 /// The last scanline per frame
 const int FRAME_END_SCANLINE = 261;
 

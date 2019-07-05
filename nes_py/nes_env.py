@@ -80,7 +80,7 @@ CONTROLLER_VECTOR = ctypes.c_byte * 1
 
 
 class NESEnv(gym.Env):
-    """An NES environment based on the LaiNES emulator."""
+    """An NES environment based on the SimpleNES emulator."""
 
     # relevant meta-data about the environment
     metadata = {

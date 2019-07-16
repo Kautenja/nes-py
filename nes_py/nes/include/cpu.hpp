@@ -19,25 +19,18 @@ class CPU {
  private:
     /// The program counter register
     NES_Address register_PC;
-
     /// The stack pointer register
     NES_Byte register_SP;
-
     /// The A register
     NES_Byte register_A;
-
     /// The X register
     NES_Byte register_X;
-
     /// The Y register
     NES_Byte register_Y;
-
     /// The flags register
     CPU_Flags flags;
-
     /// The number of cycles to skip
     int skip_cycles;
-
     /// The number of cycles the CPU has run
     int cycles;
 

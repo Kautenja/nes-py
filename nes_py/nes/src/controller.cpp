@@ -9,9 +9,9 @@
 
 NES_Byte Controller::read() {
     NES_Byte ret;
-    if (is_strobe)
+    if (is_strobe) {
         ret = (joypad_buttons & 1);
-    else {
+    } else {
         ret = (joypad_bits & 1);
         joypad_bits >>= 1;
     }

@@ -15,9 +15,9 @@ MapperUxROM::MapperUxROM(Cartridge &cart) :
         has_character_ram = true;
         character_ram.resize(0x2000);
         LOG(Info) << "Uses character RAM" << std::endl;
-    }
-    else
+    } else {
         has_character_ram = false;
+    }
 
     // last - 16KB
     last_bank_pointer = &cart.getROM()[cart.getROM().size() - 0x4000];

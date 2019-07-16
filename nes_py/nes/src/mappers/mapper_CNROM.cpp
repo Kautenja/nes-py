@@ -10,7 +10,7 @@
 
 MapperCNROM::MapperCNROM(Cartridge& cart) : Mapper(cart), select_chr(0) {
     is_one_bank = cart.getROM().size() == 0x4000;
-};
+}
 
 NES_Byte MapperCNROM::readPRG(NES_Address address) {
     if (!is_one_bank)

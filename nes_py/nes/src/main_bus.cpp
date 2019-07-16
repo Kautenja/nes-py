@@ -13,19 +13,15 @@ NES_Byte MainBus::read(NES_Address address) {
         return ram[address & 0x7ff];
     } else if (address < 0x4020) {
         if (address < 0x4000) {  // PPU registers, mirrored
-            auto it = read_callbacks.find(static_cast<IORegisters>(address & 0x2007));
-            if (it != read_callbacks.end())
-                // Second object is the pointer to the function object
-                // Dereference the function pointer and call it
-                return (it->second)();
+            auto reg = static_cast<IORegisters>(address & 0x2007);
+            if (read_callbacks.count(reg))
+                return read_callbacks.at(reg)();
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else if (address < 0x4018 && address >= 0x4014) {  // only *some* IO registers
-            auto it = read_callbacks.find(static_cast<IORegisters>(address));
-            if (it != read_callbacks.end())
-                // Second object is the pointer to the function object
-                // Dereference the function pointer and call it
-                return (it->second)();
+            auto reg = static_cast<IORegisters>(address);
+            if (read_callbacks.count(reg))
+                return read_callbacks.at(reg)();
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
         }
@@ -48,19 +44,15 @@ void MainBus::write(NES_Address address, NES_Byte value) {
         ram[address & 0x7ff] = value;
     } else if (address < 0x4020) {
         if (address < 0x4000) {  // PPU registers, mirrored
-            auto it = write_callbacks.find(static_cast<IORegisters>(address & 0x2007));
-            if (it != write_callbacks.end())
-                // Second object is the pointer to the function object
-                // Dereference the function pointer and call it
-                (it->second)(value);
+            auto reg = static_cast<IORegisters>(address & 0x2007);
+            if (write_callbacks.count(reg))
+                return write_callbacks.at(reg)(value);
             else
                 LOG(InfoVerbose) << "No write callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else if (address < 0x4017 && address >= 0x4014) {  // only some registers
-            auto it = write_callbacks.find(static_cast<IORegisters>(address));
-            if (it != write_callbacks.end())
-                // Second object is the pointer to the function object
-                // Dereference the function pointer and call it
-                (it->second)(value);
+            auto reg = static_cast<IORegisters>(address);
+            if (write_callbacks.count(reg))
+                return write_callbacks.at(reg)(value);
             else
                 LOG(InfoVerbose) << "No write callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else {

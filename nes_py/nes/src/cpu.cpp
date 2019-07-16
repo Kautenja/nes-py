@@ -6,9 +6,7 @@
 //
 
 #include "cpu.hpp"
-
 #include "log.hpp"
-
 
 bool CPU::implied(MainBus &bus, NES_Byte opcode) {
     switch (static_cast<OperationImplied>(opcode)) {

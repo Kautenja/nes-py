@@ -14,8 +14,7 @@
 
 /// The MOS6502 CPU for the Nintendo Entertainment System (NES)
 class CPU {
-
-private:
+ private:
     /// The program counter register
     NES_Address register_PC;
 
@@ -46,7 +45,7 @@ private:
     ///
     inline void set_ZN(NES_Byte value) {
         flags.bits.Z = !value; flags.bits.N = value & 0x80;
-    };
+    }
 
     /// Read a 16-bit address from the bus given an address.
     ///
@@ -56,7 +55,7 @@ private:
     ///
     inline NES_Address read_address(MainBus &bus, NES_Address address) {
         return bus.read(address) | bus.read(address + 1) << 8;
-    };
+    }
 
     /// Push a value onto the stack.
     ///
@@ -65,7 +64,7 @@ private:
     ///
     inline void push_stack(MainBus &bus, NES_Byte value) {
         bus.write(0x100 | register_SP--, value);
-    };
+    }
 
     /// Pop a value off the stack.
     ///
@@ -74,7 +73,7 @@ private:
     ///
     inline NES_Byte pop_stack(MainBus &bus) {
         return bus.read(0x100 | ++register_SP);
-    };
+    }
 
     /// Increment the skip cycles if two addresses refer to different pages.
     ///
@@ -84,7 +83,7 @@ private:
     ///
     inline void set_page_crossed(NES_Address a, NES_Address b, int inc = 1) {
         if ((a & 0xff00) != (b & 0xff00)) skip_cycles += inc;
-    };
+    }
 
     /// Execute an implied mode instruction.
     ///
@@ -132,7 +131,7 @@ private:
     ///
     void reset(NES_Address start_address);
 
-public:
+ public:
     /// The interrupt types available to this CPU
     enum InterruptType {
         IRQ_INTERRUPT,
@@ -147,7 +146,7 @@ public:
     ///
     /// @param bus the main bus of the NES emulator
     ///
-    inline void reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); };
+    inline void reset(MainBus &bus) { reset(read_address(bus, RESET_VECTOR)); }
 
     /// Interrupt the CPU.
     ///
@@ -170,8 +169,7 @@ public:
     /// 513 = 256 read + 256 write + 1 dummy read
     /// &1 -> +1 if on odd cycle
     ///
-    inline void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); };
-
+    inline void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); }
 };
 
 #endif // CPU_HPP

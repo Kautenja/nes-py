@@ -10,8 +10,12 @@
 
 #include <vector>
 #include <map>
+// #include <unordered_map>
+// #include "tsl/robin_map.h"
 #include "common.hpp"
 #include "mapper.hpp"
+
+namespace NES {
 
 /// The IO registers on the main bus
 enum IORegisters {
@@ -26,6 +30,15 @@ enum IORegisters {
     OAMDMA = 0x4014,
     JOY1 = 0x4016,
     JOY2 = 0x4017,
+};
+
+/// An enum functor object for calculating the hash of an enum class
+/// https://stackoverflow.com/questions/18837857/cant-use-enum-class-as-unordered-map-key
+struct EnumClassHash {
+    template <typename T>
+    std::size_t operator()(T t) const {
+        return static_cast<std::size_t>(t);
+    }
 };
 
 /// a type for write callback functions
@@ -84,16 +97,18 @@ class MainBus {
 
     /// Set a callback for when writes occur.
     inline void set_write_callback(IORegisters reg, WriteCallback callback) {
-        write_callbacks.emplace(reg, callback);
+        write_callbacks.insert({reg, callback});
     }
 
     /// Set a callback for when reads occur.
     inline void set_read_callback(IORegisters reg, ReadCallback callback) {
-        read_callbacks.emplace(reg, callback);
+        read_callbacks.insert({reg, callback});
     }
 
     /// Return a pointer to the page in memory.
     const NES_Byte* get_page_pointer(NES_Byte page);
 };
+
+}  // namespace NES
 
 #endif  // MAIN_BUS_HPP

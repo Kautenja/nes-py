@@ -12,6 +12,8 @@
 #include "common.hpp"
 #include "mapper.hpp"
 
+namespace NES {
+
 class MapperUxROM : public Mapper {
  private:
     /// whether the cartridge use character RAM
@@ -67,5 +69,7 @@ class MapperUxROM : public Mapper {
     ///
     const NES_Byte* getPagePtr(NES_Address address);
 };
+
+}  // namespace NES
 
 #endif  // MAPPERUXROM_HPP

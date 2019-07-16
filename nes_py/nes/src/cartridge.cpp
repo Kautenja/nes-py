@@ -9,6 +9,8 @@
 #include "cartridge.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 void Cartridge::loadFromFile(std::string path) {
     // create a stream to load the ROM file
     std::ifstream romFile(path, std::ios_base::binary | std::ios_base::in);
@@ -31,3 +33,5 @@ void Cartridge::loadFromFile(std::string path) {
     chr_rom.resize(0x2000 * vbanks);
     romFile.read(reinterpret_cast<char*>(&chr_rom[0]), 0x2000 * vbanks);
 }
+
+}  // namespace NES

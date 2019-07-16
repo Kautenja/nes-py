@@ -8,6 +8,8 @@
 #include "main_bus.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 NES_Byte MainBus::read(NES_Address address) {
     if (address < 0x2000) {
         return ram[address & 0x7ff];
@@ -88,3 +90,5 @@ void MainBus::set_mapper(Mapper* mapper) {
     if (mapper->hasExtendedRAM())
         extended_ram.resize(0x2000);
 }
+
+}  // namespace NES

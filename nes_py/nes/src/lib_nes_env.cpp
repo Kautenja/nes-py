@@ -25,60 +25,60 @@
 extern "C" {
     /// Return the width of the NES.
     EXP int Width() {
-        return Emulator::WIDTH;
+        return NES::Emulator::WIDTH;
     }
 
     /// Return the height of the NES.
     EXP int Height() {
-        return Emulator::HEIGHT;
+        return NES::Emulator::HEIGHT;
     }
 
     /// Initialize a new emulator and return a pointer to it
-    EXP Emulator* Initialize(wchar_t* path) {
+    EXP NES::Emulator* Initialize(wchar_t* path) {
         // convert the c string to a c++ std string data structure
         std::wstring ws_rom_path(path);
         std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
         // create a new emulator with the given ROM path
-        return new Emulator(rom_path);
+        return new NES::Emulator(rom_path);
     }
 
     /// Return a pointer to a controller on the machine
-    EXP NES_Byte* Controller(Emulator* emu, int port) {
+    EXP NES::NES_Byte* Controller(NES::Emulator* emu, int port) {
         return emu->get_controller(port);
     }
 
     /// Return the pointer to the screen buffer
-    EXP NES_Pixel* Screen(Emulator* emu) {
+    EXP NES::NES_Pixel* Screen(NES::Emulator* emu) {
         return emu->get_screen_buffer();
     }
 
     /// Return the pointer to the memory buffer
-    EXP NES_Byte* Memory(Emulator* emu) {
+    EXP NES::NES_Byte* Memory(NES::Emulator* emu) {
         return emu->get_memory_buffer();
     }
 
     /// Reset the emulator
-    EXP void Reset(Emulator* emu) {
+    EXP void Reset(NES::Emulator* emu) {
         emu->reset();
     }
 
     /// Perform a discrete step in the emulator (i.e., 1 frame)
-    EXP void Step(Emulator* emu) {
+    EXP void Step(NES::Emulator* emu) {
         emu->step();
     }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP void Backup(Emulator* emu) {
+    EXP void Backup(NES::Emulator* emu) {
         emu->backup();
     }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP void Restore(Emulator* emu) {
+    EXP void Restore(NES::Emulator* emu) {
         emu->restore();
     }
 
     /// Close the emulator, i.e., purge it from memory
-    EXP void Close(Emulator* emu) {
+    EXP void Close(NES::Emulator* emu) {
         delete emu;
     }
 }

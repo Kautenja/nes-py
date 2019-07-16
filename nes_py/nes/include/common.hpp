@@ -12,11 +12,15 @@
 #define _CRT_DECLARE_NONSTDC_NAMES 0
 #include <cstdint>
 
+namespace NES {
+
 /// A shortcut for a byte
 typedef uint8_t NES_Byte;
 /// A shortcut for a memory address (16-bit)
 typedef uint16_t NES_Address;
 /// A shortcut for a single pixel in memory
 typedef uint32_t NES_Pixel;
+
+}  // namespace NES
 
 #endif  // COMMON_HPP

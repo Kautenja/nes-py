@@ -8,6 +8,8 @@
 #include "mappers/mapper_SxROM.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 MapperSxROM::MapperSxROM(Cartridge &cart, std::function<void(void)> mirroring_cb) :
     Mapper(cart),
     mirroring_callback(mirroring_cb),
@@ -142,3 +144,5 @@ void MapperSxROM::writeCHR(NES_Address address, NES_Byte value) {
     else
         LOG(Info) << "Read-only CHR memory write attempt at " << std::hex << address << std::endl;
 }
+
+}  // namespace NES

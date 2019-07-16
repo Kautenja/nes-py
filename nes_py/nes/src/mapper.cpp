@@ -11,6 +11,8 @@
 #include "mappers/mapper_UxROM.hpp"
 #include "mappers/mapper_CNROM.hpp"
 
+namespace NES {
+
 Mapper* Mapper::create(Cartridge& game, std::function<void(void)> callback) {
     switch (static_cast<Mapper::Type>(game.getMapper())) {
         case NROM:
@@ -25,3 +27,5 @@ Mapper* Mapper::create(Cartridge& game, std::function<void(void)> callback) {
             return nullptr;
     }
 }
+
+}  // namespace NES

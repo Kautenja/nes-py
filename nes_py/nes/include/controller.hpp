@@ -10,6 +10,8 @@
 
 #include "common.hpp"
 
+namespace NES {
+
 /// A standard NES controller
 class Controller {
  private:
@@ -45,5 +47,7 @@ class Controller {
     ///
     NES_Byte read();
 };
+
+}  // namespace NES
 
 #endif  // CONTROLLER_HPP

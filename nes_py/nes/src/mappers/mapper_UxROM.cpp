@@ -8,6 +8,8 @@
 #include "mappers/mapper_UxROM.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 MapperUxROM::MapperUxROM(Cartridge &cart) :
     Mapper(cart),
     select_prg(0) {
@@ -54,3 +56,5 @@ void MapperUxROM::writeCHR(NES_Address address, NES_Byte value) {
             address <<
             std::endl;
 }
+
+}  // namespace NES

@@ -8,6 +8,8 @@
 #include "picture_bus.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 NES_Byte PictureBus::read(NES_Address address) {
     if (address < 0x2000) {
         return mapper->readCHR(address);
@@ -82,3 +84,5 @@ void PictureBus::update_mirroring() {
                 std::endl;
     }
 }
+
+}  // namespace NES

@@ -8,6 +8,8 @@
 #include "mappers/mapper_NROM.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 MapperNROM::MapperNROM(Cartridge &cart) : Mapper(cart) {
     if (cart.getROM().size() == 0x4000)  // 1 bank
         is_one_bank = true;
@@ -63,3 +65,5 @@ const NES_Byte* MapperNROM::getPagePtr(NES_Address address) {
     else  // mirrored
         return &cartridge.getROM()[(address - 0x8000) & 0x3fff];
 }
+
+}  // namespace NES

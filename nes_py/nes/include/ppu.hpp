@@ -12,6 +12,8 @@
 #include "picture_bus.hpp"
 #include "main_bus.hpp"
 
+namespace NES {
+
 /// The number of visible scan lines (i.e., the height of the screen)
 const int VISIBLE_SCANLINES = 240;
 /// The number of visible dots per scan line (i.e., the width of the screen)
@@ -182,5 +184,7 @@ class PPU {
     /// Return a pointer to the screen buffer.
     inline NES_Pixel* get_screen_buffer() { return *screen; }
 };
+
+}  // namespace NES
 
 #endif  // PPU_HPP

@@ -8,6 +8,8 @@
 #include "mappers/mapper_CNROM.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 MapperCNROM::MapperCNROM(Cartridge& cart) : Mapper(cart), select_chr(0) {
     is_one_bank = cart.getROM().size() == 0x4000;
 }
@@ -35,3 +37,5 @@ void MapperCNROM::writeCHR(NES_Address address, NES_Byte value) {
         address <<
         std::endl;
 }
+
+}  // namespace NES

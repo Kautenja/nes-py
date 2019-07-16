@@ -10,6 +10,8 @@
 #include "palette.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 void PPU::reset() {
     is_long_sprites = false;
     is_interrupting = false;
@@ -365,3 +367,5 @@ void PPU::set_scroll(NES_Byte scroll) {
         is_first_write = true;
     }
 }
+
+}  // namespace NES

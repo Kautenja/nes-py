@@ -10,6 +10,8 @@
 
 #include "common.hpp"
 
+namespace NES {
+
 const auto INSTRUCTION_MODE_MASK = 0x3;
 
 const auto OPERATION_MASK = 0xe0;
@@ -156,5 +158,7 @@ const NES_Byte OPERATION_CYCLES[0x100] = {
     2, 6, 0, 0, 3, 3, 5, 0, 2, 2, 2, 2, 4, 4, 6, 0,
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
 };
+
+}  // namespace NES
 
 #endif  // CPU_OPCODES_HPP

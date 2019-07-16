@@ -12,6 +12,8 @@
 #include <string>
 #include "common.hpp"
 
+namespace NES {
+
 /// A cartridge holding game ROM and a special hardware mapper emulation
 class Cartridge {
  private:
@@ -51,5 +53,7 @@ class Cartridge {
     /// Load a ROM file into the cartridge and build the corresponding mapper.
     void loadFromFile(std::string path);
 };
+
+}  // namespace NES
 
 #endif // CARTRIDGE_HPP

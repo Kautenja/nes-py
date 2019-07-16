@@ -18,6 +18,8 @@
 #include "mapper.hpp"
 #include "picture_bus.hpp"
 
+namespace NES {
+
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
  private:
@@ -94,5 +96,7 @@ class Emulator {
     /// Restore the backup state on the emulator.
     void restore();
 };
+
+}  // namespace NES
 
 #endif  // EMULATOR_HPP

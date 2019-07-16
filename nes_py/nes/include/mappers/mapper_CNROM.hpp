@@ -11,6 +11,8 @@
 #include "common.hpp"
 #include "mapper.hpp"
 
+namespace NES {
+
 class MapperCNROM : public Mapper {
  private:
     /// whether there are 1 or 2 banks
@@ -64,5 +66,7 @@ class MapperCNROM : public Mapper {
     ///
     const NES_Byte* getPagePtr(NES_Address address);
 };
+
+}  // namespace NES
 
 #endif // MAPPERCNROM_HPP

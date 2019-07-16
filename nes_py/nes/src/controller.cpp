@@ -7,6 +7,8 @@
 
 #include "controller.hpp"
 
+namespace NES {
+
 NES_Byte Controller::read() {
     NES_Byte ret;
     if (is_strobe) {
@@ -17,3 +19,5 @@ NES_Byte Controller::read() {
     }
     return ret | 0x40;
 }
+
+}  // namespace NES

@@ -13,6 +13,8 @@
 #include "common.hpp"
 #include "mapper.hpp"
 
+namespace NES {
+
 /// The bus for graphical data to travel along
 class PictureBus {
  private:
@@ -66,5 +68,7 @@ class PictureBus {
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();
 };
+
+}  // namespace NES
 
 #endif  // PICTURE_BUS_HPP

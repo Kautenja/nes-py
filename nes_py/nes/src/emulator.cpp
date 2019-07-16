@@ -8,6 +8,8 @@
 #include "emulator.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 Emulator::Emulator(std::string rom_path) {
     // set the read callbacks
     bus.set_read_callback(PPUSTATUS, [&](void) { return ppu.get_status();          });
@@ -67,3 +69,5 @@ void Emulator::restore() {
     cpu = backup_cpu;
     ppu = backup_ppu;
 }
+
+}  // namespace NES

@@ -12,6 +12,8 @@
 #include "cpu_opcodes.hpp"
 #include "main_bus.hpp"
 
+namespace NES {
+
 /// The MOS6502 CPU for the Nintendo Entertainment System (NES)
 class CPU {
  private:
@@ -171,5 +173,7 @@ class CPU {
     ///
     inline void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); }
 };
+
+}  // namespace NES
 
 #endif  // CPU_HPP

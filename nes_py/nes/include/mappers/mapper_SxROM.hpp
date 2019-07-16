@@ -12,6 +12,8 @@
 #include "common.hpp"
 #include "mapper.hpp"
 
+namespace NES {
+
 class MapperSxROM : public Mapper {
  private:
     /// The mirroring callback on the PPU
@@ -94,5 +96,7 @@ class MapperSxROM : public Mapper {
     /// Return the name table mirroring mode of this mapper.
     inline NameTableMirroring getNameTableMirroring() { return mirroing; }
 };
+
+}  // namespace NES
 
 #endif  // MAPPERSXROM_HPP

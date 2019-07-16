@@ -8,6 +8,8 @@
 #include "cpu.hpp"
 #include "log.hpp"
 
+namespace NES {
+
 bool CPU::implied(MainBus &bus, NES_Byte opcode) {
     switch (static_cast<OperationImplied>(opcode)) {
         case NOP: {
@@ -558,3 +560,5 @@ void CPU::cycle(MainBus &bus) {
     else
         std::cout << "failed to execute opcode: " << std::hex << +op << std::endl;
 }
+
+}  // namespace NES

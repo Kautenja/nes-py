@@ -12,6 +12,8 @@
 #include "common.hpp"
 #include "cartridge.hpp"
 
+namespace NES {
+
 /// Mirroring modes supported by the NES
 enum NameTableMirroring {
     HORIZONTAL  = 0,
@@ -93,5 +95,7 @@ class Mapper {
     /// Return true if this mapper has extended RAM, false otherwise.
     inline bool hasExtendedRAM() { return cartridge.hasExtendedRAM(); }
 };
+
+}  // namespace NES
 
 #endif  // MAPPER_HPP

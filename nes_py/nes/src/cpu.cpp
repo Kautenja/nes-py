@@ -10,12 +10,14 @@
 
 bool CPU::implied(MainBus &bus, NES_Byte opcode) {
     switch (static_cast<OperationImplied>(opcode)) {
-        case NOP:
+        case NOP: {
             break;
-        case BRK:
+        }
+        case BRK: {
             interrupt(bus, BRK_INTERRUPT);
             break;
-        case JSR:
+        }
+        case JSR: {
             // Push address of next instruction - 1, thus register_PC + 1
             // instead of register_PC + 2 since register_PC and
             // register_PC + 1 are address of subroutine
@@ -23,151 +25,174 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             push_stack(bus, static_cast<NES_Byte>(register_PC + 1));
             register_PC = read_address(bus, register_PC);
             break;
-        case RTS:
+        }
+        case RTS: {
             register_PC = pop_stack(bus);
             register_PC |= pop_stack(bus) << 8;
             ++register_PC;
             break;
+        }
         case RTI: {
-                flags.byte = pop_stack(bus);
-            }
+            flags.byte = pop_stack(bus);
             register_PC = pop_stack(bus);
             register_PC |= pop_stack(bus) << 8;
             break;
-        case JMP:
+        }
+        case JMP: {
             register_PC = read_address(bus, register_PC);
             break;
+        }
         case JMPI: {
-                NES_Address location = read_address(bus, register_PC);
-                // 6502 has a bug such that the when the vector of an indirect
-                // address begins at the last byte of a page, the second byte
-                // is fetched from the beginning of that page rather than the
-                // beginning of the next
-                // Recreating here:
-                NES_Address Page = location & 0xff00;
-                register_PC = bus.read(location) |
-                       bus.read(Page | ((location + 1) & 0xff)) << 8;
-            }
+            NES_Address location = read_address(bus, register_PC);
+            // 6502 has a bug such that the when the vector of an indirect
+            // address begins at the last byte of a page, the second byte
+            // is fetched from the beginning of that page rather than the
+            // beginning of the next
+            // Recreating here:
+            NES_Address Page = location & 0xff00;
+            register_PC = bus.read(location) | bus.read(Page | ((location + 1) & 0xff)) << 8;
             break;
+        }
         case PHP: {
-                push_stack(bus, flags.byte);
-            }
+            push_stack(bus, flags.byte);
             break;
+        }
         case PLP: {
-                flags.byte = pop_stack(bus);
-            }
+            flags.byte = pop_stack(bus);
             break;
-        case PHA:
+        }
+        case PHA: {
             push_stack(bus, register_A);
             break;
-        case PLA:
+        }
+        case PLA: {
             register_A = pop_stack(bus);
             set_ZN(register_A);
             break;
-        case DEY:
+        }
+        case DEY: {
             --register_Y;
             set_ZN(register_Y);
             break;
-        case DEX:
+        }
+        case DEX: {
             --register_X;
             set_ZN(register_X);
             break;
-        case TAY:
+        }
+        case TAY: {
             register_Y = register_A;
             set_ZN(register_Y);
             break;
-        case INY:
+        }
+        case INY: {
             ++register_Y;
             set_ZN(register_Y);
             break;
-        case INX:
+        }
+        case INX: {
             ++register_X;
             set_ZN(register_X);
             break;
-        case CLC:
+        }
+        case CLC: {
             flags.bits.C = false;
             break;
-        case SEC:
+        }
+        case SEC: {
             flags.bits.C = true;
             break;
-        case CLI:
+        }
+        case CLI: {
             flags.bits.I = false;
             break;
-        case SEI:
+        }
+        case SEI: {
             flags.bits.I = true;
             break;
-        case CLD:
+        }
+        case CLD: {
             flags.bits.D = false;
             break;
-        case SED:
+        }
+        case SED: {
             flags.bits.D = true;
             break;
-        case TYA:
+        }
+        case TYA: {
             register_A = register_Y;
             set_ZN(register_A);
             break;
-        case CLV:
+        }
+        case CLV: {
             flags.bits.V = false;
             break;
-        case TXA:
+        }
+        case TXA: {
             register_A = register_X;
             set_ZN(register_A);
             break;
-        case TXS:
+        }
+        case TXS: {
             register_SP = register_X;
             break;
-        case TAX:
+        }
+        case TAX: {
             register_X = register_A;
             set_ZN(register_X);
             break;
-        case TSX:
+        }
+        case TSX: {
             register_X = register_SP;
             set_ZN(register_X);
             break;
-        default:
-            return false;
+        }
+        default: return false;
     }
     return true;
 }
 
 bool CPU::branch(MainBus &bus, NES_Byte opcode) {
-    if ((opcode & BRANCH_INSTRUCTION_MASK) == BRANCH_INSTRUCTION_MASK_RESULT) {
-        // branch is initialized to the condition required (for the flag
-        // specified later)
-        bool branch = opcode & BRANCH_CONDITION_MASK;
+    if ((opcode & BRANCH_INSTRUCTION_MASK) != BRANCH_INSTRUCTION_MASK_RESULT)
+        return false;
 
-        // set branch to true if the given condition is met by the given flag
-        // We use xnor here, it is true if either both operands are true or
-        // false
-        switch (opcode >> BRANCH_ON_FLAG_SHIFT) {
-            case NEGATIVE:
-                branch = !(branch ^ flags.bits.N);
-                break;
-            case OVERFLOW:
-                branch = !(branch ^ flags.bits.V);
-                break;
-            case CARRY:
-                branch = !(branch ^ flags.bits.C);
-                break;
-            case ZERO:
-                branch = !(branch ^ flags.bits.Z);
-                break;
-            default:
-                return false;
-        }
+    // branch is initialized to the condition required (for the flag
+    // specified later)
+    bool branch = opcode & BRANCH_CONDITION_MASK;
 
-        if (branch) {
-            int8_t offset = bus.read(register_PC++);
-            ++skip_cycles;
-            auto newPC = static_cast<NES_Address>(register_PC + offset);
-            set_page_crossed(register_PC, newPC, 2);
-            register_PC = newPC;
-        } else {
-            ++register_PC;
+    // set branch to true if the given condition is met by the given flag
+    // We use xnor here, it is true if either both operands are true or
+    // false
+    switch (opcode >> BRANCH_ON_FLAG_SHIFT) {
+        case NEGATIVE: {
+            branch = !(branch ^ flags.bits.N);
+            break;
         }
-        return true;
+        case OVERFLOW: {
+            branch = !(branch ^ flags.bits.V);
+            break;
+        }
+        case CARRY: {
+            branch = !(branch ^ flags.bits.C);
+            break;
+        }
+        case ZERO: {
+            branch = !(branch ^ flags.bits.Z);
+            break;
+        }
+        default: return false;
     }
-    return false;
+
+    if (branch) {
+        int8_t offset = bus.read(register_PC++);
+        ++skip_cycles;
+        auto newPC = static_cast<NES_Address>(register_PC + offset);
+        set_page_crossed(register_PC, newPC, 2);
+        register_PC = newPC;
+    } else {
+        ++register_PC;
+    }
+    return true;
 }
 
 bool CPU::type0(MainBus &bus, NES_Byte opcode) {
@@ -358,125 +383,135 @@ bool CPU::type1(MainBus &bus, NES_Byte opcode) {
 }
 
 bool CPU::type2(MainBus &bus, NES_Byte opcode) {
-    if ((opcode & INSTRUCTION_MODE_MASK) == 2) {
-        NES_Address location = 0;
-        auto op = static_cast<Operation2>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
-        auto address_mode =
-                static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT);
-        switch (address_mode) {
-            case M2_IMMEDIATE:
-                location = register_PC++;
-                break;
-            case M2_ZERO_PAGE:
-                location = bus.read(register_PC++);
-                break;
-            case M2_ACCUMULATOR:
-                break;
-            case M2_ABSOLUTE:
-                location = read_address(bus, register_PC);
-                register_PC += 2;
-                break;
-            case M2_INDEXED: {
-                    location = bus.read(register_PC++);
-                    NES_Byte index;
-                    if (op == LDX || op == STX)
-                        index = register_Y;
-                    else
-                        index = register_X;
-                    //The mask wraps address around zero page
-                    location = (location + index) & 0xff;
-                }
-                break;
-            case M2_ABSOLUTE_INDEXED: {
-                    location = read_address(bus, register_PC);
-                    register_PC += 2;
-                    NES_Byte index;
-                    if (op == LDX || op == STX)
-                        index = register_Y;
-                    else
-                        index = register_X;
-                    set_page_crossed(location, location + index);
-                    location += index;
-                }
-                break;
-            default:
-                return false;
-        }
+    if ((opcode & INSTRUCTION_MODE_MASK) != 2)
+        return false;
 
-        NES_Address operand = 0;
-        switch (op) {
-            case ASL:
-            case ROL:
-                if (address_mode == M2_ACCUMULATOR) {
-                    auto prev_C = flags.bits.C;
-                    flags.bits.C = register_A & 0x80;
-                    register_A <<= 1;
-                    //If Rotating, set the bit-0 to the the previous carry
-                    register_A = register_A | (prev_C && (op == ROL));
-                    set_ZN(register_A);
-                }
-                else {
-                    auto prev_C = flags.bits.C;
-                    operand = bus.read(location);
-                    flags.bits.C = operand & 0x80;
-                    operand = operand << 1 | (prev_C && (op == ROL));
-                    set_ZN(operand);
-                    bus.write(location, operand);
-                }
-                break;
-            case LSR:
-            case ROR:
-                if (address_mode == M2_ACCUMULATOR) {
-                    auto prev_C = flags.bits.C;
-                    flags.bits.C = register_A & 1;
-                    register_A >>= 1;
-                    //If Rotating, set the bit-7 to the previous carry
-                    register_A = register_A | (prev_C && (op == ROR)) << 7;
-                    set_ZN(register_A);
-                }
-                else {
-                    auto prev_C = flags.bits.C;
-                    operand = bus.read(location);
-                    flags.bits.C = operand & 1;
-                    operand = operand >> 1 | (prev_C && (op == ROR)) << 7;
-                    set_ZN(operand);
-                    bus.write(location, operand);
-                }
-                break;
-            case STX:
-                bus.write(location, register_X);
-                break;
-            case LDX:
-                register_X = bus.read(location);
-                set_ZN(register_X);
-                break;
-            case DEC: {
-                    auto tmp = bus.read(location) - 1;
-                    set_ZN(tmp);
-                    bus.write(location, tmp);
-                }
-                break;
-            case INC: {
-                    auto tmp = bus.read(location) + 1;
-                    set_ZN(tmp);
-                    bus.write(location, tmp);
-                }
-                break;
-            default:
-                return false;
+    NES_Address location = 0;
+    auto op = static_cast<Operation2>((opcode & OPERATION_MASK) >> OPERATION_SHIFT);
+    auto address_mode = static_cast<AddrMode2>((opcode & ADRESS_MODE_MASK) >> ADDRESS_MODE_SHIFT);
+    switch (address_mode) {
+        case M2_IMMEDIATE: {
+            location = register_PC++;
+            break;
         }
-        return true;
+        case M2_ZERO_PAGE: {
+            location = bus.read(register_PC++);
+            break;
+        }
+        case M2_ACCUMULATOR: {
+            break;
+        }
+        case M2_ABSOLUTE: {
+            location = read_address(bus, register_PC);
+            register_PC += 2;
+            break;
+        }
+        case M2_INDEXED: {
+            location = bus.read(register_PC++);
+            NES_Byte index;
+            if (op == LDX || op == STX)
+                index = register_Y;
+            else
+                index = register_X;
+            //The mask wraps address around zero page
+            location = (location + index) & 0xff;
+            break;
+        }
+        case M2_ABSOLUTE_INDEXED: {
+            location = read_address(bus, register_PC);
+            register_PC += 2;
+            NES_Byte index;
+            if (op == LDX || op == STX)
+                index = register_Y;
+            else
+                index = register_X;
+            set_page_crossed(location, location + index);
+            location += index;
+            break;
+        }
+        default: return false;
     }
-    return false;
+
+    NES_Address operand = 0;
+    switch (op) {
+        case ASL:
+        case ROL:
+            if (address_mode == M2_ACCUMULATOR) {
+                auto prev_C = flags.bits.C;
+                flags.bits.C = register_A & 0x80;
+                register_A <<= 1;
+                //If Rotating, set the bit-0 to the the previous carry
+                register_A = register_A | (prev_C && (op == ROL));
+                set_ZN(register_A);
+            } else {
+                auto prev_C = flags.bits.C;
+                operand = bus.read(location);
+                flags.bits.C = operand & 0x80;
+                operand = operand << 1 | (prev_C && (op == ROL));
+                set_ZN(operand);
+                bus.write(location, operand);
+            }
+            break;
+        case LSR:
+        case ROR:
+            if (address_mode == M2_ACCUMULATOR) {
+                auto prev_C = flags.bits.C;
+                flags.bits.C = register_A & 1;
+                register_A >>= 1;
+                //If Rotating, set the bit-7 to the previous carry
+                register_A = register_A | (prev_C && (op == ROR)) << 7;
+                set_ZN(register_A);
+            } else {
+                auto prev_C = flags.bits.C;
+                operand = bus.read(location);
+                flags.bits.C = operand & 1;
+                operand = operand >> 1 | (prev_C && (op == ROR)) << 7;
+                set_ZN(operand);
+                bus.write(location, operand);
+            }
+            break;
+        case STX: {
+            bus.write(location, register_X);
+            break;
+        }
+        case LDX: {
+            register_X = bus.read(location);
+            set_ZN(register_X);
+            break;
+        }
+        case DEC: {
+            auto tmp = bus.read(location) - 1;
+            set_ZN(tmp);
+            bus.write(location, tmp);
+            break;
+        }
+        case INC: {
+            auto tmp = bus.read(location) + 1;
+            set_ZN(tmp);
+            bus.write(location, tmp);
+            break;
+        }
+        default: return false;
+    }
+    return true;
 }
 
 void CPU::reset(NES_Address start_address) {
-    skip_cycles = cycles = 0;
-    register_A = register_X = register_Y = 0;
-    flags.bits.I = true;
-    flags.bits.C = flags.bits.D = flags.bits.N = flags.bits.V = flags.bits.Z = false;
+    skip_cycles = 0;
+    cycles = 0;
+    register_A = 0;
+    register_X = 0;
+    register_Y = 0;
+    // flags.bits.I = true;
+    // flags.bits.C = false;
+    // flags.bits.D = false;
+    // flags.bits.N = false;
+    // flags.bits.V = false;
+    // flags.bits.Z = false;
+    flags.byte = 0b00110100;
     register_PC = start_address;
-    register_SP = 0xfd; //documented startup state
+    // documented startup state
+    register_SP = 0xfd;
 }
 
 void CPU::interrupt(MainBus &bus, InterruptType type) {

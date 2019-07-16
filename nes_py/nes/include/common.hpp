@@ -13,10 +13,10 @@
 #include <cstdint>
 
 /// A shortcut for a byte
-using NES_Byte = uint8_t;
+typedef uint8_t NES_Byte;
 /// A shortcut for a memory address (16-bit)
-using NES_Address = uint16_t;
+typedef uint16_t NES_Address;
 /// A shortcut for a single pixel in memory
-using NES_Pixel = uint32_t;
+typedef uint32_t NES_Pixel;
 
 #endif  // COMMON_HPP

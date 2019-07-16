@@ -92,7 +92,6 @@ class Mapper {
 
     /// Return true if this mapper has extended RAM, false otherwise.
     inline bool hasExtendedRAM() { return cartridge.hasExtendedRAM(); }
-
 };
 
-#endif //MAPPER_HPP
+#endif  // MAPPER_HPP

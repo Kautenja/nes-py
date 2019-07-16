@@ -8,12 +8,12 @@
 #ifndef MAPPERSXROM_HPP
 #define MAPPERSXROM_HPP
 
+#include <vector>
 #include "common.hpp"
 #include "mapper.hpp"
 
 class MapperSxROM : public Mapper {
-
-private:
+ private:
     /// The mirroring callback on the PPU
     std::function<void(void)> mirroring_callback;
     /// the mirroring mode on the device
@@ -48,7 +48,7 @@ private:
     /// TODO: what does this do
     void calculatePRGPointers();
 
-public:
+ public:
     /// Create a new mapper with a cartridge.
     ///
     /// @param cart a reference to a cartridge for the mapper to access
@@ -61,28 +61,28 @@ public:
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    NES_Byte readPRG (NES_Address address);
+    NES_Byte readPRG(NES_Address address);
 
     /// Write a byte to an address in the PRG RAM.
     ///
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writePRG (NES_Address address, NES_Byte value);
+    void writePRG(NES_Address address, NES_Byte value);
 
     /// Read a byte from the CHR RAM.
     ///
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    NES_Byte readCHR (NES_Address address);
+    NES_Byte readCHR(NES_Address address);
 
     /// Write a byte to an address in the CHR RAM.
     ///
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    void writeCHR (NES_Address address, NES_Byte value);
+    void writeCHR(NES_Address address, NES_Byte value);
 
     /// Return the page pointer for the given address.
     ///
@@ -92,8 +92,7 @@ public:
     const NES_Byte* getPagePtr(NES_Address address);
 
     /// Return the name table mirroring mode of this mapper.
-    inline NameTableMirroring getNameTableMirroring() { return mirroing; };
-
+    inline NameTableMirroring getNameTableMirroring() { return mirroing; }
 };
 
-#endif // MAPPERSXROM_HPP
+#endif  // MAPPERSXROM_HPP

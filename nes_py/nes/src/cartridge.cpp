@@ -5,13 +5,13 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <fstream>
 #include "cartridge.hpp"
 #include "log.hpp"
-#include <fstream>
 
 void Cartridge::loadFromFile(std::string path) {
     // create a stream to load the ROM file
-    std::ifstream romFile (path, std::ios_base::binary | std::ios_base::in);
+    std::ifstream romFile(path, std::ios_base::binary | std::ios_base::in);
     // create a byte vector for the iNES header
     std::vector<NES_Byte> header;
     header.resize(0x10);

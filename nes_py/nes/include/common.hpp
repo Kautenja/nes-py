@@ -10,7 +10,7 @@
 
 // resolve an issue with MSVC overflow during compilation (Windows)
 #define _CRT_DECLARE_NONSTDC_NAMES 0
-#include <stdint.h>
+#include <cstdint>
 
 /// A shortcut for a byte
 using NES_Byte = uint8_t;
@@ -19,4 +19,4 @@ using NES_Address = uint16_t;
 /// A shortcut for a single pixel in memory
 using NES_Pixel = uint32_t;
 
-#endif // COMMON_HPP
+#endif  // COMMON_HPP

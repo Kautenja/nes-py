@@ -28,6 +28,15 @@ enum IORegisters {
     JOY2 = 0x4017,
 };
 
+/// a type for write callback functions
+typedef std::function<void(NES_Byte)> WriteCallback;
+/// a map type from IORegsiters to WriteCallbacks
+typedef std::map<IORegisters, WriteCallback> IORegisterToWriteCallbackMap;
+/// a type for read callback functions
+typedef std::function<NES_Byte(void)> ReadCallback;
+/// a map type from IORegsiters to ReadCallbacks
+typedef std::map<IORegisters, ReadCallback> IORegisterToReadCallbackMap;
+
 /// The main bus for data to travel along the NES hardware
 class MainBus {
  private:
@@ -38,9 +47,9 @@ class MainBus {
     /// a pointer to the mapper on the cartridge
     Mapper* mapper;
     /// a map of IO registers to callback methods for writes
-    std::map<IORegisters, std::function<void(NES_Byte)>> write_callbacks;
+    IORegisterToWriteCallbackMap write_callbacks;
     /// a map of IO registers to callback methods for reads
-    std::map<IORegisters, std::function<NES_Byte(void)>> read_callbacks;
+    IORegisterToReadCallbackMap read_callbacks;
 
  public:
     /// Initialize a new main bus.
@@ -74,18 +83,12 @@ class MainBus {
     void set_mapper(Mapper* mapper);
 
     /// Set a callback for when writes occur.
-    inline void set_write_callback(
-        IORegisters reg,
-        std::function<void(NES_Byte)> callback
-    ) {
+    inline void set_write_callback(IORegisters reg, WriteCallback callback) {
         write_callbacks.emplace(reg, callback);
     }
 
     /// Set a callback for when reads occur.
-    inline void set_read_callback(
-        IORegisters reg,
-        std::function<NES_Byte(void)> callback
-    ) {
+    inline void set_read_callback(IORegisters reg, ReadCallback callback) {
         read_callbacks.emplace(reg, callback);
     }
 

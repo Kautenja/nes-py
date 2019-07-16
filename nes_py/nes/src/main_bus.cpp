@@ -15,9 +15,9 @@ NES_Byte MainBus::read(NES_Address address) {
         if (address < 0x4000) {  // PPU registers, mirrored
             auto it = read_callbacks.find(static_cast<IORegisters>(address & 0x2007));
             if (it != read_callbacks.end())
-                return (it -> second)();
                 // Second object is the pointer to the function object
                 // Dereference the function pointer and call it
+                return (it->second)();
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else if (address < 0x4018 && address >= 0x4014) {  // only *some* IO registers

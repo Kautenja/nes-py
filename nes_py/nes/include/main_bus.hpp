@@ -9,9 +9,7 @@
 #define MAIN_BUS_HPP
 
 #include <vector>
-#include <map>
-// #include <unordered_map>
-// #include "tsl/robin_map.h"
+#include <unordered_map>
 #include "common.hpp"
 #include "mapper.hpp"
 
@@ -36,19 +34,17 @@ enum IORegisters {
 /// https://stackoverflow.com/questions/18837857/cant-use-enum-class-as-unordered-map-key
 struct EnumClassHash {
     template <typename T>
-    std::size_t operator()(T t) const {
-        return static_cast<std::size_t>(t);
-    }
+    std::size_t operator()(T t) const { return static_cast<std::size_t>(t); }
 };
 
 /// a type for write callback functions
 typedef std::function<void(NES_Byte)> WriteCallback;
 /// a map type from IORegsiters to WriteCallbacks
-typedef std::map<IORegisters, WriteCallback> IORegisterToWriteCallbackMap;
+typedef std::unordered_map<IORegisters, WriteCallback, EnumClassHash> IORegisterToWriteCallbackMap;
 /// a type for read callback functions
 typedef std::function<NES_Byte(void)> ReadCallback;
 /// a map type from IORegsiters to ReadCallbacks
-typedef std::map<IORegisters, ReadCallback> IORegisterToReadCallbackMap;
+typedef std::unordered_map<IORegisters, ReadCallback, EnumClassHash> IORegisterToReadCallbackMap;
 
 /// The main bus for data to travel along the NES hardware
 class MainBus {

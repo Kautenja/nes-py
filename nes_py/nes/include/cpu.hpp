@@ -172,4 +172,4 @@ class CPU {
     inline void skip_DMA_cycles() { skip_cycles += 513 + (cycles & 1); }
 };
 
-#endif // CPU_HPP
+#endif  // CPU_HPP

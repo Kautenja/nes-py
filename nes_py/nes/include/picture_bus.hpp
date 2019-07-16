@@ -8,15 +8,14 @@
 #ifndef PICTURE_BUS_HPP
 #define PICTURE_BUS_HPP
 
+#include <vector>
+#include <cstdlib>
 #include "common.hpp"
 #include "mapper.hpp"
-#include <vector>
-#include <stdlib.h>
 
 /// The bus for graphical data to travel along
 class PictureBus {
-
-private:
+ private:
     /// the VRAM on the picture bus
     std::vector<NES_Byte> ram;
     /// indexes where they start in RAM vector
@@ -27,9 +26,9 @@ private:
     /// a pointer to the mapper on the cartridge
     Mapper* mapper;
 
-public:
+ public:
     /// Initialize a new picture bus.
-    PictureBus() : ram(0x800), palette(0x20), mapper(nullptr) { };;
+    PictureBus() : ram(0x800), palette(0x20), mapper(nullptr) { }
 
     /// Read a byte from an address on the VRAM.
     ///
@@ -50,7 +49,9 @@ public:
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    inline void set_mapper(Mapper *mapper) { this->mapper = mapper; update_mirroring(); };
+    inline void set_mapper(Mapper *mapper) {
+        this->mapper = mapper; update_mirroring();
+    }
 
     /// Read a color index from the palette.
     ///
@@ -58,11 +59,12 @@ public:
     ///
     /// @return the index of the RGB tuple in the color array
     ///
-    inline NES_Byte read_palette(NES_Byte address) { return palette[address]; };
+    inline NES_Byte read_palette(NES_Byte address) {
+        return palette[address];
+    }
 
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();
-
 };
 
-#endif // PICTURE_BUS_HPP
+#endif  // PICTURE_BUS_HPP

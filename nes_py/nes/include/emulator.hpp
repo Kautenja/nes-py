@@ -8,6 +8,7 @@
 #ifndef EMULATOR_HPP
 #define EMULATOR_HPP
 
+#include <string>
 #include "common.hpp"
 #include "cartridge.hpp"
 #include "controller.hpp"
@@ -16,15 +17,12 @@
 #include "main_bus.hpp"
 #include "mapper.hpp"
 #include "picture_bus.hpp"
-#include <string>
 
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
-
-private:
+ private:
     /// The number of cycles in 1 frame
-    const static int CYCLES_PER_FRAME = 29781;
-
+    static const int CYCLES_PER_FRAME = 29781;
     /// the virtual cartridge with ROM and mapper data
     Cartridge cartridge;
     /// the 2 controllers on the emulator
@@ -51,11 +49,11 @@ private:
     /// Skip DMA cycle and perform a DMA copy.
     void DMA(NES_Byte page);
 
-public:
+ public:
     /// The width of the NES screen in pixels
-    const static int WIDTH = SCANLINE_VISIBLE_DOTS;
+    static const int WIDTH = SCANLINE_VISIBLE_DOTS;
     /// The height of the NES screen in pixels
-    const static int HEIGHT = VISIBLE_SCANLINES;
+    static const int HEIGHT = VISIBLE_SCANLINES;
 
     /// Initialize a new emulator with a path to a ROM file.
     ///
@@ -67,23 +65,25 @@ public:
     ///
     /// @return a 32-bit pointer to the screen buffer's first address
     ///
-    inline NES_Pixel* get_screen_buffer() { return ppu.get_screen_buffer(); };
+    inline NES_Pixel* get_screen_buffer() { return ppu.get_screen_buffer(); }
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    inline NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); };
+    inline NES_Byte* get_memory_buffer() { return bus.get_memory_buffer(); }
 
     /// Return a pointer to a controller port
     ///
     /// @param port the port of the controller to return the pointer to
     /// @return a pointer to the byte buffer for the controller state
     ///
-    inline NES_Byte* get_controller(int port) { return controllers[port].get_joypad_buffer(); };
+    inline NES_Byte* get_controller(int port) {
+        return controllers[port].get_joypad_buffer();
+    }
 
     /// Load the ROM into the NES.
-    inline void reset() { cpu.reset(bus); ppu.reset(); };
+    inline void reset() { cpu.reset(bus); ppu.reset(); }
 
     /// Perform a step on the emulator, i.e., a single frame.
     void step();
@@ -93,7 +93,6 @@ public:
 
     /// Restore the backup state on the emulator.
     void restore();
-
 };
 
-#endif // EMULATOR_HPP
+#endif  // EMULATOR_HPP

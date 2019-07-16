@@ -5,8 +5,8 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
-#ifndef CPUOPCODES_HPP
-#define CPUOPCODES_HPP
+#ifndef CPU_OPCODES_HPP
+#define CPU_OPCODES_HPP
 
 #include "common.hpp"
 
@@ -93,7 +93,7 @@ enum OperationImplied {
     RTS = 0x60,
 
     JMP  = 0x4C,
-    JMPI = 0x6C, //JMP Indirect
+    JMPI = 0x6C,  // JMP Indirect
 
     PHP = 0x08,
     PLP = 0x28,
@@ -157,4 +157,4 @@ const NES_Byte OPERATION_CYCLES[0x100] = {
     2, 5, 0, 0, 0, 4, 6, 0, 2, 4, 0, 0, 0, 4, 7, 0,
 };
 
-#endif // CPUOPCODES_HPP
+#endif  // CPU_OPCODES_HPP

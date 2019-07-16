@@ -8,9 +8,9 @@
 #ifndef MAPPER_HPP
 #define MAPPER_HPP
 
+#include <functional>
 #include "common.hpp"
 #include "cartridge.hpp"
-#include <functional>
 
 /// Mirroring modes supported by the NES
 enum NameTableMirroring {

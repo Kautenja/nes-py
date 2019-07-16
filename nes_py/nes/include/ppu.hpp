@@ -25,8 +25,7 @@ const int FRAME_END_SCANLINE = 261;
 
 /// The Picture Processing Unit (PPU) for the NES
 class PPU {
-
-private:
+ private:
     /// The callback to fire when entering vertical blanking mode
     std::function<void(void)> vblank_callback;
     /// The OAM memory (sprites)
@@ -103,9 +102,9 @@ private:
     /// the number of visible scan line dots
     NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
 
-public:
+ public:
     /// Initialize a new PPU.
-    PPU() : sprite_memory(64 * 4) { };
+    PPU() : sprite_memory(64 * 4) { }
 
     /// Perform a single cycle on the PPU.
     void cycle(PictureBus& bus);
@@ -114,7 +113,9 @@ public:
     void reset();
 
     /// Set the interrupt callback for the CPU.
-    inline void set_interrupt_callback(std::function<void(void)> cb) { vblank_callback = cb; };
+    inline void set_interrupt_callback(std::function<void(void)> cb) {
+        vblank_callback = cb;
+    }
 
     /// TODO: doc
     void do_DMA(const NES_Byte* page_ptr);
@@ -158,23 +159,28 @@ public:
     ///
     /// @param address the new OAM data address
     ///
-    inline void set_OAM_address(NES_Byte address) { sprite_data_address = address; };
+    inline void set_OAM_address(NES_Byte address) {
+        sprite_data_address = address;
+    }
 
     /// Read a byte from OAM memory at the sprite data address.
     ///
     /// @return the byte at the given address in OAM memory
     ///
-    inline NES_Byte get_OAM_data() { return sprite_memory[sprite_data_address]; };
+    inline NES_Byte get_OAM_data() {
+        return sprite_memory[sprite_data_address];
+    }
 
     /// Write a byte to OAM memory at the sprite data address.
     ///
     /// @param value the byte to write to the given address
     ///
-    inline void set_OAM_data(NES_Byte value) { sprite_memory[sprite_data_address++] = value; };
+    inline void set_OAM_data(NES_Byte value) {
+        sprite_memory[sprite_data_address++] = value;
+    }
 
     /// Return a pointer to the screen buffer.
-    inline NES_Pixel* get_screen_buffer() { return *screen; };
-
+    inline NES_Pixel* get_screen_buffer() { return *screen; }
 };
 
-#endif // PPU_HPP
+#endif  // PPU_HPP

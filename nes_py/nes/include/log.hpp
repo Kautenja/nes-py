@@ -24,4 +24,4 @@ enum Level {
     CpuTrace
 };
 
-#endif // LOG_HPP
+#endif  // LOG_HPP

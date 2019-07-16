@@ -8,10 +8,10 @@
 #ifndef MAIN_BUS_HPP
 #define MAIN_BUS_HPP
 
-#include "common.hpp"
-#include "mapper.hpp"
 #include <vector>
 #include <map>
+#include "common.hpp"
+#include "mapper.hpp"
 
 /// The IO registers on the main bus
 enum IORegisters {
@@ -30,8 +30,7 @@ enum IORegisters {
 
 /// The main bus for data to travel along the NES hardware
 class MainBus {
-
-private:
+ private:
     /// The RAM on the main bus
     std::vector<NES_Byte> ram;
     /// The extended RAM (if the mapper has extended RAM)
@@ -43,15 +42,15 @@ private:
     /// a map of IO registers to callback methods for reads
     std::map<IORegisters, std::function<NES_Byte(void)>> read_callbacks;
 
-public:
+ public:
     /// Initialize a new main bus.
-    MainBus() : ram(0x800, 0), mapper(nullptr) { };
+    MainBus() : ram(0x800, 0), mapper(nullptr) { }
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    inline NES_Byte* get_memory_buffer() { return &ram.front(); };
+    inline NES_Byte* get_memory_buffer() { return &ram.front(); }
 
     /// Read a byte from an address on the RAM.
     ///
@@ -75,18 +74,23 @@ public:
     void set_mapper(Mapper* mapper);
 
     /// Set a callback for when writes occur.
-    inline void set_write_callback(IORegisters reg, std::function<void(NES_Byte)> callback) {
+    inline void set_write_callback(
+        IORegisters reg,
+        std::function<void(NES_Byte)> callback
+    ) {
         write_callbacks.emplace(reg, callback);
-    };
+    }
 
     /// Set a callback for when reads occur.
-    inline void set_read_callback(IORegisters reg, std::function<NES_Byte(void)> callback) {
+    inline void set_read_callback(
+        IORegisters reg,
+        std::function<NES_Byte(void)> callback
+    ) {
         read_callbacks.emplace(reg, callback);
-    };
+    }
 
     /// Return a pointer to the page in memory.
     const NES_Byte* get_page_pointer(NES_Byte page);
-
 };
 
-#endif // MAIN_BUS_HPP
+#endif  // MAIN_BUS_HPP

@@ -30,10 +30,10 @@ const auto RESET_VECTOR = 0xfffc;
 const auto IRQ_VECTOR = 0xfffe;
 
 enum BranchOnFlag {
-    NEGATIVE,
-    OVERFLOW,
-    CARRY,
-    ZERO,
+    NEGATIVE_,
+    OVERFLOW_,
+    CARRY_,
+    ZERO_,
 };
 
 enum Operation1 {

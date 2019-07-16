@@ -166,19 +166,19 @@ bool CPU::branch(MainBus &bus, NES_Byte opcode) {
     // We use xnor here, it is true if either both operands are true or
     // false
     switch (opcode >> BRANCH_ON_FLAG_SHIFT) {
-        case NEGATIVE: {
+        case NEGATIVE_: {
             branch = !(branch ^ flags.bits.N);
             break;
         }
-        case OVERFLOW: {
+        case OVERFLOW_: {
             branch = !(branch ^ flags.bits.V);
             break;
         }
-        case CARRY: {
+        case CARRY_: {
             branch = !(branch ^ flags.bits.C);
             break;
         }
-        case ZERO: {
+        case ZERO_: {
             branch = !(branch ^ flags.bits.Z);
             break;
         }

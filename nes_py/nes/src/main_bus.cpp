@@ -9,11 +9,10 @@
 #include "log.hpp"
 
 NES_Byte MainBus::read(NES_Address address) {
-    if (address < 0x2000)
+    if (address < 0x2000) {
         return ram[address & 0x7ff];
-    else if (address < 0x4020) {
-        // PPU registers, mirrored
-        if (address < 0x4000) {
+    } else if (address < 0x4020) {
+        if (address < 0x4000) {  // PPU registers, mirrored
             auto it = read_callbacks.find(static_cast<IORegisters>(address & 0x2007));
             if (it != read_callbacks.end())
                 return (it -> second)();
@@ -21,70 +20,58 @@ NES_Byte MainBus::read(NES_Address address) {
                 // Dereference the function pointer and call it
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
-        }
-        // only *some* IO registers
-        else if (address < 0x4018 && address >= 0x4014) {
+        } else if (address < 0x4018 && address >= 0x4014) {  // only *some* IO registers
             auto it = read_callbacks.find(static_cast<IORegisters>(address));
             if (it != read_callbacks.end())
-                return (it -> second)();
                 // Second object is the pointer to the function object
                 // Dereference the function pointer and call it
+                return (it->second)();
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
         }
-        else
+        else {
             LOG(InfoVerbose) << "Read access attempt at: " << std::hex << +address << std::endl;
-    }
-    else if (address < 0x6000) {
-        LOG(InfoVerbose) << "Expansion ROM read attempted. This is currently unsupported" << std::endl;
-    }
-    else if (address < 0x8000) {
-        if (mapper->hasExtendedRAM()) {
-            return extended_ram[address - 0x6000];
         }
-    }
-    else {
+    } else if (address < 0x6000) {
+        LOG(InfoVerbose) << "Expansion ROM read attempted. This is currently unsupported" << std::endl;
+    } else if (address < 0x8000) {
+        if (mapper->hasExtendedRAM())
+            return extended_ram[address - 0x6000];
+    } else {
         return mapper->readPRG(address);
     }
     return 0;
 }
 
 void MainBus::write(NES_Address address, NES_Byte value) {
-    if (address < 0x2000)
+    if (address < 0x2000) {
         ram[address & 0x7ff] = value;
-    else if (address < 0x4020) {
-        //PPU registers, mirrored
-        if (address < 0x4000) {
+    } else if (address < 0x4020) {
+        if (address < 0x4000) {  // PPU registers, mirrored
             auto it = write_callbacks.find(static_cast<IORegisters>(address & 0x2007));
             if (it != write_callbacks.end())
-                (it -> second)(value);
-                //Second object is the pointer to the function object
-                //Dereference the function pointer and call it
+                // Second object is the pointer to the function object
+                // Dereference the function pointer and call it
+                (it->second)(value);
             else
                 LOG(InfoVerbose) << "No write callback registered for I/O register at: " << std::hex << +address << std::endl;
-        }
-        //only some registers
-        else if (address < 0x4017 && address >= 0x4014) {
+        } else if (address < 0x4017 && address >= 0x4014) {  // only some registers
             auto it = write_callbacks.find(static_cast<IORegisters>(address));
             if (it != write_callbacks.end())
-                (it -> second)(value);
-                //Second object is the pointer to the function object
-                //Dereference the function pointer and call it
+                // Second object is the pointer to the function object
+                // Dereference the function pointer and call it
+                (it->second)(value);
             else
                 LOG(InfoVerbose) << "No write callback registered for I/O register at: " << std::hex << +address << std::endl;
-        }
-        else
+        } else {
             LOG(InfoVerbose) << "Write access attmept at: " << std::hex << +address << std::endl;
-    }
-    else if (address < 0x6000) {
-        LOG(InfoVerbose) << "Expansion ROM access attempted. This is currently unsupported" << std::endl;
-    }
-    else if (address < 0x8000) {
-        if (mapper->hasExtendedRAM()) {
-            extended_ram[address - 0x6000] = value;
         }
-    }
-    else {
+    } else if (address < 0x6000) {
+        LOG(InfoVerbose) << "Expansion ROM access attempted. This is currently unsupported" << std::endl;
+    } else if (address < 0x8000) {
+        if (mapper->hasExtendedRAM())
+            extended_ram[address - 0x6000] = value;
+    } else {
         mapper->writePRG(address, value);
     }
 }

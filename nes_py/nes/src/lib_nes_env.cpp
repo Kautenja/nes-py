@@ -5,9 +5,9 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <string>
 #include "common.hpp"
 #include "emulator.hpp"
-#include <string>
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -81,7 +81,6 @@ extern "C" {
     EXP void Close(Emulator* emu) {
         delete emu;
     }
-
 }
 
 // un-define the macro

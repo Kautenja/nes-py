@@ -1,6 +1,12 @@
 """The setup script for installing and distributing the nes-py package."""
 from glob import glob
+import os
 from setuptools import setup, find_packages, Extension
+
+
+# set the compiler for the C++ framework
+os.environ['CC'] = 'g++'
+os.environ['CCX'] = 'g++'
 
 
 # read the contents from the README file

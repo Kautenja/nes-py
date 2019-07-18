@@ -19,7 +19,7 @@ class MapperSxROM : public Mapper {
     /// The mirroring callback on the PPU
     std::function<void(void)> mirroring_callback;
     /// the mirroring mode on the device
-    NameTableMirroring mirroing;
+    NameTableMirroring mirroring;
     /// whether the cartridge uses character RAM
     bool has_character_ram;
     /// the mode for CHR ROM
@@ -94,7 +94,7 @@ class MapperSxROM : public Mapper {
     const NES_Byte* getPagePtr(NES_Address address);
 
     /// Return the name table mirroring mode of this mapper.
-    inline NameTableMirroring getNameTableMirroring() { return mirroing; }
+    inline NameTableMirroring getNameTableMirroring() { return mirroring; }
 };
 
 }  // namespace NES

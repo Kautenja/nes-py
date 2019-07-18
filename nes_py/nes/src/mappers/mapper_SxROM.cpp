@@ -13,7 +13,7 @@ namespace NES {
 MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb) :
     Mapper(cart),
     mirroring_callback(mirroring_cb),
-    mirroing(HORIZONTAL),
+    mirroring(HORIZONTAL),
     mode_chr(0),
     mode_prg(3),
     temp_register(0),
@@ -56,10 +56,10 @@ void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
         if (write_counter == 5) {
             if (address <= 0x9fff) {
                 switch (temp_register & 0x3) {
-                    case 0: { mirroing = ONE_SCREEN_LOWER;   break; }
-                    case 1: { mirroing = ONE_SCREEN_HIGHER;  break; }
-                    case 2: { mirroing = VERTICAL;           break; }
-                    case 3: { mirroing = HORIZONTAL;         break; }
+                    case 0: { mirroring = ONE_SCREEN_LOWER;   break; }
+                    case 1: { mirroring = ONE_SCREEN_HIGHER;  break; }
+                    case 2: { mirroring = VERTICAL;           break; }
+                    case 3: { mirroring = HORIZONTAL;         break; }
                 }
                 mirroring_callback();
 

@@ -48,9 +48,6 @@ class Emulator {
     /// the emulators' PPU
     PPU backup_ppu;
 
-    /// Skip DMA cycle and perform a DMA copy.
-    void DMA(NES_Byte page);
-
  public:
     /// The width of the NES screen in pixels
     static const int WIDTH = SCANLINE_VISIBLE_DOTS;

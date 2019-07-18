@@ -122,13 +122,6 @@ void MapperSxROM::calculatePRGPointers() {
     }
 }
 
-const NES_Byte* MapperSxROM::getPagePtr(NES_Address address) {
-    if (address < 0xc000)
-        return (first_bank_prg + (address & 0x3fff));
-    else
-        return (second_bank_prg + (address & 0x3fff));
-}
-
 NES_Byte MapperSxROM::readCHR(NES_Address address) {
     if (has_character_ram)
         return character_ram[address];

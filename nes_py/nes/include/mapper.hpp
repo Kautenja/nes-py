@@ -80,13 +80,6 @@ class Mapper {
     ///
     virtual void writeCHR(NES_Address address, NES_Byte value) = 0;
 
-    /// Return the page pointer for the given address.
-    ///
-    /// @param address the address of the page pointer to get
-    /// @return the page pointer at the given address
-    ///
-    virtual const NES_Byte* getPagePtr(NES_Address address) = 0;
-
     /// Return the name table mirroring mode of this mapper.
     inline virtual NameTableMirroring getNameTableMirroring() {
         return static_cast<NameTableMirroring>(cartridge->getNameTableMirroring());

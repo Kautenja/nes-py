@@ -59,11 +59,4 @@ void MapperNROM::writeCHR(NES_Address address, NES_Byte value) {
             std::endl;
 }
 
-const NES_Byte* MapperNROM::getPagePtr(NES_Address address) {
-    if (!is_one_bank)
-        return &cartridge->getROM()[address - 0x8000];
-    else  // mirrored
-        return &cartridge->getROM()[(address - 0x8000) & 0x3fff];
-}
-
 }  // namespace NES

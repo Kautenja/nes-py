@@ -61,13 +61,6 @@ class MapperUxROM : public Mapper {
     /// @param value the byte to write to the given address
     ///
     void writeCHR(NES_Address address, NES_Byte value);
-
-    /// Return the page pointer for the given address.
-    ///
-    /// @param address the address of the page pointer to get
-    /// @return the page pointer at the given address
-    ///
-    const NES_Byte* getPagePtr(NES_Address address);
 };
 
 }  // namespace NES

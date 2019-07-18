@@ -32,13 +32,6 @@ NES_Byte MapperUxROM::readPRG(NES_Address address) {
         return *(last_bank_pointer + (address & 0x3fff));
 }
 
-const NES_Byte* MapperUxROM::getPagePtr(NES_Address address) {
-    if (address < 0xc000)
-        return &cartridge->getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
-    else
-        return last_bank_pointer + (address & 0x3fff);
-}
-
 NES_Byte MapperUxROM::readCHR(NES_Address address) {
     if (has_character_ram)
         return character_ram[address];

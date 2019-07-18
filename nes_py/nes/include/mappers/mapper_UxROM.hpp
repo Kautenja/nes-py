@@ -19,7 +19,7 @@ class MapperUxROM : public Mapper {
     /// whether the cartridge use character RAM
     bool has_character_ram;
     /// the pointer to the last bank
-    const NES_Byte* last_bank_pointer;
+    std::size_t last_bank_pointer;
     /// TODO: what is this?
     NES_Address select_prg;
     /// The character RAM on the mapper

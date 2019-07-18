@@ -25,14 +25,22 @@ class MapperCNROM : public Mapper {
     ///
     /// @param cart a reference to a cartridge for the mapper to access
     ///
-    explicit MapperCNROM(Cartridge* cart);
+    explicit MapperCNROM(Cartridge* cart) :
+        Mapper(cart),
+        select_chr(0),
+        is_one_bank(cart->getROM().size() == 0x4000) { }
 
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    NES_Byte readPRG(NES_Address address);
+    inline NES_Byte readPRG(NES_Address address) {
+        if (!is_one_bank)
+            return cartridge->getROM()[address - 0x8000];
+        else  // mirrored
+            return cartridge->getROM()[(address - 0x8000) & 0x3fff];
+    }
 
     /// Write a byte to an address in the PRG RAM.
     ///

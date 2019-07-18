@@ -35,7 +35,12 @@ class MapperNROM : public Mapper {
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    NES_Byte readPRG(NES_Address address);
+    inline NES_Byte readPRG(NES_Address address) {
+        if (!is_one_bank)
+            return cartridge->getROM()[address - 0x8000];
+        else  // mirrored
+            return cartridge->getROM()[(address - 0x8000) & 0x3fff];
+    }
 
     /// Write a byte to an address in the PRG RAM.
     ///
@@ -49,7 +54,12 @@ class MapperNROM : public Mapper {
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    NES_Byte readCHR(NES_Address address);
+    inline NES_Byte readCHR(NES_Address address) {
+        if (has_character_ram)
+            return character_ram[address];
+        else
+            return cartridge->getVROM()[address];
+    }
 
     /// Write a byte to an address in the CHR RAM.
     ///

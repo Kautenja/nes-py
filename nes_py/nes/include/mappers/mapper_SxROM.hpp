@@ -56,7 +56,7 @@ class MapperSxROM : public Mapper {
     /// @param cart a reference to a cartridge for the mapper to access
     /// @param mirroring_cb the callback to change mirroring modes on the PPU
     ///
-    MapperSxROM(Cartridge& cart, std::function<void(void)> mirroring_cb);
+    MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb);
 
     /// Read a byte from the PRG RAM.
     ///

@@ -25,7 +25,7 @@ class MapperCNROM : public Mapper {
     ///
     /// @param cart a reference to a cartridge for the mapper to access
     ///
-    MapperCNROM(Cartridge& cart);
+    explicit MapperCNROM(Cartridge* cart);
 
     /// Read a byte from the PRG RAM.
     ///
@@ -49,7 +49,7 @@ class MapperCNROM : public Mapper {
     /// @return the byte located at the given address in CHR RAM
     ///
     inline NES_Byte readCHR(NES_Address address) {
-        return cartridge.getVROM()[address | (select_chr << 13)];
+        return cartridge->getVROM()[address | (select_chr << 13)];
     }
 
     /// Write a byte to an address in the CHR RAM.

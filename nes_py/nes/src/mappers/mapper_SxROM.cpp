@@ -22,9 +22,9 @@ MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb
     register_chr0(0),
     register_chr1(0),
     first_bank_prg(0),
-    second_bank_prg(0),
-    first_bank_chr(nullptr),
-    second_bank_chr(nullptr) {
+    second_bank_prg(cart->getROM().size() - 0x4000),
+    first_bank_chr(0),
+    second_bank_chr(0) {
     if (cart->getVROM().size() == 0) {
         has_character_ram = true;
         character_ram.resize(0x2000);
@@ -32,23 +32,15 @@ MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb
     } else {
         LOG(Info) << "Using CHR-ROM" << std::endl;
         has_character_ram = false;
-        first_bank_chr = &cart->getVROM()[0];
-        second_bank_chr = &cart->getVROM()[0x1000 * register_chr1];
+        first_bank_chr = 0;
+        second_bank_chr = 0x1000 * register_chr1;
     }
-    // first bank
-    // first_bank_prg = &cart->getROM()[0];
-    first_bank_prg = 0;
-    // last bank
-    second_bank_prg = cart->getROM().size() - 0x4000;
-    // second_bank_prg = &cart->getROM()[cart->getROM().size() - 0x4000];
 }
 
 NES_Byte MapperSxROM::readPRG(NES_Address address) {
     if (address < 0xc000)
-        // return *(first_bank_prg + (address & 0x3fff));
         return cartridge->getROM()[first_bank_prg + (address & 0x3fff)];
     else
-        // return *(second_bank_prg + (address & 0x3fff));
         return cartridge->getROM()[second_bank_prg + (address & 0x3fff)];
 }
 
@@ -74,22 +66,22 @@ void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
                 // Recalculate CHR pointers
                 if (mode_chr == 0) {  // one 8KB bank
                     // ignore last bit
-                    first_bank_chr = &cartridge->getVROM()[0x1000 * (register_chr0 | 1)];
+                    first_bank_chr = 0x1000 * (register_chr0 | 1);
                     second_bank_chr = first_bank_chr + 0x1000;
                 } else {  // two 4KB banks
-                    first_bank_chr = &cartridge->getVROM()[0x1000 * register_chr0];
-                    second_bank_chr = &cartridge->getVROM()[0x1000 * register_chr1];
+                    first_bank_chr = 0x1000 * register_chr0;
+                    second_bank_chr = 0x1000 * register_chr1;
                 }
             } else if (address <= 0xbfff) {  // CHR Reg 0
                 register_chr0 = temp_register;
                 // OR 1 if 8KB mode
-                first_bank_chr = &cartridge->getVROM()[0x1000 * (temp_register | (1 - mode_chr))];
+                first_bank_chr = 0x1000 * (temp_register | (1 - mode_chr));
                 if (mode_chr == 0)
                     second_bank_chr = first_bank_chr + 0x1000;
             } else if (address <= 0xdfff) {
                 register_chr1 = temp_register;
                 if(mode_chr == 1)
-                    second_bank_chr = &cartridge->getVROM()[0x1000 * temp_register];
+                    second_bank_chr = 0x1000 * temp_register;
             } else {
                 // TODO: PRG-RAM
                 if ((temp_register & 0x10) == 0x10) {
@@ -130,9 +122,9 @@ NES_Byte MapperSxROM::readCHR(NES_Address address) {
     if (has_character_ram)
         return character_ram[address];
     else if (address < 0x1000)
-        return *(first_bank_chr + address);
+        return cartridge->getVROM()[first_bank_chr + address];
     else
-        return *(second_bank_chr + (address & 0xfff));
+        return cartridge->getVROM()[second_bank_chr + (address & 0xfff)];
 }
 
 void MapperSxROM::writeCHR(NES_Address address, NES_Byte value) {

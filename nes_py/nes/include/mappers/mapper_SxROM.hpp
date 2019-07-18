@@ -41,9 +41,9 @@ class MapperSxROM : public Mapper {
     /// The second PRG bank
     std::size_t second_bank_prg;
     /// The first CHR bank
-    const NES_Byte* first_bank_chr;
+    std::size_t first_bank_chr;
     /// The second CHR bank
-    const NES_Byte* second_bank_chr;
+    std::size_t second_bank_chr;
     /// The character RAM on the cartridge
     std::vector<NES_Byte> character_ram;
 

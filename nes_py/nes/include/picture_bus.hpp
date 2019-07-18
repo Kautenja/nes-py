@@ -21,7 +21,6 @@ class PictureBus {
     /// the VRAM on the picture bus
     std::vector<NES_Byte> ram;
     /// indexes where they start in RAM vector
-    // std::size_t NameTable0, NameTable1, NameTable2, NameTable3;
     std::size_t name_tables[4] = {0, 0, 0, 0};
     /// the palette for decoding RGB tuples
     std::vector<NES_Byte> palette;

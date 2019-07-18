@@ -21,8 +21,8 @@ MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb
     register_prg(0),
     register_chr0(0),
     register_chr1(0),
-    first_bank_prg(nullptr),
-    second_bank_prg(nullptr),
+    first_bank_prg(0),
+    second_bank_prg(0),
     first_bank_chr(nullptr),
     second_bank_chr(nullptr) {
     if (cart->getVROM().size() == 0) {
@@ -36,16 +36,20 @@ MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb
         second_bank_chr = &cart->getVROM()[0x1000 * register_chr1];
     }
     // first bank
-    first_bank_prg = &cart->getROM()[0];
+    // first_bank_prg = &cart->getROM()[0];
+    first_bank_prg = 0;
     // last bank
-    second_bank_prg = &cart->getROM()[cart->getROM().size() - 0x4000];
+    second_bank_prg = cart->getROM().size() - 0x4000;
+    // second_bank_prg = &cart->getROM()[cart->getROM().size() - 0x4000];
 }
 
 NES_Byte MapperSxROM::readPRG(NES_Address address) {
     if (address < 0xc000)
-        return *(first_bank_prg + (address & 0x3fff));
+        // return *(first_bank_prg + (address & 0x3fff));
+        return cartridge->getROM()[first_bank_prg + (address & 0x3fff)];
     else
-        return *(second_bank_prg + (address & 0x3fff));
+        // return *(second_bank_prg + (address & 0x3fff));
+        return cartridge->getROM()[second_bank_prg + (address & 0x3fff)];
 }
 
 void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
@@ -110,15 +114,15 @@ void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
 void MapperSxROM::calculatePRGPointers() {
     if (mode_prg <= 1) {  // 32KB changeable
         // equivalent to multiplying 0x8000 * (register_prg >> 1)
-        first_bank_prg = &cartridge->getROM()[0x4000 * (register_prg & ~1)];
+        first_bank_prg = 0x4000 * (register_prg & ~1);
         // add 16KB
         second_bank_prg = first_bank_prg + 0x4000;
     } else if (mode_prg == 2) {  // fix first switch second
-        first_bank_prg = &cartridge->getROM()[0];
+        first_bank_prg = 0;
         second_bank_prg = first_bank_prg + 0x4000 * register_prg;
     } else {  // switch first fix second
-        first_bank_prg = &cartridge->getROM()[0x4000 * register_prg];
-        second_bank_prg = &cartridge->getROM()[cartridge->getROM().size() - 0x4000];
+        first_bank_prg = 0x4000 * register_prg;
+        second_bank_prg = cartridge->getROM().size() - 0x4000;
     }
 }
 

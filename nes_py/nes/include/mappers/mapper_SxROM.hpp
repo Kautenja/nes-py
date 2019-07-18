@@ -37,9 +37,9 @@ class MapperSxROM : public Mapper {
     /// The second CHR register
     NES_Byte register_chr1;
     /// The first PRG bank
-    const NES_Byte* first_bank_prg;
+    std::size_t first_bank_prg;
     /// The second PRG bank
-    const NES_Byte* second_bank_prg;
+    std::size_t second_bank_prg;
     /// The first CHR bank
     const NES_Byte* first_bank_chr;
     /// The second CHR bank

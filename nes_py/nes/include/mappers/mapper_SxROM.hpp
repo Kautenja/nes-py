@@ -19,7 +19,7 @@ class MapperSxROM : public Mapper {
     /// The mirroring callback on the PPU
     std::function<void(void)> mirroring_callback;
     /// the mirroring mode on the device
-    NameTableMirroring mirroing;
+    NameTableMirroring mirroring;
     /// whether the cartridge uses character RAM
     bool has_character_ram;
     /// the mode for CHR ROM
@@ -37,13 +37,13 @@ class MapperSxROM : public Mapper {
     /// The second CHR register
     NES_Byte register_chr1;
     /// The first PRG bank
-    const NES_Byte* first_bank_prg;
+    std::size_t first_bank_prg;
     /// The second PRG bank
-    const NES_Byte* second_bank_prg;
+    std::size_t second_bank_prg;
     /// The first CHR bank
-    const NES_Byte* first_bank_chr;
+    std::size_t first_bank_chr;
     /// The second CHR bank
-    const NES_Byte* second_bank_chr;
+    std::size_t second_bank_chr;
     /// The character RAM on the cartridge
     std::vector<NES_Byte> character_ram;
 
@@ -56,14 +56,19 @@ class MapperSxROM : public Mapper {
     /// @param cart a reference to a cartridge for the mapper to access
     /// @param mirroring_cb the callback to change mirroring modes on the PPU
     ///
-    MapperSxROM(Cartridge& cart, std::function<void(void)> mirroring_cb);
+    MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb);
 
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    NES_Byte readPRG(NES_Address address);
+    inline NES_Byte readPRG(NES_Address address) {
+        if (address < 0xc000)
+            return cartridge->getROM()[first_bank_prg + (address & 0x3fff)];
+        else
+            return cartridge->getROM()[second_bank_prg + (address & 0x3fff)];
+    }
 
     /// Write a byte to an address in the PRG RAM.
     ///
@@ -77,7 +82,14 @@ class MapperSxROM : public Mapper {
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    NES_Byte readCHR(NES_Address address);
+    inline NES_Byte readCHR(NES_Address address) {
+        if (has_character_ram)
+            return character_ram[address];
+        else if (address < 0x1000)
+            return cartridge->getVROM()[first_bank_chr + address];
+        else
+            return cartridge->getVROM()[second_bank_chr + (address & 0xfff)];
+    }
 
     /// Write a byte to an address in the CHR RAM.
     ///
@@ -86,15 +98,8 @@ class MapperSxROM : public Mapper {
     ///
     void writeCHR(NES_Address address, NES_Byte value);
 
-    /// Return the page pointer for the given address.
-    ///
-    /// @param address the address of the page pointer to get
-    /// @return the page pointer at the given address
-    ///
-    const NES_Byte* getPagePtr(NES_Address address);
-
     /// Return the name table mirroring mode of this mapper.
-    inline NameTableMirroring getNameTableMirroring() { return mirroing; }
+    inline NameTableMirroring getNameTableMirroring() { return mirroring; }
 };
 
 }  // namespace NES

@@ -10,40 +10,29 @@
 
 namespace NES {
 
-MapperUxROM::MapperUxROM(Cartridge &cart) :
+MapperUxROM::MapperUxROM(Cartridge* cart) :
     Mapper(cart),
+    has_character_ram(cart->getVROM().size() == 0),
+    last_bank_pointer(cart->getROM().size() - 0x4000),
     select_prg(0) {
-    if (cart.getVROM().size() == 0) {
-        has_character_ram = true;
+    if (has_character_ram) {
         character_ram.resize(0x2000);
         LOG(Info) << "Uses character RAM" << std::endl;
-    } else {
-        has_character_ram = false;
     }
-
-    // last - 16KB
-    last_bank_pointer = &cart.getROM()[cart.getROM().size() - 0x4000];
 }
 
 NES_Byte MapperUxROM::readPRG(NES_Address address) {
     if (address < 0xc000)
-        return cartridge.getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
+        return cartridge->getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
     else
-        return *(last_bank_pointer + (address & 0x3fff));
-}
-
-const NES_Byte* MapperUxROM::getPagePtr(NES_Address address) {
-    if (address < 0xc000)
-        return &cartridge.getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
-    else
-        return last_bank_pointer + (address & 0x3fff);
+        return cartridge->getROM()[last_bank_pointer + (address & 0x3fff)];
 }
 
 NES_Byte MapperUxROM::readCHR(NES_Address address) {
     if (has_character_ram)
         return character_ram[address];
     else
-        return cartridge.getVROM()[address];
+        return cartridge->getVROM()[address];
 }
 
 void MapperUxROM::writeCHR(NES_Address address, NES_Byte value) {

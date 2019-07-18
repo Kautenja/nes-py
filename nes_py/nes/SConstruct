@@ -9,7 +9,7 @@ VariantDir('build', 'src', duplicate=0)
 #  the compiler and linker flags for the C++ environment
 FLAGS = [
     '-std=c++1y',
-    '-O2',
+    '-O3',
     '-march=native',
     '-pipe',
 ]

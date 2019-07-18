@@ -28,14 +28,19 @@ class MapperNROM : public Mapper {
     ///
     /// @param cart a reference to a cartridge for the mapper to access
     ///
-    MapperNROM(Cartridge& cart);
+    explicit MapperNROM(Cartridge* cart);
 
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in PRG RAM
     ///
-    NES_Byte readPRG(NES_Address address);
+    inline NES_Byte readPRG(NES_Address address) {
+        if (!is_one_bank)
+            return cartridge->getROM()[address - 0x8000];
+        else  // mirrored
+            return cartridge->getROM()[(address - 0x8000) & 0x3fff];
+    }
 
     /// Write a byte to an address in the PRG RAM.
     ///
@@ -49,7 +54,12 @@ class MapperNROM : public Mapper {
     /// @param address the 16-bit address of the byte to read
     /// @return the byte located at the given address in CHR RAM
     ///
-    NES_Byte readCHR(NES_Address address);
+    inline NES_Byte readCHR(NES_Address address) {
+        if (has_character_ram)
+            return character_ram[address];
+        else
+            return cartridge->getVROM()[address];
+    }
 
     /// Write a byte to an address in the CHR RAM.
     ///
@@ -57,13 +67,6 @@ class MapperNROM : public Mapper {
     /// @param value the byte to write to the given address
     ///
     void writeCHR(NES_Address address, NES_Byte value);
-
-    /// Return the page pointer for the given address.
-    ///
-    /// @param address the address of the page pointer to get
-    /// @return the page pointer at the given address
-    ///
-    const NES_Byte* getPagePtr(NES_Address address);
 };
 
 }  // namespace NES

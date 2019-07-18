@@ -58,7 +58,7 @@ class Emulator {
     ///
     /// @param rom_path the path to the ROM for the emulator to run
     ///
-    Emulator(std::string rom_path);
+    explicit Emulator(std::string rom_path);
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///
@@ -88,10 +88,20 @@ class Emulator {
     void step();
 
     /// Create a backup state on the emulator.
-    void backup();
+    inline void backup() {
+        backup_bus = bus;
+        backup_picture_bus = picture_bus;
+        backup_cpu = cpu;
+        backup_ppu = ppu;
+    }
 
     /// Restore the backup state on the emulator.
-    void restore();
+    inline void restore() {
+        bus = backup_bus;
+        picture_bus = backup_picture_bus;
+        cpu = backup_cpu;
+        ppu = backup_ppu;
+    }
 };
 
 }  // namespace NES

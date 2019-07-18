@@ -230,10 +230,9 @@ bool CPU::type0(MainBus &bus, NES_Byte opcode) {
         }
         default: return false;
     }
-    NES_Address operand = 0;
     switch (static_cast<Operation0>((opcode & OPERATION_MASK) >> OPERATION_SHIFT)) {
         case BIT: {
-            operand = bus.read(location);
+            NES_Address operand = bus.read(location);
             flags.bits.Z = !(register_A & operand);
             flags.bits.V = operand & 0x40;
             flags.bits.N = operand & 0x80;

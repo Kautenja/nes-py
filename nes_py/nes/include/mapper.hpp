@@ -27,7 +27,7 @@ enum NameTableMirroring {
 class Mapper {
  protected:
     /// The cartridge this mapper associates with
-    Cartridge& cartridge;
+    Cartridge* cartridge;
 
  public:
     /// an enumeration of mapper IDs
@@ -42,7 +42,7 @@ class Mapper {
     ///
     /// @param game a reference to a cartridge for the mapper to access
     ///
-    Mapper(Cartridge& game) : cartridge(game) { }
+    explicit Mapper(Cartridge* game) : cartridge(game) { }
 
     /// Create a mapper based on given type, a game cartridge.
     ///
@@ -50,7 +50,7 @@ class Mapper {
     /// @param callback the callback to signify a change in mirroring mode
     /// @return a pointer to a mapper class based on the given game
     ///
-    static Mapper* create(Cartridge& game, std::function<void(void)> callback);
+    static Mapper* create(Cartridge* game, std::function<void(void)> callback);
 
     /// Read a byte from the PRG RAM.
     ///
@@ -80,20 +80,13 @@ class Mapper {
     ///
     virtual void writeCHR(NES_Address address, NES_Byte value) = 0;
 
-    /// Return the page pointer for the given address.
-    ///
-    /// @param address the address of the page pointer to get
-    /// @return the page pointer at the given address
-    ///
-    virtual const NES_Byte* getPagePtr(NES_Address address) = 0;
-
     /// Return the name table mirroring mode of this mapper.
     inline virtual NameTableMirroring getNameTableMirroring() {
-        return static_cast<NameTableMirroring>(cartridge.getNameTableMirroring());
+        return static_cast<NameTableMirroring>(cartridge->getNameTableMirroring());
     }
 
     /// Return true if this mapper has extended RAM, false otherwise.
-    inline bool hasExtendedRAM() { return cartridge.hasExtendedRAM(); }
+    inline bool hasExtendedRAM() { return cartridge->hasExtendedRAM(); }
 };
 
 }  // namespace NES

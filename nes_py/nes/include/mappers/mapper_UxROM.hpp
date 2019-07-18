@@ -19,7 +19,7 @@ class MapperUxROM : public Mapper {
     /// whether the cartridge use character RAM
     bool has_character_ram;
     /// the pointer to the last bank
-    const NES_Byte* last_bank_pointer;
+    std::size_t last_bank_pointer;
     /// TODO: what is this?
     NES_Address select_prg;
     /// The character RAM on the mapper
@@ -30,7 +30,7 @@ class MapperUxROM : public Mapper {
     ///
     /// @param cart a reference to a cartridge for the mapper to access
     ///
-    MapperUxROM(Cartridge& cart);
+    explicit MapperUxROM(Cartridge* cart);
 
     /// Read a byte from the PRG RAM.
     ///
@@ -61,13 +61,6 @@ class MapperUxROM : public Mapper {
     /// @param value the byte to write to the given address
     ///
     void writeCHR(NES_Address address, NES_Byte value);
-
-    /// Return the page pointer for the given address.
-    ///
-    /// @param address the address of the page pointer to get
-    /// @return the page pointer at the given address
-    ///
-    const NES_Byte* getPagePtr(NES_Address address);
 };
 
 }  // namespace NES

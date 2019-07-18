@@ -10,7 +10,6 @@
 
 #include "common.hpp"
 #include "picture_bus.hpp"
-#include "main_bus.hpp"
 
 namespace NES {
 

@@ -37,13 +37,6 @@ MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb
     }
 }
 
-NES_Byte MapperSxROM::readPRG(NES_Address address) {
-    if (address < 0xc000)
-        return cartridge->getROM()[first_bank_prg + (address & 0x3fff)];
-    else
-        return cartridge->getROM()[second_bank_prg + (address & 0x3fff)];
-}
-
 void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
     if (!(value & 0x80)) {  // reset bit is NOT set
         temp_register = (temp_register >> 1) | ((value & 1) << 4);
@@ -116,15 +109,6 @@ void MapperSxROM::calculatePRGPointers() {
         first_bank_prg = 0x4000 * register_prg;
         second_bank_prg = cartridge->getROM().size() - 0x4000;
     }
-}
-
-NES_Byte MapperSxROM::readCHR(NES_Address address) {
-    if (has_character_ram)
-        return character_ram[address];
-    else if (address < 0x1000)
-        return cartridge->getVROM()[first_bank_chr + address];
-    else
-        return cartridge->getVROM()[second_bank_chr + (address & 0xfff)];
 }
 
 void MapperSxROM::writeCHR(NES_Address address, NES_Byte value) {

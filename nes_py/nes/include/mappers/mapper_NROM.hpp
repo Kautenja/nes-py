@@ -28,7 +28,7 @@ class MapperNROM : public Mapper {
     ///
     /// @param cart a reference to a cartridge for the mapper to access
     ///
-    MapperNROM(Cartridge* cart);
+    explicit MapperNROM(Cartridge* cart);
 
     /// Read a byte from the PRG RAM.
     ///

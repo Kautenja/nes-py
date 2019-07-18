@@ -42,7 +42,7 @@ class Mapper {
     ///
     /// @param game a reference to a cartridge for the mapper to access
     ///
-    Mapper(Cartridge* game) : cartridge(game) { }
+    explicit Mapper(Cartridge* game) : cartridge(game) { }
 
     /// Create a mapper based on given type, a game cartridge.
     ///

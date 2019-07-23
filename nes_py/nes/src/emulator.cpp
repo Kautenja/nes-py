@@ -6,6 +6,7 @@
 //
 
 #include "emulator.hpp"
+#include "mapper_factory.hpp"
 #include "log.hpp"
 
 namespace NES {
@@ -32,7 +33,7 @@ Emulator::Emulator(std::string rom_path) {
     // load the ROM from disk, expect that the Python code has validated it
     cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM
-    Mapper* mapper(Mapper::create(&cartridge, [&](){ picture_bus.update_mirroring(); }));
+    auto mapper = MapperFactory(&cartridge, [&](){ picture_bus.update_mirroring(); });
     // give the IO buses a pointer to the mapper
     bus.set_mapper(mapper);
     picture_bus.set_mapper(mapper);

@@ -15,7 +15,6 @@
 #include "cpu.hpp"
 #include "ppu.hpp"
 #include "main_bus.hpp"
-#include "mapper.hpp"
 #include "picture_bus.hpp"
 
 namespace NES {

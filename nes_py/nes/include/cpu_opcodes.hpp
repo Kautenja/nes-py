@@ -88,39 +88,34 @@ enum Operation0 {
 
 /// Implied mode opcodes
 enum OperationImplied {
-    NOP = 0xea,
     BRK = 0x00,
-    JSR = 0x20,
-    RTI = 0x40,
-    RTS = 0x60,
-
-    JMP  = 0x4C,
-    JMPI = 0x6C,  // JMP Indirect
-
     PHP = 0x08,
-    PLP = 0x28,
-    PHA = 0x48,
-    PLA = 0x68,
-
-    DEY = 0x88,
-    DEX = 0xca,
-    TAY = 0xa8,
-    INY = 0xc8,
-    INX = 0xe8,
-
     CLC = 0x18,
+    JSR = 0x20,
+    PLP = 0x28,
     SEC = 0x38,
+    RTI = 0x40,
+    PHA = 0x48,
+    JMP  = 0x4C,
     CLI = 0x58,
+    RTS = 0x60,
+    PLA = 0x68,
+    JMPI = 0x6C,  // JMP indirect
     SEI = 0x78,
-    TYA = 0x98,
-    CLV = 0xb8,
-    CLD = 0xd8,
-    SED = 0xf8,
-
+    DEY = 0x88,
     TXA = 0x8a,
+    TYA = 0x98,
     TXS = 0x9a,
+    TAY = 0xa8,
     TAX = 0xaa,
+    CLV = 0xb8,
     TSX = 0xba,
+    INY = 0xc8,
+    DEX = 0xca,
+    CLD = 0xd8,
+    INX = 0xe8,
+    NOP = 0xea,
+    SED = 0xf8,
 };
 
 /// A structure for working with the flags register

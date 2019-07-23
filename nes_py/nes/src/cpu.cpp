@@ -12,11 +12,16 @@ namespace NES {
 
 bool CPU::implied(MainBus &bus, NES_Byte opcode) {
     switch (static_cast<OperationImplied>(opcode)) {
-        case NOP: {
-            break;
-        }
         case BRK: {
             interrupt(bus, BRK_INTERRUPT);
+            break;
+        }
+        case PHP: {
+            push_stack(bus, flags.byte);
+            break;
+        }
+        case CLC: {
+            flags.bits.C = false;
             break;
         }
         case JSR: {
@@ -28,10 +33,12 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             register_PC = read_address(bus, register_PC);
             break;
         }
-        case RTS: {
-            register_PC = pop_stack(bus);
-            register_PC |= pop_stack(bus) << 8;
-            ++register_PC;
+        case PLP: {
+            flags.byte = pop_stack(bus);
+            break;
+        }
+        case SEC: {
+            flags.bits.C = true;
             break;
         }
         case RTI: {
@@ -40,8 +47,27 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             register_PC |= pop_stack(bus) << 8;
             break;
         }
+        case PHA: {
+            push_stack(bus, register_A);
+            break;
+        }
         case JMP: {
             register_PC = read_address(bus, register_PC);
+            break;
+        }
+        case CLI: {
+            flags.bits.I = false;
+            break;
+        }
+        case RTS: {
+            register_PC = pop_stack(bus);
+            register_PC |= pop_stack(bus) << 8;
+            ++register_PC;
+            break;
+        }
+        case PLA: {
+            register_A = pop_stack(bus);
+            set_ZN(register_A);
             break;
         }
         case JMPI: {
@@ -55,25 +81,50 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             register_PC = bus.read(location) | bus.read(Page | ((location + 1) & 0xff)) << 8;
             break;
         }
-        case PHP: {
-            push_stack(bus, flags.byte);
-            break;
-        }
-        case PLP: {
-            flags.byte = pop_stack(bus);
-            break;
-        }
-        case PHA: {
-            push_stack(bus, register_A);
-            break;
-        }
-        case PLA: {
-            register_A = pop_stack(bus);
-            set_ZN(register_A);
+        case SEI: {
+            flags.bits.I = true;
             break;
         }
         case DEY: {
             --register_Y;
+            set_ZN(register_Y);
+            break;
+        }
+        case TXA: {
+            register_A = register_X;
+            set_ZN(register_A);
+            break;
+        }
+        case TYA: {
+            register_A = register_Y;
+            set_ZN(register_A);
+            break;
+        }
+        case TXS: {
+            register_SP = register_X;
+            break;
+        }
+        case TAY: {
+            register_Y = register_A;
+            set_ZN(register_Y);
+            break;
+        }
+        case TAX: {
+            register_X = register_A;
+            set_ZN(register_X);
+            break;
+        }
+        case CLV: {
+            flags.bits.V = false;
+            break;
+        }
+        case TSX: {
+            register_X = register_SP;
+            set_ZN(register_X);
+            break;
+        }
+        case INY: {
+            ++register_Y;
             set_ZN(register_Y);
             break;
         }
@@ -82,14 +133,8 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             set_ZN(register_X);
             break;
         }
-        case TAY: {
-            register_Y = register_A;
-            set_ZN(register_Y);
-            break;
-        }
-        case INY: {
-            ++register_Y;
-            set_ZN(register_Y);
+        case CLD: {
+            flags.bits.D = false;
             break;
         }
         case INX: {
@@ -97,56 +142,11 @@ bool CPU::implied(MainBus &bus, NES_Byte opcode) {
             set_ZN(register_X);
             break;
         }
-        case CLC: {
-            flags.bits.C = false;
-            break;
-        }
-        case SEC: {
-            flags.bits.C = true;
-            break;
-        }
-        case CLI: {
-            flags.bits.I = false;
-            break;
-        }
-        case SEI: {
-            flags.bits.I = true;
-            break;
-        }
-        case CLD: {
-            flags.bits.D = false;
+        case NOP: {
             break;
         }
         case SED: {
             flags.bits.D = true;
-            break;
-        }
-        case TYA: {
-            register_A = register_Y;
-            set_ZN(register_A);
-            break;
-        }
-        case CLV: {
-            flags.bits.V = false;
-            break;
-        }
-        case TXA: {
-            register_A = register_X;
-            set_ZN(register_A);
-            break;
-        }
-        case TXS: {
-            register_SP = register_X;
-            break;
-        }
-        case TAX: {
-            register_X = register_A;
-            set_ZN(register_X);
-            break;
-        }
-        case TSX: {
-            register_X = register_SP;
-            set_ZN(register_X);
             break;
         }
         default: return false;

@@ -362,8 +362,7 @@ void PPU::set_scroll(NES_Byte scroll) {
         is_first_write = false;
     } else {
         temp_address &= ~0x73e0;
-        temp_address |= ((scroll & 0x7) << 12) |
-                         ((scroll & 0xf8) << 2);
+        temp_address |= ((scroll & 0x7) << 12) | ((scroll & 0xf8) << 2);
         is_first_write = true;
     }
 }

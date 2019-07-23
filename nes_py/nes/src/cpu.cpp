@@ -359,6 +359,12 @@ bool CPU::type1(MainBus &bus, NES_Byte opcode) {
             set_ZN(register_A);
             break;
         }
+        case CMP: {
+            NES_Address diff = register_A - bus.read(location);
+            flags.bits.C = !(diff & 0x100);
+            set_ZN(diff);
+            break;
+        }
         case SBC: {
             //High carry means "no borrow", thus negate and subtract
             NES_Address subtrahend = bus.read(location),
@@ -369,12 +375,6 @@ bool CPU::type1(MainBus &bus, NES_Byte opcode) {
             //substitute with it's one complement
             flags.bits.V = (register_A ^ diff) & (~subtrahend ^ diff) & 0x80;
             register_A = diff;
-            set_ZN(diff);
-            break;
-        }
-        case CMP: {
-            NES_Address diff = register_A - bus.read(location);
-            flags.bits.C = !(diff & 0x100);
             set_ZN(diff);
             break;
         }

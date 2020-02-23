@@ -1,5 +1,6 @@
 """A method to play gym environments using human IO inputs."""
 import gym
+import time
 from pyglet import clock
 from .._image_viewer import ImageViewer
 
@@ -20,8 +21,6 @@ def play_human(env: gym.Env, callback=None):
         None
 
     """
-    # set the frame rate for pyglet
-    clock.set_fps_limit(env.metadata['video.frames_per_second'])
     # ensure the observation space is a box of pixels
     assert isinstance(env.observation_space, gym.spaces.box.Box)
     # ensure the observation space is either B&W pixels or RGB Pixels
@@ -46,9 +45,18 @@ def play_human(env: gym.Env, callback=None):
     )
     # create a done flag for the environment
     done = True
+    # prepare frame rate limiting
+    target_frame_duration = 1 / env.metadata['video.frames_per_second']
+    last_frame_time = 0
     # start the main game loop
     try:
         while True:
+            current_frame_time = time.time()
+            # limit frame rate
+            if last_frame_time + target_frame_duration > current_frame_time:
+                continue
+            # save frame beginning time for next refresh
+            last_frame_time = current_frame_time
             # clock tick
             clock.tick()
             # reset if the environment is done

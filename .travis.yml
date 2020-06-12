@@ -19,16 +19,6 @@ matrix:
       osx_image: xcode10.2
       language: shell
       before_install: brew install scons
-    - name: "Python 3.7 on Windows"
-      os: windows
-      language: shell
-      before_install: choco install python
-      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
-      install: python -m pip install -r requirements.txt
-      script:
-        - python setup.py sdist
-        - python setup.py install
-        - python scripts/run.py
 install:
   - pip3 install -r requirements.txt
 script:

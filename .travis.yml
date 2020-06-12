@@ -24,12 +24,13 @@ matrix:
       language: shell
       before_install: choco install python
       env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
+      install: python -m pip install -r requirements.txt
       script:
         - python setup.py sdist
         - python setup.py install
         - python scripts/run.py
 install:
-  - pyton3 -m pip install -r requirements.txt
+  - pip3 install -r requirements.txt
 script:
   - scons -C nes_py/nes
   - mv nes_py/nes/lib_nes_env*.so nes_py

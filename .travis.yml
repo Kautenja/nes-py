@@ -2,7 +2,6 @@
 language: python # this works for Linux but is an error on macOS or Windows
 matrix:
   include:
-      before_install: pip3 install scons
     - name: "Python 3.5 on Ubuntu 16.04"
       python: 3.5
       dist: xenial

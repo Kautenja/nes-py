@@ -1,8 +1,5 @@
 gym>=0.17.2
-matplotlib>=2.0.2
 numpy>=1.18.5
-Pillow>=6.1.0
 pyglet>=1.5.5
-# scons>=3.0.1
 tqdm>=4.32.2
 twine>=3.1.1

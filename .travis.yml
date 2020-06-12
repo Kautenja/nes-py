@@ -30,7 +30,7 @@ matrix:
         - python setup.py install
         - python scripts/run.py
 install:
-  - pip3 install -r requirements.txt
+  - pyton3 -m pip install -r requirements.txt
 script:
   - scons -C nes_py/nes
   - mv nes_py/nes/lib_nes_env*.so nes_py

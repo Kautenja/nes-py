@@ -2,11 +2,6 @@
 language: python # this works for Linux but is an error on macOS or Windows
 matrix:
   include:
-    - name: "Python 3.5 on Ubuntu 14.04"
-      python: 3.5
-      before_install: pip3 install scons
-    - name: "Python 3.6 on Ubuntu 14.04"
-      python: 3.6
       before_install: pip3 install scons
     - name: "Python 3.5 on Ubuntu 16.04"
       python: 3.5
@@ -35,7 +30,7 @@ matrix:
         - python setup.py install
         - python scripts/run.py
 install:
-  - pip3 install -r requirements.txt
+  - pyton3 -m pip install -r requirements.txt
 script:
   - scons -C nes_py/nes
   - mv nes_py/nes/lib_nes_env*.so nes_py

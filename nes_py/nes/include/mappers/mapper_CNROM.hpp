@@ -27,8 +27,8 @@ class MapperCNROM : public Mapper {
     ///
     explicit MapperCNROM(Cartridge* cart) :
         Mapper(cart),
-        select_chr(0),
-        is_one_bank(cart->getROM().size() == 0x4000) { }
+        is_one_bank(cart->getROM().size() == 0x4000),
+        select_chr(0) { }
 
     /// Read a byte from the PRG RAM.
     ///

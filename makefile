@@ -39,7 +39,7 @@ clean: clean_dist clean_python_build clean_cpp_build
 
 # build the deployment package
 deployment: clean
-	${PYTHON} setup.py sdist
+	${PYTHON} setup.py sdist bdist_wheel --universal
 
 # ship the deployment package to PyPi
 ship: test deployment

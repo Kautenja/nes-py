@@ -25,59 +25,78 @@
 nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
 
-<p align="center">
+<table>
+    <tr>
+        <td>
 <img 
     width="256" 
     alt="Bomberman II" 
     src="https://user-images.githubusercontent.com/2184469/84821320-8c52e780-afe0-11ea-820a-662d0e54fc90.png"
 />
-<img 
+        </td>
+        <td>
+ <img 
     width="256" 
     alt="Castelvania II" 
     src="https://user-images.githubusercontent.com/2184469/84821323-8ceb7e00-afe0-11ea-89f1-56d379ae4286.png"
 />
+        </td>
+        <td>
 <img 
     width="256" 
     alt="Excitebike" 
     src="https://user-images.githubusercontent.com/2184469/84821325-8d841480-afe0-11ea-9ae2-599b83af6f65.png"
 />
 </p>
-
-<p align="center">
+        </td>
+    </tr>
+    <tr>
+        <td>
 <img 
     width="256" 
     alt="Super Mario Bros." 
     src="https://user-images.githubusercontent.com/2184469/84821327-8d841480-afe0-11ea-8172-d564aca35b5e.png"
 />
+        </td>
+        <td>
 <img 
     width="256" 
     alt="The Legend of Zelda" 
     src="https://user-images.githubusercontent.com/2184469/84821329-8d841480-afe0-11ea-9a57-c9daca04ed3b.png"
 />
+        </td>
+        <td>
 <img 
      width="256" 
      alt="Tetris" 
      src="https://user-images.githubusercontent.com/2184469/84822244-fc15a200-afe1-11ea-81de-2323845d7537.png"
 />
-</p>
-
-<p align="center">
+        </td>
+    </tr>
+    <tr>
+        <td>
 <img 
      width="256" 
      alt="Contra" 
      src="https://user-images.githubusercontent.com/2184469/84822247-fcae3880-afe1-11ea-901d-1ef5e8378989.png"
 />
+        </td>
+        <td>
 <img 
      width="256" 
      alt="Mega Man II" 
      src="https://user-images.githubusercontent.com/2184469/84822249-fcae3880-afe1-11ea-8271-9e898933e571.png"
 />
+        </td>
+        <td>
 <img 
     width="256" 
     alt="Bubble Bobble" 
     src="https://user-images.githubusercontent.com/2184469/84822551-79411700-afe2-11ea-9ed6-947d78f29e8f.png"
 />
-</p>
+        </td>
+    </tr>
+</table>
 
 # Installation
 

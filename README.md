@@ -25,7 +25,7 @@
 nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
 
-<table>
+<table align="center">
     <tr>
         <td>
 <img 

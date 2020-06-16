@@ -54,6 +54,24 @@ Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
     alt="The Legend of Zelda" 
     src="https://user-images.githubusercontent.com/2184469/84821329-8d841480-afe0-11ea-9a57-c9daca04ed3b.png"
 />
+<img 
+     width="256" 
+     alt="Tetris" 
+     src="https://user-images.githubusercontent.com/2184469/84822244-fc15a200-afe1-11ea-81de-2323845d7537.png"
+/>
+</p>
+
+<p align="center">
+<img 
+     width="256" 
+     alt="Contra" 
+     src="https://user-images.githubusercontent.com/2184469/84822247-fcae3880-afe1-11ea-901d-1ef5e8378989.png"
+/>
+<img 
+     width="256" 
+     alt="Mega Man II" 
+     src="https://user-images.githubusercontent.com/2184469/84822249-fcae3880-afe1-11ea-8271-9e898933e571.png"
+/>
 </p>
 
 # Installation

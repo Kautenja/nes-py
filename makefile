@@ -1,13 +1,5 @@
-# an alias to the python command
-PYTHON=python3
-
-# build the LaiNES code, test the Python interface, and build
-# the deployment package
+# build everything
 all: test deployment
-
-#
-# MARK: Development
-#
 
 # build the LaiNES CPP code
 lib_nes_env:
@@ -16,30 +8,20 @@ lib_nes_env:
 
 # run the Python test suite
 test: lib_nes_env
-	${PYTHON} -m unittest discover .
+	python3 -m unittest discover .
 
-#
-# MARK: Deployment
-#
-
-clean_dist:
+# clean the build directory
+clean:
 	rm -rf build/ dist/ .eggs/ *.egg-info/ || true
-
-clean_python_build:
 	find . -name "*.pyc" -delete
 	find . -name "__pycache__" -delete
-
-clean_cpp_build:
 	find . -name ".sconsign.dblite" -delete
 	find . -name "build" | rm -rf
 	find . -name "lib_nes_env.so" -delete
 
-# clean the build directory
-clean: clean_dist clean_python_build clean_cpp_build
-
 # build the deployment package
 deployment: clean
-	${PYTHON} setup.py sdist bdist_wheel
+	python3 setup.py sdist bdist_wheel
 
 # ship the deployment package to PyPi
 ship: test deployment

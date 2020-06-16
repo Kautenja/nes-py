@@ -1,14 +1,4 @@
 """A simple class for viewing images using pyglet."""
-from pyglet.window import key
-from pyglet.window import Window
-from pyglet.image import ImageData
-
-
-# a mapping from pyglet key identifiers to native identifiers
-KEY_MAP = {
-    key.ENTER: ord('\r'),
-    key.SPACE: ord(' '),
-}
 
 
 class ImageViewer(object):
@@ -31,6 +21,20 @@ class ImageViewer(object):
         Returns:
             None
         """
+        # detect if rendering from python threads and fail
+        import threading
+        if threading.current_thread() is not threading.main_thread():
+            msg = 'rendering from python threads is not supported'
+            raise RuntimeError(msg)
+        # import pyglet within class scope to resolve issues with how pyglet
+        # interacts with OpenGL while using multiprocessing
+        import pyglet
+        self.pyglet = pyglet
+        # a mapping from pyglet key identifiers to native identifiers
+        self.KEY_MAP = {
+            self.pyglet.window.key.ENTER: ord('\r'),
+            self.pyglet.window.key.SPACE: ord(' '),
+        }
         self.caption = caption
         self.height = height
         self.width = width
@@ -68,9 +72,9 @@ class ImageViewer(object):
 
         """
         # remap the key to the expected domain
-        symbol = KEY_MAP.get(symbol, symbol)
+        symbol = self.KEY_MAP.get(symbol, symbol)
         # check if the symbol is the escape key
-        if symbol == key.ESCAPE:
+        if symbol == self.pyglet.window.key.ESCAPE:
             self._is_escape_pressed = is_press
             return
         # make sure the symbol is relevant
@@ -93,7 +97,7 @@ class ImageViewer(object):
     def open(self):
         """Open the window."""
         # create a window for this image viewer instance
-        self._window = Window(
+        self._window = self.pyglet.window.Window(
             caption=self.caption,
             height=self.height,
             width=self.width,
@@ -133,7 +137,7 @@ class ImageViewer(object):
         self._window.switch_to()
         self._window.dispatch_events()
         # create an image data object
-        image = ImageData(
+        image = self.pyglet.image.ImageData(
             frame.shape[1],
             frame.shape[0],
             'RGB',

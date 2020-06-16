@@ -9,6 +9,7 @@ from gym.spaces import Box
 from gym.spaces import Discrete
 import numpy as np
 from ._rom import ROM
+from ._image_viewer import ImageViewer
 
 
 # the path to the directory this file is in
@@ -361,7 +362,6 @@ class NESEnv(gym.Env):
         if mode == 'human':
             # if the viewer isn't setup, import it and create one
             if self.viewer is None:
-                from ._image_viewer import ImageViewer
                 # get the caption for the ImageViewer
                 if self.spec is None:
                     # if there is no spec, just use the .nes filename

@@ -146,11 +146,6 @@ nes_py -h
 | Enter        | Start         |
 | Space        | Select        |
 
-| Keyboard Key | Emu Function  |
-|:-------------|:--------------|
-| E            | Backup State  |
-| R            | Restore State |
-
 ## Parallelism Caveats
 
 both the `threading` and `multiprocessing` packages are supported by

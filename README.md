@@ -72,6 +72,11 @@ Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
      alt="Mega Man II" 
      src="https://user-images.githubusercontent.com/2184469/84822249-fcae3880-afe1-11ea-8271-9e898933e571.png"
 />
+<img 
+    width="256" 
+    alt="Bubble Bobble" 
+    src="https://user-images.githubusercontent.com/2184469/84822551-79411700-afe2-11ea-9ed6-947d78f29e8f.png"
+/>
 </p>
 
 # Installation

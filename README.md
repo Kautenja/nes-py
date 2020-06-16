@@ -79,6 +79,16 @@ nes_py -h
 | E            | Backup State  |
 | R            | Restore State |
 
+## Parallelism Caveats
+
+both the `threading` and `multiprocessing` packages are supported by
+`nes-py` with some caveats related to rendering:
+
+1.  rendering **is not** supported from instances of `threading.Thread`
+2.  rendering **is** supported from instances of `multiprocessing.Process`,
+    but `nes-py` must be imported within the process that executes the render
+    call
+
 # Development
 
 To design a custom environment using `nes-py`, introduce new features, or fix
@@ -90,10 +100,7 @@ There you will find instructions for:
 -   reference material for the `NESEnv` API
 -   documentation for the `nes_py.wrappers` module
 
-# Compatibility
-
-nes-py implements several common mappers, which should be enough for a good
-percentage of the games:
+# Cartridge Mapper Compatibility
 
 0.  NROM
 1.  MMC1 / SxROM

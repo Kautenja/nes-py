@@ -31,7 +31,7 @@ def play(steps):
     env.close()
 
 
-class ShouldMakeMultipleEnvironemntsParallel(object):
+class ShouldMakeMultipleEnvironmentsParallel(object):
     """An abstract test case to make environments in parallel."""
 
     # the class to the parallel initializer (Thread, Process, etc.)
@@ -55,12 +55,12 @@ class ShouldMakeMultipleEnvironemntsParallel(object):
             proc.join()
 
 
-class ProcessTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
+class ProcessTest(ShouldMakeMultipleEnvironmentsParallel, TestCase):
     """Test that processes (true multi-threading) work."""
     parallel_initializer = Process
 
 
-class ThreadTest(ShouldMakeMultipleEnvironemntsParallel, TestCase):
+class ThreadTest(ShouldMakeMultipleEnvironmentsParallel, TestCase):
     """Test that threads (internal parallelism) work"""
     parallel_initializer = Thread
 
@@ -84,4 +84,4 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
                 if dones[idx]:
                     _ = envs[idx].reset()
                 action = envs[idx].action_space.sample()
-                _, _, _, _ = envs[idx].step(action)
+                _, _, dones[idx], _ = envs[idx].step(action)

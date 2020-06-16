@@ -47,7 +47,6 @@ Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
     alt="Excitebike" 
     src="https://user-images.githubusercontent.com/2184469/84821325-8d841480-afe0-11ea-9ae2-599b83af6f65.png"
 />
-</p>
         </td>
     </tr>
     <tr>

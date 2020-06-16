@@ -12,7 +12,7 @@
 [![Format][pypi-format]][pypi-home]
 [![License][pypi-license]](LICENSE)
 
-[build-status]: https://travis-ci.com/Kautenja/nes-py.svg?token=FCkX2qMNHzx2qWEzZZMP&branch=master
+[build-status]: https://travis-ci.com/Kautenja/nes-py.svg
 [ci-server]: https://travis-ci.com/Kautenja/nes-py
 [pypi-version]: https://badge.fury.io/py/nes-py.svg
 [pypi-license]: https://img.shields.io/pypi/l/nes-py.svg

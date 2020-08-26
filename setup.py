@@ -37,7 +37,7 @@ LIB_NES_ENV = Extension(LIB_NAME,
 
 setup(
     name='nes_py',
-    version='8.1.5',
+    version='8.1.6',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README,
     long_description_content_type='text/markdown',
@@ -69,7 +69,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'gym>=0.17.2',
-        'numpy>=1.19.1',
+        'numpy>=1.18.5',
         'pyglet<=1.5.0,>=1.4.0',
         'tqdm>=4.48.2',
     ],

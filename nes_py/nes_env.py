@@ -69,7 +69,7 @@ SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 # shape of the screen as 32-bit RGB (C++ memory arrangement)
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 # create a type for the screen tensor matrix from C++
-SCREEN_TENSOR = ctypes.c_byte * np.prod(SCREEN_SHAPE_32_BIT)
+SCREEN_TENSOR = ctypes.c_byte * int(np.prod(SCREEN_SHAPE_32_BIT))
 
 
 # create a type for the RAM vector from C++

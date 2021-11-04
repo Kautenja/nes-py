@@ -1,8 +1,8 @@
 """The setup script for installing and distributing the nes-py package."""
-from glob import glob
 import os
-from setuptools import setup, find_packages, Extension
+from glob import glob
 
+from setuptools import setup, find_packages, Extension
 
 # set the compiler for the C++ framework
 os.environ['CC'] = 'g++'
@@ -26,7 +26,7 @@ SOURCES = glob('nes_py/nes/src/*.cpp') + glob('nes_py/nes/src/mappers/*.cpp')
 # headers with sdist
 INCLUDE_DIRS = ['nes_py/nes/include']
 # Build arguments to pass to the compiler
-EXTRA_COMPILE_ARGS = ['-std=c++1y', '-march=native', '-pipe', '-O3']
+EXTRA_COMPILE_ARGS = ['-std=c++1y', '-pipe', '-O3']
 # The official extension using the name, source, headers, and build args
 LIB_NES_ENV = Extension(LIB_NAME,
     sources=SOURCES,

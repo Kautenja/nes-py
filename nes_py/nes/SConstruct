@@ -10,7 +10,6 @@ VariantDir('build', 'src', duplicate=0)
 FLAGS = [
     '-std=c++1y',
     '-O3',
-    '-march=native',
     '-pipe',
 ]
 

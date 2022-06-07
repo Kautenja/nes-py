@@ -1,8 +1,8 @@
 """The setup script for installing and distributing the nes-py package."""
 import os
 from glob import glob
-
 from setuptools import setup, find_packages, Extension
+
 
 # set the compiler for the C++ framework
 os.environ['CC'] = 'g++'
@@ -37,7 +37,7 @@ LIB_NES_ENV = Extension(LIB_NAME,
 
 setup(
     name='nes_py',
-    version='8.1.8',
+    version='8.1.9',
     description='An NES Emulator and OpenAI Gym interface',
     long_description=README,
     long_description_content_type='text/markdown',

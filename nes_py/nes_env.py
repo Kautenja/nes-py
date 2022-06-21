@@ -243,14 +243,21 @@ class NESEnv(gym.Env):
         # return the list of seeds used by RNG(s) in the environment
         return [seed]
 
-    def reset(self):
+    def reset(self, seed=None, options=None, return_info=None):
         """
         Reset the state of the environment and returns an initial observation.
+
+        Args:
+            seed (int): an optional random number seed for the next episode
+            options (any): unused
+            return_info (any): unused
 
         Returns:
             state (np.ndarray): next frame as a result of the given action
 
         """
+        # Set the seed.
+        self.seed(seed)
         # call the before reset callback
         self._will_reset()
         # reset the emulator

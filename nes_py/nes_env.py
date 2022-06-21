@@ -292,9 +292,9 @@ class NESEnv(gym.Env):
         # pass the action to the emulator as an unsigned byte
         _LIB.Step(self._env)
         # get the reward for this step
-        reward = self._get_reward()
+        reward = float(self._get_reward())
         # get the done flag for this step
-        self.done = self._get_done()
+        self.done = bool(self._get_done())
         # get the info for this step
         info = self._get_info()
         # call the after step callback

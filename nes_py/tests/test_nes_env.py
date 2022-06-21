@@ -91,7 +91,7 @@ class ShouldStepEnv(TestCase):
             # check each output
             state, reward, done, info = output
             self.assertIsInstance(state, np.ndarray)
-            self.assertIsInstance(reward, int)
+            self.assertIsInstance(reward, float)
             self.assertIsInstance(done, bool)
             self.assertIsInstance(info, dict)
             # check the render output

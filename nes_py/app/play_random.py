@@ -19,9 +19,9 @@ def play_random(env, steps):
         progress = tqdm(range(steps))
         for _ in progress:
             if done:
-                _ = env.reset()
+                _, _ = env.reset()
             action = env.action_space.sample()
-            _, reward, done, info = env.step(action)
+            _, reward, done, _, info = env.step(action)
             progress.set_postfix(reward=reward, info=info)
             env.render()
     except KeyboardInterrupt:

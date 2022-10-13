@@ -62,15 +62,15 @@ def play_human(env: gym.Env, callback=None):
             # reset if the environment is done
             if done:
                 done = False
-                state = env.reset()
+                state, _ = env.reset()
                 viewer.show(env.unwrapped.screen)
             # unwrap the action based on pressed relevant keys
             action = keys_to_action.get(viewer.pressed_keys, _NOP)
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, done, truncated, _ = env.step(action)
             viewer.show(env.unwrapped.screen)
             # pass the observation data through the callback
             if callback is not None:
-                callback(state, action, reward, done, next_state)
+                callback(state, action, reward, done, truncated, next_state)
             state = next_state
             # shutdown if the escape key is pressed
             if viewer.is_escape_pressed:

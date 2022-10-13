@@ -4,13 +4,27 @@ import glob
 import itertools
 import os
 import sys
+
 import gym
+from gym.core import ObsType, RenderFrame
 from gym.spaces import Box
 from gym.spaces import Discrete
 import numpy as np
 from ._rom import ROM
 from ._image_viewer import ImageViewer
 
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    SupportsFloat,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 # the path to the directory this file is in
 _MODULE_PATH = os.path.dirname(__file__)
@@ -23,7 +37,6 @@ try:
     _LIB = ctypes.cdll.LoadLibrary(glob.glob(_LIB_PATH)[0])
 except IndexError:
     raise OSError('missing static lib_nes_env*.so library!')
-
 
 # setup the argument and return types for Width
 _LIB.Width.argtypes = None
@@ -59,7 +72,6 @@ _LIB.Restore.restype = None
 _LIB.Close.argtypes = [ctypes.c_void_p]
 _LIB.Close.restype = None
 
-
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _LIB.Height()
 # width in pixels of the NES screen
@@ -71,10 +83,8 @@ SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
 # create a type for the screen tensor matrix from C++
 SCREEN_TENSOR = ctypes.c_byte * int(np.prod(SCREEN_SHAPE_32_BIT))
 
-
 # create a type for the RAM vector from C++
 RAM_VECTOR = ctypes.c_byte * 0x800
-
 
 # create a type for the controller buffers from C++
 CONTROLLER_VECTOR = ctypes.c_byte * 1
@@ -94,10 +104,10 @@ class NESEnv(gym.Env):
 
     # observation space for the environment is static across all instances
     observation_space = Box(
-        low=0,
-        high=255,
-        shape=SCREEN_SHAPE_24_BIT,
-        dtype=np.uint8
+            low=0,
+            high=255,
+            shape=SCREEN_SHAPE_24_BIT,
+            dtype=np.uint8
     )
 
     # action space is a bitmap of button press values for the 8 NES buttons
@@ -145,6 +155,8 @@ class NESEnv(gym.Env):
         self._has_backup = False
         # setup a done flag
         self.done = True
+        # truncated
+        self.truncated = False
         # setup the controllers, screen, and RAM buffers
         self.controllers = [self._controller_buffer(port) for port in range(2)]
         self.screen = self._screen_buffer()
@@ -243,7 +255,7 @@ class NESEnv(gym.Env):
         # return the list of seeds used by RNG(s) in the environment
         return [seed]
 
-    def reset(self, seed=None, options=None, return_info=None):
+    def reset(self, seed=None, options=None, return_info=None) -> Tuple[ObsType, dict]:
         """
         Reset the state of the environment and returns an initial observation.
 
@@ -253,7 +265,9 @@ class NESEnv(gym.Env):
             return_info (any): unused
 
         Returns:
-            state (np.ndarray): next frame as a result of the given action
+            a tuple
+                state (np.ndarray): next frame as a result of the given action
+                info dict: Return the info after a step occurs
 
         """
         # Set the seed.
@@ -270,13 +284,13 @@ class NESEnv(gym.Env):
         # set the done flag to false
         self.done = False
         # return the screen from the emulator
-        return self.screen
+        return self.screen, self._get_info()
 
     def _did_reset(self):
         """Handle any RAM hacking after a reset occurs."""
         pass
 
-    def step(self, action):
+    def step(self, action) -> Tuple[ObsType, float, bool, bool, dict]:
         """
         Run one frame of the NES and return the relevant observation data.
 
@@ -304,6 +318,7 @@ class NESEnv(gym.Env):
         self.done = bool(self._get_done())
         # get the info for this step
         info = self._get_info()
+        self.truncated = self._get_truncated()
         # call the after step callback
         self._did_step(self.done)
         # bound the reward in [min, max]
@@ -312,7 +327,7 @@ class NESEnv(gym.Env):
         elif reward > self.reward_range[1]:
             reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
-        return self.screen, reward, self.done, info
+        return self.screen, reward, self.done, self.truncated, info
 
     def _get_reward(self):
         """Return the reward after a step occurs."""
@@ -320,6 +335,10 @@ class NESEnv(gym.Env):
 
     def _get_done(self):
         """Return True if the episode is over, False otherwise."""
+        return False
+
+    def _get_truncated(self):
+        """Return True if truncated """
         return False
 
     def _get_info(self):
@@ -352,7 +371,7 @@ class NESEnv(gym.Env):
         if self.viewer is not None:
             self.viewer.close()
 
-    def render(self, mode='human'):
+    def render(self, mode='human') -> Optional[Union[RenderFrame, List[RenderFrame]]]:
         """
         Render the environment.
 
@@ -378,9 +397,9 @@ class NESEnv(gym.Env):
                     caption = self.spec.id
                 # create the ImageViewer to display frames
                 self.viewer = ImageViewer(
-                    caption=caption,
-                    height=SCREEN_HEIGHT,
-                    width=SCREEN_WIDTH,
+                        caption=caption,
+                        height=SCREEN_HEIGHT,
+                        width=SCREEN_WIDTH,
                 )
             # show the screen on the image viewer
             self.viewer.show(self.screen)
@@ -401,7 +420,7 @@ class NESEnv(gym.Env):
             ord('a'),  # left
             ord('s'),  # down
             ord('w'),  # up
-            ord('\r'), # start
+            ord('\r'),  # start
             ord(' '),  # select
             ord('p'),  # B
             ord('o'),  # A

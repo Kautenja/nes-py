@@ -24,9 +24,9 @@ def play(steps):
     done = True
     for _ in range(steps):
         if done:
-            _ = env.reset()
+            _, _ = env.reset()
         action = env.action_space.sample()
-        _, _, done, _ = env.step(action)
+        _, _, done, _, _ = env.step(action)
     # close the environment
     env.close()
 
@@ -45,7 +45,7 @@ class ShouldMakeMultipleEnvironmentsParallel(object):
 
     def test(self):
         procs = [None] * self.num_execs
-        args = (self.steps, )
+        args = (self.steps,)
         # spawn the parallel instances
         for idx in range(self.num_execs):
             procs[idx] = self.parallel_initializer(target=play, args=args)
@@ -82,6 +82,6 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
         for _ in range(self.steps):
             for idx in range(self.num_envs):
                 if dones[idx]:
-                    _ = envs[idx].reset()
+                    _, _ = envs[idx].reset()
                 action = envs[idx].action_space.sample()
-                _, _, dones[idx], _ = envs[idx].step(action)
+                _, _, dones[idx], _, _ = envs[idx].step(action)

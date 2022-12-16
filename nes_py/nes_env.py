@@ -264,19 +264,31 @@ class NESEnv(gym.Env):
         """
         # Set the seed.
         self.seed(seed)
+
         # call the before reset callback
         self._will_reset()
+
         # reset the emulator
         if self._has_backup:
             self._restore()
         else:
             _LIB.Reset(self._env)
+
         # call the after reset callback
         self._did_reset()
+
         # set the done flag to false
         self.done = False
+
         # return the screen from the emulator
         return self.screen
+
+    def snapshot(self, slot_id: int):
+        self._backup(slot_id)
+
+    def restore_snapshot(self, slot_id: int):
+        self._restore(slot_id)
+        self.done = False
 
     def _did_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -318,7 +330,7 @@ class NESEnv(gym.Env):
         elif reward > self.reward_range[1]:
             reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
-        return self.screen, reward, self.done, info
+        return self.screen, reward, self.done, False, info
 
     def _get_reward(self):
         """Return the reward after a step occurs."""

@@ -43,7 +43,7 @@ class Emulator: public Core {
     Controller controllers[2];
 
     // Backup slots
-    std::array<State, 11> backup_slots;
+    std::array<Core, 11> backup_slots;
 
  public:
     /// The width of the NES screen in pixels
@@ -84,19 +84,19 @@ class Emulator: public Core {
     /// Perform a step on the emulator, i.e., a single frame.
     void step();
 
-    State& get_slot(int slot_id) {
-        int idx = std::max(0, std::min(slot_id+1, backup_slots.size()-1));
+    Core& get_slot(int slot_id) {
+        int idx = std::max<int>(0, std::min<int>(slot_id+1, backup_slots.size()-1));
         return backup_slots[idx];
     }
 
     /// Create a backup state on the emulator.
     inline void backup(int slot_id) {
-        get_slot(slot_id) = *(static_cast<Core *>this);
+        get_slot(slot_id) = *static_cast<Core *>(this);
     }
 
     /// Restore the backup state on the emulator.
     inline void restore(int slot_id) {
-        *(static_cast<Core *>this) = get_slot(slot_id);
+        *static_cast<Core *>(this) = get_slot(slot_id);
     }
 };
 

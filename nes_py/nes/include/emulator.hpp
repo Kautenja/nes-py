@@ -21,23 +21,7 @@
 
 namespace NES {
 
-struct State {
-    CPU cpu;
-    PPU ppu;
-    MainBus bus;
-    PictureBus picture_bus;
-};
-
-/// An NES Emulator and OpenAI Gym interface
-class Emulator {
- private:
-    /// The number of cycles in 1 frame
-    static const int CYCLES_PER_FRAME = 29781;
-    /// the virtual cartridge with ROM and mapper data
-    Cartridge cartridge;
-    /// the 2 controllers on the emulator
-    Controller controllers[2];
-
+struct Core {
     /// the main data bus of the emulator
     MainBus bus;
     /// the picture bus from the PPU of the emulator
@@ -46,7 +30,19 @@ class Emulator {
     CPU cpu;
     /// the emulators' PPU
     PPU ppu;
+};
 
+/// An NES Emulator and OpenAI Gym interface
+class Emulator: public Core {
+ private:
+    /// The number of cycles in 1 frame
+    static const int CYCLES_PER_FRAME = 29781;
+    /// the virtual cartridge with ROM and mapper data
+    Cartridge cartridge;
+    /// the 2 controllers on the emulator
+    Controller controllers[2];
+
+    // Backup slots
     std::array<State, 11> backup_slots;
 
  public:
@@ -95,20 +91,12 @@ class Emulator {
 
     /// Create a backup state on the emulator.
     inline void backup(int slot_id) {
-        State &state = get_slot(slot_id);
-        state.bus = bus;
-        state.picture_bus = picture_bus;
-        state.cpu = cpu;
-        state.ppu = ppu;
+        get_slot(slot_id) = *(static_cast<Core *>this);
     }
 
     /// Restore the backup state on the emulator.
     inline void restore(int slot_id) {
-        const State &state = get_slot(slot_id);
-        bus = state.bus;
-        picture_bus = state.picture_bus;
-        cpu = state.cpu;
-        ppu = state.ppu;
+        *(static_cast<Core *>this) = get_slot(slot_id);
     }
 };
 

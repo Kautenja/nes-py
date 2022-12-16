@@ -50,10 +50,10 @@ _LIB.Reset.restype = None
 _LIB.Step.argtypes = [ctypes.c_void_p]
 _LIB.Step.restype = None
 # setup the argument and return types for Backup
-_LIB.Backup.argtypes = [ctypes.c_void_p]
+_LIB.Backup.argtypes = [ctypes.c_void_p, ctypes.c_int]
 _LIB.Backup.restype = None
 # setup the argument and return types for Restore
-_LIB.Restore.argtypes = [ctypes.c_void_p]
+_LIB.Restore.argtypes = [ctypes.c_void_p, ctypes.c_int]
 _LIB.Restore.restype = None
 # setup the argument and return types for Close
 _LIB.Close.argtypes = [ctypes.c_void_p]
@@ -210,14 +210,20 @@ class NESEnv(gym.Env):
         # perform a step on the emulator
         _LIB.Step(self._env)
 
-    def _backup(self):
+    def _backup(self, slot_id: int = -1):
         """Backup the NES state in the emulator."""
-        _LIB.Backup(self._env)
+        if slot_id < -1 or slot_id > 10:
+            raise RuntimeError('Only 10 backup slots available')
+
+        _LIB.Backup(self._env, slot_id)
         self._has_backup = True
 
-    def _restore(self):
+    def _restore(self, slot_id: int = -1):
         """Restore the backup state into the NES emulator."""
-        _LIB.Restore(self._env)
+        if slot_id < -1 or slot_id > 10:
+            raise RuntimeError('Only 10 backup slots available')
+
+        _LIB.Restore(self._env, slot_id)
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""

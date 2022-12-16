@@ -68,13 +68,13 @@ extern "C" {
     }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP void Backup(NES::Emulator* emu) {
-        emu->backup();
+    EXP void Backup(NES::Emulator* emu, int slot_id) {
+        emu->backup(slot_id);
     }
 
     /// Create a deep copy (i.e., a clone) of the given emulator
-    EXP void Restore(NES::Emulator* emu) {
-        emu->restore();
+    EXP void Restore(NES::Emulator* emu, int slot_id) {
+        emu->restore(slot_id);
     }
 
     /// Close the emulator, i.e., purge it from memory

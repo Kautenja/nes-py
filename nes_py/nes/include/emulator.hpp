@@ -9,6 +9,7 @@
 #define EMULATOR_HPP
 
 #include <string>
+#include <algorithm>
 #include "common.hpp"
 #include "cartridge.hpp"
 #include "controller.hpp"
@@ -18,6 +19,13 @@
 #include "picture_bus.hpp"
 
 namespace NES {
+
+struct State {
+    CPU cpu;
+    PPU ppu;
+    MainBus bus;
+    PictureBus picture_bus;
+};
 
 /// An NES Emulator and OpenAI Gym interface
 class Emulator {
@@ -38,14 +46,7 @@ class Emulator {
     /// the emulators' PPU
     PPU ppu;
 
-    /// the main data bus of the emulator
-    MainBus backup_bus;
-    /// the picture bus from the PPU of the emulator
-    PictureBus backup_picture_bus;
-    /// The emulator's CPU
-    CPU backup_cpu;
-    /// the emulators' PPU
-    PPU backup_ppu;
+    State backup_slots[11];
 
  public:
     /// The width of the NES screen in pixels
@@ -86,20 +87,27 @@ class Emulator {
     /// Perform a step on the emulator, i.e., a single frame.
     void step();
 
+    State& get_slot(int slot_id) {
+        int idx = std::max(0, std::min(slot_id+1, 10));
+        return backup_slots[idx];
+    }
+
     /// Create a backup state on the emulator.
-    inline void backup() {
-        backup_bus = bus;
-        backup_picture_bus = picture_bus;
-        backup_cpu = cpu;
-        backup_ppu = ppu;
+    inline void backup(int slot_id) {
+        State &state = get_slot(slot_id);
+        state.bus = bus;
+        state.picture_bus = picture_bus;
+        state.cpu = cpu;
+        state.ppu = ppu;
     }
 
     /// Restore the backup state on the emulator.
-    inline void restore() {
-        bus = backup_bus;
-        picture_bus = backup_picture_bus;
-        cpu = backup_cpu;
-        ppu = backup_ppu;
+    inline void restore(int slot_id) {
+        const State &state = get_slot(slot_id);
+        bus = state.bus;
+        picture_bus = state.picture_bus;
+        cpu = state.cpu;
+        ppu = state.ppu;
     }
 };
 

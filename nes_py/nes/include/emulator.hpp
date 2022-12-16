@@ -8,6 +8,7 @@
 #ifndef EMULATOR_HPP
 #define EMULATOR_HPP
 
+#include <array>
 #include <string>
 #include <algorithm>
 #include "common.hpp"
@@ -46,7 +47,7 @@ class Emulator {
     /// the emulators' PPU
     PPU ppu;
 
-    State backup_slots[11];
+    std::array<State, 11> backup_slots;
 
  public:
     /// The width of the NES screen in pixels
@@ -88,7 +89,7 @@ class Emulator {
     void step();
 
     State& get_slot(int slot_id) {
-        int idx = std::max(0, std::min(slot_id+1, 10));
+        int idx = std::max(0, std::min(slot_id+1, backup_slots.size()-1));
         return backup_slots[idx];
     }
 

@@ -50,10 +50,10 @@ _LIB.Reset.restype = None
 _LIB.Step.argtypes = [ctypes.c_void_p]
 _LIB.Step.restype = None
 # setup the argument and return types for Backup
-_LIB.Backup.argtypes = [ctypes.c_void_p]
+_LIB.Backup.argtypes = [ctypes.c_void_p, ctypes.c_int]
 _LIB.Backup.restype = None
 # setup the argument and return types for Restore
-_LIB.Restore.argtypes = [ctypes.c_void_p]
+_LIB.Restore.argtypes = [ctypes.c_void_p, ctypes.c_int]
 _LIB.Restore.restype = None
 # setup the argument and return types for Close
 _LIB.Close.argtypes = [ctypes.c_void_p]
@@ -210,14 +210,20 @@ class NESEnv(gym.Env):
         # perform a step on the emulator
         _LIB.Step(self._env)
 
-    def _backup(self):
+    def _backup(self, slot_id: int = -1):
         """Backup the NES state in the emulator."""
-        _LIB.Backup(self._env)
+        if slot_id < -1 or slot_id > 10:
+            raise RuntimeError('Only 10 backup slots available')
+
+        _LIB.Backup(self._env, slot_id)
         self._has_backup = True
 
-    def _restore(self):
+    def _restore(self, slot_id: int = -1):
         """Restore the backup state into the NES emulator."""
-        _LIB.Restore(self._env)
+        if slot_id < -1 or slot_id > 10:
+            raise RuntimeError('Only 10 backup slots available')
+
+        _LIB.Restore(self._env, slot_id)
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -258,19 +264,32 @@ class NESEnv(gym.Env):
         """
         # Set the seed.
         self.seed(seed)
+
         # call the before reset callback
         self._will_reset()
+
         # reset the emulator
         if self._has_backup:
             self._restore()
         else:
             _LIB.Reset(self._env)
+
         # call the after reset callback
         self._did_reset()
+
         # set the done flag to false
         self.done = False
+
         # return the screen from the emulator
         return self.screen
+
+    def snapshot(self, slot_id: int):
+        self._backup(slot_id)
+
+    def restore_snapshot(self, slot_id: int):
+        self._restore(slot_id)
+        self._did_reset()
+        self.done = False
 
     def _did_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -312,7 +331,7 @@ class NESEnv(gym.Env):
         elif reward > self.reward_range[1]:
             reward = self.reward_range[1]
         # return the screen from the emulator and other relevant data
-        return self.screen, reward, self.done, info
+        return self.screen, reward, self.done, False, info
 
     def _get_reward(self):
         """Return the reward after a step occurs."""

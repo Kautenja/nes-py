@@ -71,7 +71,7 @@ setup(
     install_requires=[
         'gym>=0.17.2',
         'numpy>=1.18.5',
-        'pyglet<=1.5.21,>=1.4.0',
+        'pyglet<=2.0.1,>1.5.21',
         'tqdm>=4.48.2',
     ],
     entry_points={

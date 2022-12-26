@@ -8,7 +8,9 @@
 #ifndef EMULATOR_HPP
 #define EMULATOR_HPP
 
+#include <array>
 #include <string>
+#include <algorithm>
 #include "common.hpp"
 #include "cartridge.hpp"
 #include "controller.hpp"
@@ -19,16 +21,7 @@
 
 namespace NES {
 
-/// An NES Emulator and OpenAI Gym interface
-class Emulator {
- private:
-    /// The number of cycles in 1 frame
-    static const int CYCLES_PER_FRAME = 29781;
-    /// the virtual cartridge with ROM and mapper data
-    Cartridge cartridge;
-    /// the 2 controllers on the emulator
-    Controller controllers[2];
-
+struct Core {
     /// the main data bus of the emulator
     MainBus bus;
     /// the picture bus from the PPU of the emulator
@@ -37,15 +30,20 @@ class Emulator {
     CPU cpu;
     /// the emulators' PPU
     PPU ppu;
+};
 
-    /// the main data bus of the emulator
-    MainBus backup_bus;
-    /// the picture bus from the PPU of the emulator
-    PictureBus backup_picture_bus;
-    /// The emulator's CPU
-    CPU backup_cpu;
-    /// the emulators' PPU
-    PPU backup_ppu;
+/// An NES Emulator and OpenAI Gym interface
+class Emulator: public Core {
+ private:
+    /// The number of cycles in 1 frame
+    static const int CYCLES_PER_FRAME = 29781;
+    /// the virtual cartridge with ROM and mapper data
+    Cartridge cartridge;
+    /// the 2 controllers on the emulator
+    Controller controllers[2];
+
+    // Backup slots
+    std::array<Core, 11> backup_slots;
 
  public:
     /// The width of the NES screen in pixels
@@ -86,20 +84,19 @@ class Emulator {
     /// Perform a step on the emulator, i.e., a single frame.
     void step();
 
+    Core& get_slot(int slot_id) {
+        int idx = std::max<int>(0, std::min<int>(slot_id+1, backup_slots.size()-1));
+        return backup_slots[idx];
+    }
+
     /// Create a backup state on the emulator.
-    inline void backup() {
-        backup_bus = bus;
-        backup_picture_bus = picture_bus;
-        backup_cpu = cpu;
-        backup_ppu = ppu;
+    inline void backup(int slot_id) {
+        get_slot(slot_id) = *static_cast<Core *>(this);
     }
 
     /// Restore the backup state on the emulator.
-    inline void restore() {
-        bus = backup_bus;
-        picture_bus = backup_picture_bus;
-        cpu = backup_cpu;
-        ppu = backup_ppu;
+    inline void restore(int slot_id) {
+        *static_cast<Core *>(this) = get_slot(slot_id);
     }
 };
 

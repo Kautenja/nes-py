@@ -146,7 +146,9 @@ class ImageViewer(object):
         )
         # send the image to the window
         image.blit(0, 0, width=self._window.width, height=self._window.height)
+        self.pyglet.text.Label('Hello', x=10, y=10).draw()
         self._window.flip()
+
 
 
 # explicitly define the outward facing API of this module

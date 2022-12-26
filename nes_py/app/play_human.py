@@ -38,8 +38,8 @@ def play_human(env: gym.Env, callback=None):
     # create the image viewer
     viewer = ImageViewer(
         env.spec.id if env.spec is not None else env.__class__.__name__,
-        env.observation_space.shape[0], # height
-        env.observation_space.shape[1], # width
+        env.observation_space.shape[0]*3, # height
+        env.observation_space.shape[1]*3, # width
         monitor_keyboard=True,
         relevant_keys=set(sum(map(list, keys_to_action.keys()), []))
     )
@@ -66,7 +66,7 @@ def play_human(env: gym.Env, callback=None):
                 viewer.show(env.unwrapped.screen)
             # unwrap the action based on pressed relevant keys
             action = keys_to_action.get(viewer.pressed_keys, _NOP)
-            next_state, reward, done, _ = env.step(action)
+            next_state, reward, _, done, _ = env.step(action)
             viewer.show(env.unwrapped.screen)
             # pass the observation data through the callback
             if callback is not None:

@@ -288,6 +288,7 @@ class NESEnv(gym.Env):
 
     def restore_snapshot(self, slot_id: int):
         self._restore(slot_id)
+        self._did_reset()
         self.done = False
 
     def _did_reset(self):

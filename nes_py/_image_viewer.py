@@ -22,10 +22,10 @@ class ImageViewer(object):
             None
         """
         # detect if rendering from python threads and fail
-        import threading
-        if threading.current_thread() is not threading.main_thread():
-            msg = 'rendering from python threads is not supported'
-            raise RuntimeError(msg)
+        # import threading
+        # if threading.current_thread() is not threading.main_thread():
+        #     msg = 'rendering from python threads is not supported'
+        #     raise RuntimeError(msg)
         # import pyglet within class scope to resolve issues with how pyglet
         # interacts with OpenGL while using multiprocessing
         import pyglet

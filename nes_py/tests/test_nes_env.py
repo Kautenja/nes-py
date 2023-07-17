@@ -1,6 +1,6 @@
 """Test cases for the NESEnv class."""
 from unittest import TestCase
-import gym
+import gymnasium as gym
 import numpy as np
 from .rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
@@ -45,9 +45,9 @@ class ShouldCreateInstanceOfNESEnv(TestCase):
         env.close()
 
 
-def create_smb1_instance():
+def create_smb1_instance(render_mode='human'):
     """Return a new SMB1 instance."""
-    return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
+    return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'), render_mode=render_mode)
 
 
 class ShouldReadAndWriteMemory(TestCase):
@@ -74,7 +74,7 @@ class ShouldResetAndCloseEnv(TestCase):
 
 class ShouldStepEnv(TestCase):
     def test(self):
-        env = create_smb1_instance()
+        env = create_smb1_instance(render_mode='rgb_array')
         done = True
         for _ in range(500):
             if done:
@@ -89,14 +89,16 @@ class ShouldStepEnv(TestCase):
             self.assertIsInstance(output, tuple)
             self.assertEqual(5, len(output))
             # check each output
-            state, reward, done, truncated, info = output
+            state, reward, terminated, truncated, info = output
+            done = terminated or truncated
             self.assertIsInstance(state, np.ndarray)
             self.assertIsInstance(reward, float)
-            self.assertIsInstance(done, bool)
+            self.assertIsInstance(terminated, bool)
             self.assertIsInstance(truncated, bool)
+            self.assertIsInstance(done, bool)
             self.assertIsInstance(info, dict)
             # check the render output
-            render = env.render('rgb_array')
+            render = env.render()
             self.assertIsInstance(render, np.ndarray)
         env.reset()
         env.close()
@@ -111,7 +113,8 @@ class ShouldStepEnvBackupRestore(TestCase):
             if done:
                 state, _ = env.reset()
                 done = False
-            state, _, done, _, _ = env.step(0)
+            state, _, terminated, truncated, _ = env.step(0)
+            done = terminated or truncated
 
         backup = state.copy()
 
@@ -121,7 +124,8 @@ class ShouldStepEnvBackupRestore(TestCase):
             if done:
                 state = env.reset()
                 done = False
-            state, _, done, _, _ = env.step(0)
+            state, _, terminated, truncated, _ = env.step(0)
+            done = terminated or truncated
 
         self.assertFalse(np.array_equal(backup, state))
         env._restore()

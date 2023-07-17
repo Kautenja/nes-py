@@ -26,7 +26,8 @@ def play(steps):
         if done:
             _, _ = env.reset()
         action = env.action_space.sample()
-        _, _, done, _, _ = env.step(action)
+        _, _, terminated, truncated, _ = env.step(action)
+        done = terminated or truncated
     # close the environment
     env.close()
 
@@ -84,4 +85,5 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
                 if dones[idx]:
                     _, _ = envs[idx].reset()
                 action = envs[idx].action_space.sample()
-                _, _, dones[idx], _, _ = envs[idx].step(action)
+                _, _, terminated, truncated, _ = envs[idx].step(action)
+                dones[idx] = terminated or truncated

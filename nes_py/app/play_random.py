@@ -21,7 +21,8 @@ def play_random(env, steps):
             if done:
                 _, _ = env.reset()
             action = env.action_space.sample()
-            _, reward, done, _, info = env.step(action)
+            _, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
             progress.set_postfix(reward=reward, info=info)
             env.render()
     except KeyboardInterrupt:

@@ -1,5 +1,5 @@
 """A method to play gym environments using human IO inputs."""
-import gym
+import gymnasium as gym
 import time
 from pyglet import clock
 from .._image_viewer import ImageViewer
@@ -66,7 +66,8 @@ def play_human(env: gym.Env, callback=None):
                 viewer.show(env.unwrapped.screen)
             # unwrap the action based on pressed relevant keys
             action = keys_to_action.get(viewer.pressed_keys, _NOP)
-            next_state, reward, done, truncated, _ = env.step(action)
+            next_state, reward, terminated, truncated, _ = env.step(action)
+            done = terminated or truncated
             viewer.show(env.unwrapped.screen)
             # pass the observation data through the callback
             if callback is not None:

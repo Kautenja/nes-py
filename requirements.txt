@@ -1,4 +1,4 @@
-gymnasium>=0.26.0
+gymnasium>=0.27.0
 numpy>=1.18.5
 pyglet<=1.5.27,>=1.4.0
 tqdm>=4.48.2

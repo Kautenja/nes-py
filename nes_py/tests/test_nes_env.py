@@ -83,7 +83,7 @@ class ShouldStepEnv(TestCase):
                 self.assertIsInstance(state, np.ndarray)
             # sample a random action and check it
             action = env.action_space.sample()
-            self.assertIsInstance(action, int)
+            self.assertIsInstance(action, np.int64)
             # take a step and check the outputs
             output = env.step(action)
             self.assertIsInstance(output, tuple)

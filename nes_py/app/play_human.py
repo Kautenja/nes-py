@@ -71,7 +71,7 @@ def play_human(env: gym.Env, callback=None):
             viewer.show(env.unwrapped.screen)
             # pass the observation data through the callback
             if callback is not None:
-                callback(state, action, reward, done, truncated, next_state)
+                callback(state, action, reward, terminated, truncated, next_state)
             state = next_state
             # shutdown if the escape key is pressed
             if viewer.is_escape_pressed:

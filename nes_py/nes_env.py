@@ -144,8 +144,6 @@ class NESEnv(gym.Env):
         elif rom.mapper not in {0, 1, 2, 3}:
             msg = 'ROM has an unsupported mapper number {}. please see https://github.com/Kautenja/nes-py/issues/28 for more information.'
             raise ValueError(msg.format(rom.mapper))
-        # create a dedicated random number generator for the environment
-        self.np_random = np.random.RandomState()
         # store the ROM path
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
@@ -255,26 +253,6 @@ class NESEnv(gym.Env):
         """Handle any RAM hacking after a reset occurs."""
         pass
 
-    def seed(self, seed=None):
-        """
-        Set the seed for this environment's random number generator.
-
-        Returns:
-            list<bigint>: Returns the list of seeds used in this env's random
-              number generators. The first value in the list should be the
-              "main" seed, or the value which a reproducer should pass to
-              'seed'. Often, the main seed equals the provided 'seed', but
-              this won't be true if seed=None, for example.
-
-        """
-        # if there is no seed, return an empty list
-        if seed is None:
-            return []
-        # set the random number seed for the NumPy random number generator
-        self.np_random.seed(seed)
-        # return the list of seeds used by RNG(s) in the environment
-        return [seed]
-
     def reset(self, seed=None, options=None) -> Tuple[ObsType, dict]:
         """
         Reset the state of the environment and returns an initial observation.
@@ -290,7 +268,7 @@ class NESEnv(gym.Env):
 
         """
         # Set the seed.
-        self.seed(seed)
+        super().reset(seed=seed)
         # call the before reset callback
         self._will_reset()
         # reset the emulator

@@ -95,7 +95,7 @@ class NESEnv(gym.Env):
 
     # relevant meta-data about the environment
     metadata = {
-        'render.modes': ['rgb_array', 'human'],
+        'render.modes': ['rgb_array', 'human', None],
         'video.frames_per_second': 60
     }
 
@@ -113,7 +113,7 @@ class NESEnv(gym.Env):
     # action space is a bitmap of button press values for the 8 NES buttons
     action_space = Discrete(256)
 
-    def __init__(self, rom_path, render_mode='human'):
+    def __init__(self, rom_path, render_mode: Optional[str] = None):
         """
         Create a new NES environment.
 
@@ -150,13 +150,31 @@ class NESEnv(gym.Env):
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.Initialize(self._rom_path)
-        # setup a placeholder for a 'human' render mode viewer
-        self.viewer = None
+        if render_mode not in self.metadata['render.modes']:
+            # unpack the modes as comma delineated strings ('a', 'b', ...)
+            render_modes = [repr(x) if x is not None else x for x in self.metadata['render.modes']]
+            msg = 'valid render modes are: {}'.format(', '.join(render_modes))
+            raise NotImplementedError(msg)
+        # setup a 'human' render mode viewer
+        if render_mode == 'human':
+            # get the caption for the ImageViewer
+            if self.spec is None:
+                # if there is no spec, just use the .nes filename
+                caption = self._rom_path.split('/')[-1]
+            else:
+                # set the caption to the OpenAI Gym id
+                caption = self.spec.id
+            # create the ImageViewer to display frames
+            self.viewer = ImageViewer(
+                    caption=caption,
+                    height=SCREEN_HEIGHT,
+                    width=SCREEN_WIDTH,
+            )
         self.render_mode = render_mode
         # setup a placeholder for a pointer to a backup state
         self._has_backup = False
-        # setup a done flag
-        self.done = True
+        # setup a terminated flag
+        self.terminated = True
         # truncated
         self.truncated = False
         # setup the controllers, screen, and RAM buffers
@@ -282,8 +300,12 @@ class NESEnv(gym.Env):
             _LIB.Reset(self._env)
         # call the after reset callback
         self._did_reset()
-        # set the done flag to false
-        self.done = False
+        # set the terminated and truncated flags to false
+        self.terminated = False
+        self.truncated = False
+        # automatically render the environment if in human mode
+        if self.render_mode == 'human':
+            self.render()
         # return the screen from the emulator
         return self.screen, self._get_info()
 
@@ -302,39 +324,43 @@ class NESEnv(gym.Env):
             a tuple of:
             - state (np.ndarray): next frame as a result of the given action
             - reward (float) : amount of reward returned after given action
-            - done (boolean): whether the episode has ended
+            - terminated (boolean): whether the episode has ended
+            - truncated (boolean): whether the step limit has been reached
             - info (dict): contains auxiliary diagnostic information
 
         """
         # if the environment is done, raise an error
-        if self.done:
-            raise ValueError('cannot step in a done environment! call `reset`')
+        if self.terminated or self.truncated:
+            raise ValueError('cannot step in a terminated or truncated environment! call `reset`')
         # set the action on the controller
         self.controllers[0][:] = action
         # pass the action to the emulator as an unsigned byte
         _LIB.Step(self._env)
         # get the reward for this step
         reward = float(self._get_reward())
-        # get the done flag for this step
-        self.done = bool(self._get_done())
+        # get the terminated and truncated flags for this step
+        self.terminated = bool(self._get_terminated())
+        self.truncated = bool(self._get_truncated())
         # get the info for this step
         info = self._get_info()
-        self.truncated = self._get_truncated()
         # call the after step callback
-        self._did_step(self.done)
+        self._did_step(self.terminated, self.truncated)
         # bound the reward in [min, max]
         if reward < self.reward_range[0]:
             reward = self.reward_range[0]
         elif reward > self.reward_range[1]:
             reward = self.reward_range[1]
+        # automatically render the environment if in human mode
+        if self.render_mode == 'human':
+            self.render()
         # return the screen from the emulator and other relevant data
-        return self.screen, reward, self.done, self.truncated, info
+        return self.screen, reward, self.terminated, self.truncated, info
 
     def _get_reward(self):
         """Return the reward after a step occurs."""
         return 0
 
-    def _get_done(self):
+    def _get_terminated(self):
         """Return True if the episode is over, False otherwise."""
         return False
 
@@ -346,12 +372,13 @@ class NESEnv(gym.Env):
         """Return the info after a step occurs."""
         return {}
 
-    def _did_step(self, done):
+    def _did_step(self, terminated, truncated):
         """
         Handle any RAM hacking after a step occurs.
 
         Args:
-            done (bool): whether the done flag is set to true
+            terminated (bool): whether the terminated flag is set to true
+            truncated (bool): whether the truncated flag is set to true
 
         Returns:
             None
@@ -369,7 +396,7 @@ class NESEnv(gym.Env):
         # deallocate the object locally
         self._env = None
         # if there is an image viewer open, delete it
-        if self.viewer is not None:
+        if self.render_mode == 'human':
             self.viewer.close()
 
     def render(self) -> Optional[Union[RenderFrame, List[RenderFrame]]]:
@@ -383,24 +410,12 @@ class NESEnv(gym.Env):
             a numpy array if environment was initialized with render_mode='rgb_array', None otherwise
 
         """
-        if self.render_mode == 'human':
-            # if the viewer isn't setup, import it and create one
-            if self.viewer is None:
-                # get the caption for the ImageViewer
-                if self.spec is None:
-                    # if there is no spec, just use the .nes filename
-                    caption = self._rom_path.split('/')[-1]
-                else:
-                    # set the caption to the OpenAI Gym id
-                    caption = self.spec.id
-                # create the ImageViewer to display frames
-                self.viewer = ImageViewer(
-                        caption=caption,
-                        height=SCREEN_HEIGHT,
-                        width=SCREEN_WIDTH,
-                )
+        if self.render_mode is None:
+            return None
+        elif self.render_mode == 'human':
             # show the screen on the image viewer
             self.viewer.show(self.screen)
+            return None
         elif self.render_mode == 'rgb_array':
             return self.screen
         else:

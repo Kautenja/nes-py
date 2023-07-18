@@ -34,12 +34,14 @@ def main():
     """The main entry point for the command line interface."""
     # get arguments from the command line
     args = _get_args()
-    # create the environment
-    env = NESEnv(args.rom)
     # play the environment with the given mode
     if args.mode == 'human':
+        # environment is initialized without a rendering mode, as play_human creates its own
+        env = NESEnv(args.rom)
         play_human(env)
     else:
+        # create the environment
+        env = NESEnv(args.rom, render_mode='human')
         play_random(env, args.steps)
 
 

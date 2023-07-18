@@ -9,7 +9,7 @@ from .._image_viewer import ImageViewer
 _NOP = 0
 
 
-def play_human(env: gym.Env, callback=None):
+def play_human(env: gym.Env, callback=None, seed=None):
     """
     Play the environment using keyboard as a human.
 
@@ -44,7 +44,11 @@ def play_human(env: gym.Env, callback=None):
         relevant_keys=set(sum(map(list, keys_to_action.keys()), []))
     )
     # create a done flag for the environment
-    done = True
+    done = False
+    # reset the environment with the given seed
+    state, _ = env.reset(seed=seed)
+    # render the initial state
+    viewer.show(env.unwrapped.screen)
     # prepare frame rate limiting
     target_frame_duration = 1 / env.metadata['video.frames_per_second']
     last_frame_time = 0

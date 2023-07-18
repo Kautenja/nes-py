@@ -2,7 +2,7 @@
 from tqdm import tqdm
 
 
-def play_random(env, steps):
+def play_random(env, steps, seed=None):
     """
     Play the environment making uniformly random decisions.
 
@@ -15,7 +15,8 @@ def play_random(env, steps):
 
     """
     try:
-        done = True
+        done = False
+        _, _ = env.reset(seed=seed)
         progress = tqdm(range(steps))
         for _ in progress:
             if done:

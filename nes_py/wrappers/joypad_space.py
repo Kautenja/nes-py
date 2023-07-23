@@ -4,7 +4,7 @@ from gymnasium import Env
 from gymnasium import Wrapper
 
 
-class JoypadSpace(Wrapper):
+class JoypadSpace(Wrapper, gym.utils.RecordConstructorArgs):
     """An environment wrapper to convert binary to discrete action space."""
 
     # a mapping of buttons to binary values
@@ -38,6 +38,7 @@ class JoypadSpace(Wrapper):
             None
 
         """
+        gym.utils.RecordConstructorArgs.__init__(self, actions=actions)
         super().__init__(env)
         # create the new action space
         self.action_space = gym.spaces.Discrete(len(actions))

@@ -10,7 +10,8 @@ try:
             state = env.reset()
             done = False
         else:
-            state, reward, done, info = env.step(env.action_space.sample())
+            state, reward, terminated, truncated, info = env.step(env.action_space.sample())
+            done = terminated or truncated
         if (i + 1) % 12:
             env._backup()
         if (i + 1) % 27:

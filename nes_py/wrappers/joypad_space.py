@@ -1,10 +1,10 @@
 """An environment wrapper to convert binary to discrete action space."""
-import gym
-from gym import Env
-from gym import Wrapper
+import gymnasium as gym
+from gymnasium import Env
+from gymnasium import Wrapper
 
 
-class JoypadSpace(Wrapper):
+class JoypadSpace(Wrapper, gym.utils.RecordConstructorArgs):
     """An environment wrapper to convert binary to discrete action space."""
 
     # a mapping of buttons to binary values
@@ -38,6 +38,7 @@ class JoypadSpace(Wrapper):
             None
 
         """
+        gym.utils.RecordConstructorArgs.__init__(self, actions=actions)
         super().__init__(env)
         # create the new action space
         self.action_space = gym.spaces.Discrete(len(actions))
@@ -72,10 +73,6 @@ class JoypadSpace(Wrapper):
         """
         # take the step and record the output
         return self.env.step(self._action_map[action])
-
-    def reset(self):
-        """Reset the environment and return the initial observation."""
-        return self.env.reset()
 
     def get_keys_to_action(self):
         """Return the dictionary of keyboard keys to actions."""

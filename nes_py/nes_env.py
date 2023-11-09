@@ -95,7 +95,8 @@ class NESEnv(gym.Env):
 
     # relevant meta-data about the environment
     metadata = {
-        'render.modes': ['rgb_array', 'human', None],
+        'render_modes': ['rgb_array', 'human'],
+        'render_fps': 60,
         'video.frames_per_second': 60
     }
 
@@ -148,11 +149,8 @@ class NESEnv(gym.Env):
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
         self._env = _LIB.Initialize(self._rom_path)
-        if render_mode not in self.metadata['render.modes']:
-            # unpack the modes as comma delineated strings ('a', 'b', ...)
-            render_modes = [repr(x) if x is not None else x for x in self.metadata['render.modes']]
-            msg = 'valid render modes are: {}'.format(', '.join(render_modes))
-            raise NotImplementedError(msg)
+        assert render_mode is None or render_mode in self.metadata["render_modes"]
+
         # setup a 'human' render mode viewer
         if render_mode == 'human':
             # get the caption for the ImageViewer
@@ -398,7 +396,7 @@ class NESEnv(gym.Env):
             return self.screen
         else:
             # unpack the modes as comma delineated strings ('a', 'b', ...)
-            render_modes = [repr(x) for x in self.metadata['render.modes']]
+            render_modes = [repr(x) for x in self.metadata['render_modes']]
             msg = 'valid render modes are: {}'.format(', '.join(render_modes))
             raise NotImplementedError(msg)
 

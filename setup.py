@@ -37,11 +37,11 @@ LIB_NES_ENV = Extension(LIB_NAME,
 
 setup(
     name='nes_py',
-    version='8.2.1',
-    description='An NES Emulator and OpenAI Gym interface',
+    version='9.0.0',
+    description='A Python3 NES emulator and Gymnasium interface',
     long_description=README,
     long_description_content_type='text/markdown',
-    keywords='NES Emulator OpenAI-Gym',
+    keywords='NES Emulator Gymnasium',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
@@ -52,11 +52,10 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: C++',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Emulators',
@@ -68,12 +67,19 @@ setup(
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[LIB_NES_ENV],
     zip_safe=False,
+    python_requires='>=3.9,<3.13',
     install_requires=[
-        'gym>=0.17.2',
-        'numpy>=1.18.5',
-        'pyglet<=1.5.21,>=1.4.0',
-        'tqdm>=4.48.2',
+        'gymnasium>=0.29.0',
+        'numpy>=1.24.0,<2.0.0',
+        'pyglet>=2.0.0',
+        'tqdm>=4.66.0',
     ],
+    extras_require={
+        'dev': [
+            'pytest>=7.4.0',
+            'twine>=4.0.0',
+        ]
+    },
     entry_points={
         'console_scripts': [
             'nes_py = nes_py.app.cli:main',

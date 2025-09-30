@@ -12,8 +12,8 @@
 [![Format][pypi-format]][pypi-home]
 [![License][pypi-license]](LICENSE)
 
-[build-status]: https://app.travis-ci.com/Kautenja/nes-py.svg?branch=master
-[ci-server]: https://app.travis-ci.com/Kautenja/nes-py
+[build-status]: https://github.com/Kautenja/nes-py/actions/workflows/test.yml/badge.svg
+[ci-server]: https://github.com/Kautenja/nes-py/actions/workflows/test.yml
 [pypi-version]: https://badge.fury.io/py/nes-py.svg
 [pypi-license]: https://img.shields.io/pypi/l/nes-py.svg
 [pypi-status]: https://img.shields.io/pypi/status/nes-py.svg
@@ -22,7 +22,7 @@
 [python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
 [python-home]: https://python.org
 
-nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
+nes-py is an NES emulator and Gymnasium interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
 
 <table align="center">
@@ -105,32 +105,31 @@ The preferred installation of `nes-py` is from `pip`:
 pip install nes-py
 ```
 
-## Debian
-
-Make sure you have the `clang++` compiler installed:
-
-```shell
-sudo apt-get install clang
-```
-
-## Windows
-
-You'll need to install the Visual-Studio 17.0 tools for Windows installation.
-The [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
-package provides these tools for free.
-
 # Usage
 
-To access the NES emulator from the command line use the following command.
+```python
+import gymnasium as gym
+import nes_py
 
-```shell
-nes_py -r <path_to_rom>
-```
+# create the NES environment
+env = nes_py.NESEnv('path/to/your/rom.nes')
 
-To print out documentation for the command line interface execute:
+# reset the environment to get the initial state
+obs, info = env.reset()
 
-```shell
-nes_py -h
+# loop through the game
+while True:
+    # sample a random action
+    action = env.action_space.sample()
+    # perform the action
+    obs, reward, terminated, truncated, info = env.step(action)
+    # check if the episode is over
+    if terminated or truncated:
+        # reset the environment
+        obs, info = env.reset()
+
+# close the environment
+env.close()
 ```
 
 ## Controls

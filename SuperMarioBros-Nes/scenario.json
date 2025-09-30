@@ -1,0 +1,33 @@
+{
+  "rewards": {
+    "variables": {
+    }
+  }
+,
+  "states": {
+    "Level1-1": {
+      "Default": true
+    },
+    "Level1-4": {},
+    "Level2-1": {},
+    "Level3-1": {},
+    "Level4-1": {},
+    "Level5-1": {},
+    "Level6-1": {},
+    "Level7-1": {},
+    "Level8-1": {},
+    "scenario": {
+      "random": [
+        "Level1-1",
+        "Level1-4",
+        "Level2-1",
+        "Level3-1",
+        "Level4-1",
+        "Level5-1",
+        "Level6-1",
+        "Level7-1",
+        "Level8-1"
+      ]
+    }
+  }
+}

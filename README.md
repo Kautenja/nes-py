@@ -14,12 +14,12 @@
 
 [build-status]: https://github.com/Kautenja/nes-py/actions/workflows/test.yml/badge.svg
 [ci-server]: https://github.com/Kautenja/nes-py/actions/workflows/test.yml
-[pypi-version]: https://badge.fury.io/py/nes-py.svg
+[pypi-version]: https://img.shields.io/badge/version-9.0.0-blue
 [pypi-license]: https://img.shields.io/pypi/l/nes-py.svg
 [pypi-status]: https://img.shields.io/pypi/status/nes-py.svg
 [pypi-format]: https://img.shields.io/pypi/format/nes-py.svg
 [pypi-home]: https://badge.fury.io/py/nes-py
-[python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
+[python-version]: https://img.shields.io/badge/python-3.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue
 [python-home]: https://python.org
 
 nes-py is an NES emulator and Gymnasium interface for MacOS, Linux, and

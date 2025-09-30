@@ -25,6 +25,8 @@
 nes-py is an NES emulator and Gymnasium interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
 
+**Disclaimer:** This repository is a fork of the original [Kautenja/nes-py](https://github.com/Kautenja/nes-py) project. The modifications implemented here aim to update the library for compatibility with newer Python versions (3.9-3.12) and modern environments like Gymnasium.
+
 <table align="center">
     <tr>
         <td>

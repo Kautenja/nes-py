@@ -1,9 +1,0 @@
-#!/bin/sh
-'''exec' "/media/sajmon/M2 AI/AI/AI_Play/nes-py/venv_new/bin/python3.12" "$0" "$@"
-' '''
-import sys
-from build.__main__ import entrypoint
-if __name__ == '__main__':
-    if sys.argv[0].endswith('.exe'):
-        sys.argv[0] = sys.argv[0][:-4]
-    sys.exit(entrypoint())

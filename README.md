@@ -88,6 +88,83 @@ By setting `vec_env_cls=SubprocVecEnv`, each of the `n_envs` will open its own w
 |    Enter     |   Start    |
 |    Space     |   Select   |
 
-## Disclaimer
+## Features
+
+### Core Functionality
+- **NES Emulation**: Full NES emulator based on SimpleNES
+- **Gymnasium Integration**: Compatible with modern Gymnasium API
+- **Multi-platform Support**: Works on Windows, macOS, and Linux
+- **Python 3.9-3.12**: Modern Python support with type hints
+
+### Advanced Features
+- **Multi-process Rendering**: Optimized for parallel training with Stable-Baselines3
+- **Frame Buffer Access**: Direct access to screen and RAM buffers
+- **Controller Support**: Full NES controller emulation
+- **State Management**: Backup and restore emulator state
+
+### Performance Optimizations
+- **SubprocVecEnv Support**: Each environment runs in separate process
+- **Memory Efficient**: Optimized memory usage for training
+- **Fast Rendering**: Hardware-accelerated rendering when available
+
+## API Reference
+
+### NESEnv Class
+```python
+class NESEnv(gym.Env):
+    def __init__(self, rom_path, render_mode=None)
+    def reset(self, seed=None, options=None)
+    def step(self, action)
+    def render(self)
+    def close(self)
+```
+
+### Key Methods
+- `_screen_buffer()`: Get current screen buffer
+- `_ram_buffer()`: Access NES RAM
+- `_frame_advance(action)`: Advance single frame
+- `_backup()` / `_restore()`: State management
+
+## Integration Examples
+
+### Stable-Baselines3 Integration
+```python
+from stable_baselines3 import PPO
+from stable_baselines3.common.vec_env import SubprocVecEnv
+from nes_py import NESEnv
+
+# Create vectorized environment
+env = make_vec_env(
+    lambda: NESEnv('game.nes'),
+    n_envs=8,
+    vec_env_cls=SubprocVecEnv
+)
+
+### Custom Environment Development
+```python
+import nes_py
+
+class CustomGameEnv(nes_py.NESEnv):
+    def __init__(self):
+        super().__init__('custom_rom.nes')
+    
+    def _get_reward(self):
+        # Implement custom reward logic
+        return self._read_mem_range(0x07, 1)[0]
+    
+    def _get_done(self):
+        # Implement custom done condition
+        return self._is_game_over()
+```
+
+## Contributing
+
+This fork focuses on:
+- Modern Python compatibility
+- Gymnasium API support
+- Performance optimizations
+- Bug fixes and stability improvements
+
+## License
 
 This project is provided for educational purposes only. It is not affiliated with and has not been approved by Nintendo.

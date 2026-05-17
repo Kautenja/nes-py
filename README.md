@@ -24,7 +24,7 @@
 
 nes-py is an NES emulator and Gymnasium interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
-The supported CI target is Python 3.13.
+The supported CI targets are Python 3.13 and 3.14.
 
 <table align="center">
     <tr>
@@ -234,8 +234,8 @@ through PyPI trusted publishing, not by local `twine` credentials. Configure the
 PyPI project publisher with owner `Kautenja`, repository `nes-py`, workflow
 filename `publish.yml`, and environment `pypi`. Then create a GitHub release
 from a tag matching `pyproject.toml`'s version, with or without a leading `v`.
-The workflow builds the source distribution and CPython 3.13 wheels for Linux,
-Windows, and macOS before publishing.
+The workflow builds the source distribution and CPython 3.13 and 3.14 wheels
+for Linux, Windows, and macOS before publishing.
 
 ## Benchmarking
 

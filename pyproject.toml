@@ -11,7 +11,7 @@ name = "nes_py"
 version = "9.0.0"
 description = "An NES Emulator and Gymnasium interface"
 readme = "README.md"
-requires-python = ">=3.13,<3.14"
+requires-python = ">=3.13"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: C++",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Games/Entertainment",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Emulators",
@@ -63,7 +64,7 @@ sdist.exclude = [
 wheel.exclude = ["nes_py/tests/**"]
 
 [tool.cibuildwheel]
-build = "cp313-*"
+build = "cp313-* cp314-*"
 skip = "*-musllinux_*"
 test-command = 'python -c "import nes_py; import nes_py._native"'
 build-verbosity = 1

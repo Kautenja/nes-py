@@ -8,6 +8,7 @@
 #include <memory>
 #include <catch2/catch_test_macros.hpp>
 #include "nes_emu/mapper_factory.hpp"
+#include "nes_emu/test/nes_emu/support/emulator_inspector.hpp"
 #include "nes_emu/test/nes_emu/support/synthetic_rom.hpp"
 
 namespace {
@@ -170,6 +171,41 @@ TEST_CASE("mapper 001 protects PRG RAM and clones CHR RAM state", "[mapper]") {
     REQUIRE(backup->readPRG(0xd000) == NESTest::prg_bank_marker(3));
     REQUIRE(backup->readCHR(0x0123) == 0x5a);
     REQUIRE(backup->getNameTableMirroring() == NES::HORIZONTAL);
+}
+
+TEST_CASE("mapper 001 emulator save-state preserves MMC1 state", "[mapper]") {
+    NESTest::TemporaryROM rom("sxrom_emulator_backup", 1, 4, 0);
+    NES::Emulator emulator(rom.filename());
+    NES::Mapper& mapper = NES::EmulatorInspector::mapper(emulator);
+
+    mapper.writePRGRAM(0x6000, 0x33);
+    write_mmc1_register(mapper, 0x8000, 0x0f);
+    write_mmc1_register(mapper, 0xe000, 0x11);
+    mapper.writePRGRAM(0x6000, 0x44);
+    mapper.writeCHR(0x0123, 0x5a);
+    REQUIRE(mapper.readPRGRAM(0x6000) == 0x33);
+
+    emulator.backup();
+
+    write_mmc1_register(mapper, 0x8000, 0x0e);
+    write_mmc1_register(mapper, 0xe000, 0x02);
+    mapper.writePRGRAM(0x6000, 0x99);
+    mapper.writeCHR(0x0123, 0xa5);
+    REQUIRE(mapper.readPRG(0x9000) == NESTest::prg_bank_marker(2));
+    REQUIRE(mapper.readCHR(0x0123) == 0xa5);
+    REQUIRE(mapper.readPRGRAM(0x6000) == 0x99);
+    REQUIRE(mapper.getNameTableMirroring() == NES::VERTICAL);
+
+    emulator.restore();
+    NES::Mapper& restored = NES::EmulatorInspector::mapper(emulator);
+    REQUIRE(restored.readPRG(0x9000) == NESTest::prg_bank_marker(1));
+    REQUIRE(restored.readPRG(0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(restored.readCHR(0x0123) == 0x5a);
+    REQUIRE(restored.readPRGRAM(0x6000) == 0x33);
+    REQUIRE(restored.getNameTableMirroring() == NES::HORIZONTAL);
+
+    restored.writePRGRAM(0x6000, 0x77);
+    REQUIRE(restored.readPRGRAM(0x6000) == 0x33);
 }
 
 TEST_CASE("mapper 002 UxROM switches PRG and provides CHR RAM", "[mapper]") {

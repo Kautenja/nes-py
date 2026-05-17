@@ -4,6 +4,7 @@ import glob
 import itertools
 import os
 import sys
+from pathlib import Path
 import gym
 from gym.spaces import Box
 from gym.spaces import Discrete
@@ -16,13 +17,25 @@ from ._image_viewer import ImageViewer
 _MODULE_PATH = os.path.dirname(__file__)
 # the pattern to find the C++ shared object library
 _SO_PATH = 'lib_nes_env*'
-# the absolute path to the C++ shared object library
-_LIB_PATH = os.path.join(_MODULE_PATH, _SO_PATH)
+
+
+def _library_paths():
+    """Yield candidate paths for the compiled C++ shared library."""
+    package_paths = [Path(_MODULE_PATH)]
+    package_paths.extend(Path(path or os.getcwd()) / 'nes_py' for path in sys.path)
+    for package_path in dict.fromkeys(package_paths):
+        yield from sorted(glob.glob(str(package_path / _SO_PATH)))
+
+
 # load the library from the shared object file
-try:
-    _LIB = ctypes.cdll.LoadLibrary(glob.glob(_LIB_PATH)[0])
-except IndexError:
-    raise OSError('missing static lib_nes_env*.so library!')
+for _LIB_PATH in _library_paths():
+    try:
+        _LIB = ctypes.cdll.LoadLibrary(_LIB_PATH)
+        break
+    except OSError:
+        continue
+else:
+    raise OSError('missing static lib_nes_env* library!')
 
 
 # setup the argument and return types for Width

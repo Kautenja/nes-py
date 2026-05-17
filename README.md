@@ -12,8 +12,8 @@
 [![Format][pypi-format]][pypi-home]
 [![License][pypi-license]](LICENSE)
 
-[build-status]: https://app.travis-ci.com/Kautenja/nes-py.svg?branch=master
-[ci-server]: https://app.travis-ci.com/Kautenja/nes-py
+[build-status]: https://github.com/Kautenja/nes-py/actions/workflows/ci.yml/badge.svg?branch=master
+[ci-server]: https://github.com/Kautenja/nes-py/actions/workflows/ci.yml
 [pypi-version]: https://badge.fury.io/py/nes-py.svg
 [pypi-license]: https://img.shields.io/pypi/l/nes-py.svg
 [pypi-status]: https://img.shields.io/pypi/status/nes-py.svg
@@ -24,6 +24,7 @@
 
 nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
+The supported CI target is Python 3.13.
 
 <table align="center">
     <tr>
@@ -166,6 +167,21 @@ There you will find instructions for:
 -   designing environments based on the `NESEnv` class
 -   reference material for the `NESEnv` API
 -   documentation for the `nes_py.wrappers` module
+
+## Benchmarking
+
+Developer throughput checks are available through the packaged speedtest
+module:
+
+```shell
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --steps 5000
+```
+
+Use `--json` for machine-readable output. Benchmark numbers are informational
+and vary by machine, compiler, runner load, and display settings; they are not
+correctness criteria. Backup and restore stress options use explicit interval
+semantics, so `--backup-interval 12` runs a backup at steps 12, 24, 36, and so
+on.
 
 # Cartridge Mapper Compatibility
 

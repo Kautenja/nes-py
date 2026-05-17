@@ -57,27 +57,27 @@ class ROM(object):
     @property
     def prg_rom_size(self):
         """Return the size of the PRG ROM in KB."""
-        return 16 * self.header[4]
+        return 16 * int(self.header[4])
 
     @property
     def chr_rom_size(self):
         """Return the size of the CHR ROM in KB."""
-        return 8 * self.header[5]
+        return 8 * int(self.header[5])
 
     @property
     def flags_6(self):
         """Return the flags at the 6th byte of the header."""
-        return '{:08b}'.format(self.header[6])
+        return '{:08b}'.format(int(self.header[6]))
 
     @property
     def flags_7(self):
         """Return the flags at the 7th byte of the header."""
-        return '{:08b}'.format(self.header[7])
+        return '{:08b}'.format(int(self.header[7]))
 
     @property
     def prg_ram_size(self):
         """Return the size of the PRG RAM in KB."""
-        size = self.header[8]
+        size = int(self.header[8])
         # size becomes 8 when it's zero for compatibility
         if size == 0:
             size = 1
@@ -87,7 +87,7 @@ class ROM(object):
     @property
     def flags_9(self):
         """Return the flags at the 9th byte of the header."""
-        return '{:08b}'.format(self.header[9])
+        return '{:08b}'.format(int(self.header[9]))
 
     @property
     def flags_10(self):
@@ -99,12 +99,12 @@ class ROM(object):
             - ignored in this emulator
 
         """
-        return '{:08b}'.format(self.header[10])
+        return '{:08b}'.format(int(self.header[10]))
 
     @property
     def _zero_fill(self):
         """Return the zero fill bytes at the end of the header."""
-        return self.header[11:].sum()
+        return int(self.header[11:].sum())
 
     #
     # MARK: Header Flags

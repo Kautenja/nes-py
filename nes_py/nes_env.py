@@ -90,6 +90,86 @@ _LIB.Restore.restype = None
 # setup the argument and return types for Close
 _LIB.Close.argtypes = [ctypes.c_void_p]
 _LIB.Close.restype = None
+# setup native cartridge metadata helpers used by parser alignment tests
+_LIB.CartridgeError.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeError.restype = ctypes.c_char_p
+_LIB.CartridgeMapperNumber.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeMapperNumber.restype = ctypes.c_uint
+_LIB.CartridgeSubmapper.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeSubmapper.restype = ctypes.c_uint
+_LIB.CartridgePRGROMSize.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgePRGROMSize.restype = ctypes.c_size_t
+_LIB.CartridgePRGROMBanks.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgePRGROMBanks.restype = ctypes.c_size_t
+_LIB.CartridgeCHRROMSize.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeCHRROMSize.restype = ctypes.c_size_t
+_LIB.CartridgeCHRROMBanks.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeCHRROMBanks.restype = ctypes.c_size_t
+_LIB.CartridgePRGRAMSize.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgePRGRAMSize.restype = ctypes.c_size_t
+_LIB.CartridgePRGBatteryRAMSize.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgePRGBatteryRAMSize.restype = ctypes.c_size_t
+_LIB.CartridgeCHRRAMSize.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeCHRRAMSize.restype = ctypes.c_size_t
+_LIB.CartridgeCHRBatteryRAMSize.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeCHRBatteryRAMSize.restype = ctypes.c_size_t
+_LIB.CartridgeHasTrainer.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeHasTrainer.restype = ctypes.c_uint
+_LIB.CartridgeTrainerStart.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeTrainerStart.restype = ctypes.c_size_t
+_LIB.CartridgeTrainerStop.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeTrainerStop.restype = ctypes.c_size_t
+_LIB.CartridgeHasBattery.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeHasBattery.restype = ctypes.c_uint
+_LIB.CartridgeNameTableMirroring.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeNameTableMirroring.restype = ctypes.c_uint
+_LIB.CartridgeHasVSUnisystem.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeHasVSUnisystem.restype = ctypes.c_uint
+_LIB.CartridgeHasPlayChoice10.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeHasPlayChoice10.restype = ctypes.c_uint
+_LIB.CartridgeIsPAL.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeIsPAL.restype = ctypes.c_uint
+_LIB.CartridgeIsNES2.argtypes = [ctypes.c_wchar_p]
+_LIB.CartridgeIsNES2.restype = ctypes.c_uint
+
+
+def _native_cartridge_error(rom_path):
+    """Return the native cartridge validation error for a ROM path, if any."""
+    error = _LIB.CartridgeError(rom_path)
+    if error is None:
+        return None
+    return error.decode('utf-8')
+
+
+def _native_cartridge_metadata(rom_path):
+    """Return parsed native cartridge metadata for a ROM path."""
+    return {
+        'mapper': int(_LIB.CartridgeMapperNumber(rom_path)),
+        'submapper': int(_LIB.CartridgeSubmapper(rom_path)),
+        'prg_rom_byte_size': int(_LIB.CartridgePRGROMSize(rom_path)),
+        'prg_rom_banks': int(_LIB.CartridgePRGROMBanks(rom_path)),
+        'chr_rom_byte_size': int(_LIB.CartridgeCHRROMSize(rom_path)),
+        'chr_rom_banks': int(_LIB.CartridgeCHRROMBanks(rom_path)),
+        'prg_ram_byte_size': int(_LIB.CartridgePRGRAMSize(rom_path)),
+        'prg_battery_ram_byte_size': int(
+            _LIB.CartridgePRGBatteryRAMSize(rom_path)
+        ),
+        'chr_ram_byte_size': int(_LIB.CartridgeCHRRAMSize(rom_path)),
+        'chr_battery_ram_byte_size': int(
+            _LIB.CartridgeCHRBatteryRAMSize(rom_path)
+        ),
+        'has_trainer': bool(_LIB.CartridgeHasTrainer(rom_path)),
+        'trainer_rom_start': int(_LIB.CartridgeTrainerStart(rom_path)),
+        'trainer_rom_stop': int(_LIB.CartridgeTrainerStop(rom_path)),
+        'has_battery_backed_ram': bool(_LIB.CartridgeHasBattery(rom_path)),
+        'name_table_mirroring': int(
+            _LIB.CartridgeNameTableMirroring(rom_path)
+        ),
+        'has_vs_unisystem': bool(_LIB.CartridgeHasVSUnisystem(rom_path)),
+        'has_play_choice_10': bool(_LIB.CartridgeHasPlayChoice10(rom_path)),
+        'is_pal': bool(_LIB.CartridgeIsPAL(rom_path)),
+        'is_nes2': bool(_LIB.CartridgeIsNES2(rom_path)),
+    }
 
 
 # height in pixels of the NES screen

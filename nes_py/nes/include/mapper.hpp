@@ -48,7 +48,12 @@ class Mapper {
     }
 
     /// Return true if this mapper has extended RAM, false otherwise.
-    inline bool hasExtendedRAM() { return cartridge->hasExtendedRAM(); }
+    inline bool hasExtendedRAM() { return getExtendedRAMSize() > 0; }
+
+    /// Return the byte size of directly-addressable extended RAM.
+    inline std::size_t getExtendedRAMSize() {
+        return cartridge->getPRGMemorySize();
+    }
 
     /// Read a byte from the PRG RAM.
     ///

@@ -104,6 +104,9 @@ class Emulator {
     /// Return the loaded cartridge mapper number.
     inline int get_mapper_number() { return cartridge.getMapper(); }
 
+    /// Return the loaded cartridge submapper number.
+    inline int get_submapper() { return cartridge.getSubmapper(); }
+
     /// Return the PRG ROM size in bytes.
     inline std::size_t get_prg_rom_size() { return cartridge.getROM().size(); }
 
@@ -111,7 +114,7 @@ class Emulator {
     inline std::size_t get_chr_rom_size() { return cartridge.getVROM().size(); }
 
     /// Return true when this cartridge uses CHR RAM instead of CHR ROM.
-    inline bool has_chr_ram() { return cartridge.getVROM().size() == 0; }
+    inline bool has_chr_ram() { return cartridge.getCHRRAMSize() > 0; }
 
     /// Return the active mapper's name table mirroring mode.
     inline int get_name_table_mirroring() {

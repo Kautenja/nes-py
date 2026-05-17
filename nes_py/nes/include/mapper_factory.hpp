@@ -17,7 +17,7 @@
 namespace NES {
 
 /// an enumeration of mapper IDs
-enum class MapperID : NES_Byte {
+enum class MapperID : std::uint16_t {
     NROM  = 0,
     SxROM = 1,
     UxROM = 2,

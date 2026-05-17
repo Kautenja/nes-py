@@ -257,11 +257,15 @@ class ShouldCharacterizeMapper003CNROM(MapperTestCase):
         env = self.env(path)
 
         env.reset()
+        env._write_prg(0x8000, 0)
+        env.step(0)
         before = env.render('rgb_array').copy()
         for bank in range(4):
             env._write_prg(0x8000, bank)
             env.step(0)
             self.assertEqual(SCREEN_SHAPE_24_BIT, env.screen.shape)
 
+        env._write_prg(0x8000, 0)
+        env.step(0)
         after = env.render('rgb_array')
         self.assertTrue(np.array_equal(before, after))

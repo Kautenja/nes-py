@@ -33,8 +33,9 @@ NES_Byte MainBus::read(NES_Address address) {
     } else if (address < 0x6000) {
         LOG(InfoVerbose) << "Expansion ROM read attempted. This is currently unsupported" << std::endl;
     } else if (address < 0x8000) {
-        if (mapper->hasExtendedRAM())
-            return extended_ram[address - 0x6000];
+        std::size_t offset = address - 0x6000;
+        if (mapper->hasExtendedRAM() && offset < extended_ram.size())
+            return extended_ram[offset];
     } else {
         return mapper->readPRG(address);
     }
@@ -63,8 +64,9 @@ void MainBus::write(NES_Address address, NES_Byte value) {
     } else if (address < 0x6000) {
         LOG(InfoVerbose) << "Expansion ROM access attempted. This is currently unsupported" << std::endl;
     } else if (address < 0x8000) {
-        if (mapper->hasExtendedRAM())
-            extended_ram[address - 0x6000] = value;
+        std::size_t offset = address - 0x6000;
+        if (mapper->hasExtendedRAM() && offset < extended_ram.size())
+            extended_ram[offset] = value;
     } else {
         mapper->writePRG(address, value);
     }
@@ -78,17 +80,20 @@ const NES_Byte* MainBus::get_page_pointer(NES_Byte page) {
         LOG(Error) << "Register address memory pointer access attempt" << std::endl;
     else if (address < 0x6000)
         LOG(Error) << "Expansion ROM access attempted, which is unsupported" << std::endl;
-    else if (address < 0x8000)
-        if (mapper->hasExtendedRAM())
-            return &extended_ram[address - 0x6000];
+    else if (address < 0x8000) {
+        std::size_t offset = address - 0x6000;
+        if (mapper->hasExtendedRAM() && offset < extended_ram.size())
+            return &extended_ram[offset];
+    }
 
     return nullptr;
 }
 
 void MainBus::set_mapper(Mapper* mapper) {
     this->mapper = mapper;
-    if (mapper->hasExtendedRAM())
-        extended_ram.resize(0x2000);
+    extended_ram.clear();
+    if (mapper != nullptr && mapper->hasExtendedRAM())
+        extended_ram.resize(mapper->getExtendedRAMSize());
 }
 
 }  // namespace NES

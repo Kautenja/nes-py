@@ -64,6 +64,17 @@ void PictureBus::update_mirroring() {
                 "Vertical Name Table mirroring set. (Horizontal Scrolling)" <<
                 std::endl;
             break;
+        case FOUR_SCREEN:
+            if (ram.size() < 0x1000)
+                ram.resize(0x1000);
+            name_tables[0] = 0;
+            name_tables[1] = 0x400;
+            name_tables[2] = 0x800;
+            name_tables[3] = 0xc00;
+            LOG(InfoVerbose) <<
+                "Four-screen Name Table mirroring set." <<
+                std::endl;
+            break;
         case ONE_SCREEN_LOWER:
             name_tables[0] = name_tables[1] = name_tables[2] = name_tables[3] = 0;
             LOG(InfoVerbose) <<

@@ -16,7 +16,7 @@ MapperUxROM::MapperUxROM(Cartridge* cart) :
     last_bank_pointer(cart->getROM().size() - 0x4000),
     select_prg(0) {
     if (has_character_ram) {
-        character_ram.resize(0x2000);
+        character_ram.resize(cart->getCHRRAMSize());
         LOG(Info) << "Uses character RAM" << std::endl;
     }
 }

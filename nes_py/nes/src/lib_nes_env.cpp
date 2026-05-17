@@ -5,8 +5,10 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <exception>
 #include <string>
 #include "common.hpp"
+#include "cartridge.hpp"
 #include "emulator.hpp"
 
 // Windows-base systems
@@ -20,6 +22,23 @@
     // setup the modifier as a dummy
     #define EXP
 #endif
+
+namespace {
+
+std::string ROMPath(wchar_t* path) {
+    std::wstring ws_rom_path(path);
+    return std::string(ws_rom_path.begin(), ws_rom_path.end());
+}
+
+NES::Cartridge LoadCartridgeMetadata(wchar_t* path) {
+    NES::Cartridge cartridge;
+    cartridge.loadFromFile(ROMPath(path), true);
+    return cartridge;
+}
+
+thread_local std::string cartridge_error;
+
+}  // namespace
 
 // definitions of functions for the Python interface to access
 extern "C" {
@@ -36,10 +55,119 @@ extern "C" {
     /// Initialize a new emulator and return a pointer to it
     EXP NES::Emulator* Initialize(wchar_t* path) {
         // convert the c string to a c++ std string data structure
-        std::wstring ws_rom_path(path);
-        std::string rom_path(ws_rom_path.begin(), ws_rom_path.end());
+        std::string rom_path = ROMPath(path);
         // create a new emulator with the given ROM path
         return new NES::Emulator(rom_path);
+    }
+
+    /// Return a native cartridge validation error, or null when valid.
+    EXP const char* CartridgeError(wchar_t* path) {
+        cartridge_error.clear();
+        try {
+            NES::Cartridge cartridge;
+            cartridge.loadFromFile(ROMPath(path));
+            return nullptr;
+        } catch (const std::exception& error) {
+            cartridge_error = error.what();
+        } catch (...) {
+            cartridge_error = "unknown cartridge validation error";
+        }
+        return cartridge_error.c_str();
+    }
+
+    /// Return the parsed native mapper number for a ROM path.
+    EXP unsigned int CartridgeMapperNumber(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMapper();
+    }
+
+    /// Return the parsed native NES 2.0 submapper number for a ROM path.
+    EXP unsigned int CartridgeSubmapper(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getSubmapper();
+    }
+
+    /// Return the parsed native PRG ROM size in bytes.
+    EXP std::size_t CartridgePRGROMSize(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().prg_rom_size;
+    }
+
+    /// Return the parsed native PRG ROM bank count.
+    EXP std::size_t CartridgePRGROMBanks(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().prg_rom_banks;
+    }
+
+    /// Return the parsed native CHR ROM size in bytes.
+    EXP std::size_t CartridgeCHRROMSize(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().chr_rom_size;
+    }
+
+    /// Return the parsed native CHR ROM bank count.
+    EXP std::size_t CartridgeCHRROMBanks(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().chr_rom_banks;
+    }
+
+    /// Return the parsed native ordinary PRG RAM size in bytes.
+    EXP std::size_t CartridgePRGRAMSize(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().prg_ram_size;
+    }
+
+    /// Return the parsed native battery-backed PRG RAM size in bytes.
+    EXP std::size_t CartridgePRGBatteryRAMSize(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().prg_battery_ram_size;
+    }
+
+    /// Return the parsed native ordinary CHR RAM size in bytes.
+    EXP std::size_t CartridgeCHRRAMSize(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().chr_ram_size;
+    }
+
+    /// Return the parsed native battery-backed CHR RAM size in bytes.
+    EXP std::size_t CartridgeCHRBatteryRAMSize(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().chr_battery_ram_size;
+    }
+
+    /// Return the parsed native trainer flag.
+    EXP int CartridgeHasTrainer(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().has_trainer ? 1 : 0;
+    }
+
+    /// Return the parsed native trainer start offset.
+    EXP std::size_t CartridgeTrainerStart(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().trainer_start;
+    }
+
+    /// Return the parsed native trainer stop offset.
+    EXP std::size_t CartridgeTrainerStop(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().trainer_stop;
+    }
+
+    /// Return the parsed native battery flag.
+    EXP int CartridgeHasBattery(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().has_battery ? 1 : 0;
+    }
+
+    /// Return the parsed native header mirroring mode.
+    EXP unsigned int CartridgeNameTableMirroring(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().name_table_mirroring;
+    }
+
+    /// Return the parsed native VS Unisystem flag.
+    EXP int CartridgeHasVSUnisystem(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().has_vs_unisystem ? 1 : 0;
+    }
+
+    /// Return the parsed native PlayChoice-10 flag.
+    EXP int CartridgeHasPlayChoice10(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().has_play_choice_10 ? 1 : 0;
+    }
+
+    /// Return the parsed native PAL flag.
+    EXP int CartridgeIsPAL(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().is_pal ? 1 : 0;
+    }
+
+    /// Return the parsed native NES 2.0 header flag.
+    EXP int CartridgeIsNES2(wchar_t* path) {
+        return LoadCartridgeMetadata(path).getMetadata().is_nes2 ? 1 : 0;
     }
 
     /// Return a pointer to a controller on the machine

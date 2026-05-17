@@ -27,7 +27,7 @@ MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb
     second_bank_chr(0) {
     if (cart->getVROM().size() == 0) {
         has_character_ram = true;
-        character_ram.resize(0x2000);
+        character_ram.resize(cart->getCHRRAMSize());
         LOG(Info) << "Uses character RAM" << std::endl;
     } else {
         LOG(Info) << "Using CHR-ROM" << std::endl;

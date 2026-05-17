@@ -19,6 +19,7 @@ class ShouldLoadSupportedMapperFixtures(MapperTestCase):
             ('mmc5.nes', 5, 16, 16, 'horizontal'),
             ('axrom.nes', 7, 2, 0, 'horizontal'),
             ('mmc2.nes', 9, 4, 8, 'horizontal'),
+            ('fme7.nes', 69, 4, 1, 'horizontal'),
         )
 
         for (

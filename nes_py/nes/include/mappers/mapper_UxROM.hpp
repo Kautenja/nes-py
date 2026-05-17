@@ -32,6 +32,11 @@ class MapperUxROM : public Mapper {
     ///
     explicit MapperUxROM(Cartridge* cart);
 
+    /// Return a copy of this mapper and its current state.
+    inline Mapper* clone() const {
+        return new MapperUxROM(*this);
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read

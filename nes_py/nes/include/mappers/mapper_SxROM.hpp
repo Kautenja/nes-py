@@ -58,6 +58,11 @@ class MapperSxROM : public Mapper {
     ///
     MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb);
 
+    /// Return a copy of this mapper and its current state.
+    inline Mapper* clone() const {
+        return new MapperSxROM(*this);
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read

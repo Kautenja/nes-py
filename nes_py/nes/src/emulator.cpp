@@ -11,7 +11,9 @@
 
 namespace NES {
 
-Emulator::Emulator(std::string rom_path) {
+Emulator::Emulator(std::string rom_path) :
+    mapper(nullptr),
+    backup_mapper(nullptr) {
     // set the read callbacks
     bus.set_read_callback(PPUSTATUS, [&](void) { return ppu.get_status();          });
     bus.set_read_callback(PPUDATA,   [&](void) { return ppu.get_data(picture_bus); });
@@ -33,10 +35,15 @@ Emulator::Emulator(std::string rom_path) {
     // load the ROM from disk, expect that the Python code has validated it
     cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM
-    auto mapper = MapperFactory(&cartridge, [&](){ picture_bus.update_mirroring(); });
+    mapper = MapperFactory(&cartridge, [&](){ picture_bus.update_mirroring(); });
     // give the IO buses a pointer to the mapper
     bus.set_mapper(mapper);
     picture_bus.set_mapper(mapper);
+}
+
+Emulator::~Emulator() {
+    delete mapper;
+    delete backup_mapper;
 }
 
 void Emulator::step() {
@@ -48,6 +55,29 @@ void Emulator::step() {
         ppu.cycle(picture_bus);
         cpu.cycle(bus);
     }
+}
+
+void Emulator::backup() {
+    delete backup_mapper;
+    backup_mapper = mapper->clone();
+    backup_bus = bus;
+    backup_picture_bus = picture_bus;
+    backup_cpu = cpu;
+    backup_ppu = ppu;
+}
+
+void Emulator::restore() {
+    if (backup_mapper == nullptr)
+        return;
+
+    delete mapper;
+    mapper = backup_mapper->clone();
+    bus = backup_bus;
+    picture_bus = backup_picture_bus;
+    cpu = backup_cpu;
+    ppu = backup_ppu;
+    bus.set_mapper(mapper);
+    picture_bus.set_mapper(mapper);
 }
 
 }  // namespace NES

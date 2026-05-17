@@ -57,6 +57,57 @@ extern "C" {
         return emu->get_memory_buffer();
     }
 
+    /// Return the active mapper number.
+    EXP int MapperNumber(NES::Emulator* emu) {
+        return emu->get_mapper_number();
+    }
+
+    /// Return the PRG ROM size in bytes.
+    EXP unsigned int PRGROMSize(NES::Emulator* emu) {
+        return emu->get_prg_rom_size();
+    }
+
+    /// Return the CHR ROM size in bytes.
+    EXP unsigned int CHRROMSize(NES::Emulator* emu) {
+        return emu->get_chr_rom_size();
+    }
+
+    /// Return 1 when the active mapper uses CHR RAM, 0 for CHR ROM.
+    EXP int HasCHRRAM(NES::Emulator* emu) {
+        return emu->has_chr_ram() ? 1 : 0;
+    }
+
+    /// Return the active mapper mirroring mode.
+    EXP int NameTableMirroring(NES::Emulator* emu) {
+        return emu->get_name_table_mirroring();
+    }
+
+    /// Read active mapper PRG memory.
+    EXP unsigned int ReadPRG(NES::Emulator* emu, unsigned int address) {
+        return emu->read_prg(static_cast<NES::NES_Address>(address));
+    }
+
+    /// Write active mapper PRG memory.
+    EXP void WritePRG(NES::Emulator* emu, unsigned int address, unsigned int value) {
+        emu->write_prg(
+            static_cast<NES::NES_Address>(address),
+            static_cast<NES::NES_Byte>(value)
+        );
+    }
+
+    /// Read active mapper CHR memory.
+    EXP unsigned int ReadCHR(NES::Emulator* emu, unsigned int address) {
+        return emu->read_chr(static_cast<NES::NES_Address>(address));
+    }
+
+    /// Write active mapper CHR memory.
+    EXP void WriteCHR(NES::Emulator* emu, unsigned int address, unsigned int value) {
+        emu->write_chr(
+            static_cast<NES::NES_Address>(address),
+            static_cast<NES::NES_Byte>(value)
+        );
+    }
+
     /// Reset the emulator
     EXP void Reset(NES::Emulator* emu) {
         emu->reset();

@@ -30,6 +30,11 @@ class MapperNROM : public Mapper {
     ///
     explicit MapperNROM(Cartridge* cart);
 
+    /// Return a copy of this mapper and its current state.
+    inline Mapper* clone() const {
+        return new MapperNROM(*this);
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read

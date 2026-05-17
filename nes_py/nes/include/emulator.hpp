@@ -8,6 +8,7 @@
 #ifndef EMULATOR_HPP
 #define EMULATOR_HPP
 
+#include <cstddef>
 #include <string>
 #include "common.hpp"
 #include "cartridge.hpp"
@@ -16,6 +17,7 @@
 #include "ppu.hpp"
 #include "main_bus.hpp"
 #include "picture_bus.hpp"
+#include "mapper.hpp"
 
 namespace NES {
 
@@ -37,6 +39,8 @@ class Emulator {
     CPU cpu;
     /// the emulators' PPU
     PPU ppu;
+    /// the active mapper on the loaded cartridge
+    Mapper* mapper;
 
     /// the main data bus of the emulator
     MainBus backup_bus;
@@ -46,6 +50,8 @@ class Emulator {
     CPU backup_cpu;
     /// the emulators' PPU
     PPU backup_ppu;
+    /// the mapper state captured in the backup snapshot
+    Mapper* backup_mapper;
 
  public:
     /// The width of the NES screen in pixels
@@ -58,6 +64,9 @@ class Emulator {
     /// @param rom_path the path to the ROM for the emulator to run
     ///
     explicit Emulator(std::string rom_path);
+
+    /// Destroy this emulator and its owned mapper state.
+    ~Emulator();
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///
@@ -87,19 +96,46 @@ class Emulator {
     void step();
 
     /// Create a backup state on the emulator.
-    inline void backup() {
-        backup_bus = bus;
-        backup_picture_bus = picture_bus;
-        backup_cpu = cpu;
-        backup_ppu = ppu;
-    }
+    void backup();
 
     /// Restore the backup state on the emulator.
-    inline void restore() {
-        bus = backup_bus;
-        picture_bus = backup_picture_bus;
-        cpu = backup_cpu;
-        ppu = backup_ppu;
+    void restore();
+
+    /// Return the loaded cartridge mapper number.
+    inline int get_mapper_number() { return cartridge.getMapper(); }
+
+    /// Return the PRG ROM size in bytes.
+    inline std::size_t get_prg_rom_size() { return cartridge.getROM().size(); }
+
+    /// Return the CHR ROM size in bytes.
+    inline std::size_t get_chr_rom_size() { return cartridge.getVROM().size(); }
+
+    /// Return true when this cartridge uses CHR RAM instead of CHR ROM.
+    inline bool has_chr_ram() { return cartridge.getVROM().size() == 0; }
+
+    /// Return the active mapper's name table mirroring mode.
+    inline int get_name_table_mirroring() {
+        return mapper->getNameTableMirroring();
+    }
+
+    /// Read active mapper PRG data through the mapper implementation.
+    inline NES_Byte read_prg(NES_Address address) {
+        return mapper->readPRG(address);
+    }
+
+    /// Write active mapper PRG data through the mapper implementation.
+    inline void write_prg(NES_Address address, NES_Byte value) {
+        mapper->writePRG(address, value);
+    }
+
+    /// Read active mapper CHR data through the mapper implementation.
+    inline NES_Byte read_chr(NES_Address address) {
+        return mapper->readCHR(address);
+    }
+
+    /// Write active mapper CHR data through the mapper implementation.
+    inline void write_chr(NES_Address address, NES_Byte value) {
+        mapper->writeCHR(address, value);
     }
 };
 

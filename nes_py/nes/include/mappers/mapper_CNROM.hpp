@@ -30,6 +30,11 @@ class MapperCNROM : public Mapper {
         is_one_bank(cart->getROM().size() == 0x4000),
         select_chr(0) { }
 
+    /// Return a copy of this mapper and its current state.
+    inline Mapper* clone() const {
+        return new MapperCNROM(*this);
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read

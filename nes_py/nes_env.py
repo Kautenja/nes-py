@@ -56,6 +56,25 @@ _LIB.Screen.restype = ctypes.c_void_p
 # setup the argument and return types for GetMemoryBuffer
 _LIB.Memory.argtypes = [ctypes.c_void_p]
 _LIB.Memory.restype = ctypes.c_void_p
+# setup mapper characterization hooks used by focused native tests
+_LIB.MapperNumber.argtypes = [ctypes.c_void_p]
+_LIB.MapperNumber.restype = ctypes.c_uint
+_LIB.PRGROMSize.argtypes = [ctypes.c_void_p]
+_LIB.PRGROMSize.restype = ctypes.c_uint
+_LIB.CHRROMSize.argtypes = [ctypes.c_void_p]
+_LIB.CHRROMSize.restype = ctypes.c_uint
+_LIB.HasCHRRAM.argtypes = [ctypes.c_void_p]
+_LIB.HasCHRRAM.restype = ctypes.c_uint
+_LIB.NameTableMirroring.argtypes = [ctypes.c_void_p]
+_LIB.NameTableMirroring.restype = ctypes.c_uint
+_LIB.ReadPRG.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+_LIB.ReadPRG.restype = ctypes.c_uint
+_LIB.WritePRG.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
+_LIB.WritePRG.restype = None
+_LIB.ReadCHR.argtypes = [ctypes.c_void_p, ctypes.c_uint]
+_LIB.ReadCHR.restype = ctypes.c_uint
+_LIB.WriteCHR.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
+_LIB.WriteCHR.restype = None
 # setup the argument and return types for Reset
 _LIB.Reset.argtypes = [ctypes.c_void_p]
 _LIB.Reset.restype = None
@@ -206,6 +225,42 @@ class NESEnv(gym.Env):
         buffer_ = ctypes.cast(address, ctypes.POINTER(CONTROLLER_VECTOR)).contents
         # create a NumPy buffer from the binary data and return it
         return np.frombuffer(buffer_, dtype='uint8')
+
+    def _mapper_number(self):
+        """Return the active native mapper number."""
+        return int(_LIB.MapperNumber(self._env))
+
+    def _prg_rom_size(self):
+        """Return the native PRG ROM size in bytes."""
+        return int(_LIB.PRGROMSize(self._env))
+
+    def _chr_rom_size(self):
+        """Return the native CHR ROM size in bytes."""
+        return int(_LIB.CHRROMSize(self._env))
+
+    def _has_chr_ram(self):
+        """Return whether the active native mapper uses CHR RAM."""
+        return bool(_LIB.HasCHRRAM(self._env))
+
+    def _name_table_mirroring(self):
+        """Return the active native mapper name table mirroring mode."""
+        return int(_LIB.NameTableMirroring(self._env))
+
+    def _read_prg(self, address):
+        """Read a byte through the active native PRG mapper."""
+        return int(_LIB.ReadPRG(self._env, address))
+
+    def _write_prg(self, address, value):
+        """Write a byte through the active native PRG mapper."""
+        _LIB.WritePRG(self._env, address, value)
+
+    def _read_chr(self, address):
+        """Read a byte through the active native CHR mapper."""
+        return int(_LIB.ReadCHR(self._env, address))
+
+    def _write_chr(self, address, value):
+        """Write a byte through the active native CHR mapper."""
+        _LIB.WriteCHR(self._env, address, value)
 
     def _frame_advance(self, action):
         """

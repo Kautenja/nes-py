@@ -36,6 +36,12 @@ class Mapper {
     ///
     explicit Mapper(Cartridge* game) : cartridge(game) { }
 
+    /// Destroy this mapper.
+    virtual ~Mapper() { }
+
+    /// Return a heap-allocated copy of this mapper and its current state.
+    virtual Mapper* clone() const = 0;
+
     /// Return the name table mirroring mode of this mapper.
     inline virtual NameTableMirroring getNameTableMirroring() {
         return static_cast<NameTableMirroring>(cartridge->getNameTableMirroring());

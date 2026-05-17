@@ -69,10 +69,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          python -m pip install .
+          python -m pip install --editable . --config-settings=editable.mode=inplace
 
       - name: Run tests
         run: python -m unittest discover .
+
+      - name: Clean test build artifacts
+        run: git clean -fdX
 
       - name: Build distributions
         run: python -m build

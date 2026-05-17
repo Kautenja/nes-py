@@ -1,7 +1,9 @@
 """Benchmark helpers and CLI for measuring NES environment throughput."""
 import argparse
 import json
+import platform as platform_module
 import sys
+import sysconfig
 import time
 from dataclasses import asdict
 from dataclasses import dataclass
@@ -10,6 +12,7 @@ from typing import Callable
 import numpy as np
 from tqdm import tqdm
 
+from ._rom import ROM
 from .nes_env import NESEnv
 
 
@@ -50,6 +53,26 @@ class BenchmarkResult:
     render_mode: str | None
     backup_interval: int | None
     restore_interval: int | None
+
+    def to_dict(self):
+        """Return this result as a JSON-serializable dictionary."""
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MapperBenchmarkResult:
+    """Structured result from a current-mapper benchmark operation."""
+
+    environment: str
+    compiler: str
+    platform: str
+    rom: str
+    mapper: int
+    operation: str
+    total_steps: int
+    warmup_steps: int
+    elapsed_seconds: float
+    steps_per_second: float
 
     def to_dict(self):
         """Return this result as a JSON-serializable dictionary."""
@@ -120,6 +143,102 @@ def _iter_steps(total, progress):
     if progress:
         return tqdm(steps)
     return steps
+
+
+def _environment_name():
+    """Return a short identifier for the active Python runtime."""
+    return '{} {}'.format(
+        platform_module.python_implementation(),
+        platform_module.python_version(),
+    )
+
+
+def _compiler_name():
+    """Return the compiler configured for this Python runtime."""
+    return sysconfig.get_config_var('CC') or 'unknown'
+
+
+def _measure_mapper_operation(env, operation, steps, warmup_steps):
+    """Measure one mapper benchmark operation."""
+    if operation == 'reset':
+        action = lambda: env.reset()
+    elif operation == 'step':
+        env.reset()
+        action = lambda: _step(env, 0)
+    elif operation == 'render_rgb_array':
+        env.reset()
+        action = lambda: env.render('rgb_array')
+    elif operation == 'backup_restore':
+        env.reset()
+        action = lambda: (env._backup(), env._restore(), _mark_not_done(env))
+    else:
+        raise ValueError('unknown mapper benchmark operation: {}'.format(
+            operation
+        ))
+
+    for _ in range(warmup_steps):
+        action()
+
+    started_at = time.perf_counter()
+    for _ in range(steps):
+        action()
+    elapsed = time.perf_counter() - started_at
+    steps_per_second = steps / elapsed if elapsed > 0 else 0.0
+    return elapsed, steps_per_second
+
+
+def run_mapper_profile(
+    roms,
+    steps=50,
+    warmup_steps=10,
+    operations=None,
+):
+    """
+    Run a small benchmark profile across current mapper fixtures.
+
+    The profile intentionally checks result shape and positive throughput only;
+    callers should compare emitted JSON across revisions instead of treating
+    machine-specific timing as a pass/fail threshold.
+    """
+    if steps <= 0:
+        raise ValueError('steps must be positive')
+    _validate_non_negative('warmup_steps', warmup_steps)
+    if operations is None:
+        operations = (
+            'reset',
+            'step',
+            'render_rgb_array',
+            'backup_restore',
+        )
+
+    results = []
+    for rom in roms:
+        mapper = ROM(rom).mapper
+        for operation in operations:
+            env = NESEnv(rom)
+            try:
+                elapsed, steps_per_second = _measure_mapper_operation(
+                    env,
+                    operation,
+                    steps,
+                    warmup_steps,
+                )
+            finally:
+                env.close()
+            results.append(MapperBenchmarkResult(
+                environment=_environment_name(),
+                compiler=_compiler_name(),
+                platform=platform_module.platform(),
+                rom=rom,
+                mapper=mapper,
+                operation=operation,
+                total_steps=steps + warmup_steps,
+                warmup_steps=warmup_steps,
+                elapsed_seconds=elapsed,
+                steps_per_second=steps_per_second,
+            ))
+
+    return results
 
 
 def run_benchmark(config=None, **kwargs):
@@ -247,10 +366,27 @@ def format_result(result):
     return '\n'.join(lines)
 
 
+def format_mapper_profile(results):
+    """Return human-readable mapper profile output."""
+    lines = ['NES mapper benchmark profile']
+    for result in results:
+        lines.append(
+            '  mapper {mapper} {operation}: {steps_per_second:.2f} steps/s '
+            '({elapsed_seconds:.6f}s)'.format(**result.to_dict())
+        )
+    return '\n'.join(lines)
+
+
 def _parser():
     """Build the command line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--rom', required=True, help='path to a .nes ROM')
+    parser.add_argument('--rom', help='path to a .nes ROM')
+    parser.add_argument(
+        '--profile-rom',
+        action='append',
+        default=[],
+        help='path to a .nes ROM fixture to include in the mapper profile',
+    )
     parser.add_argument('--steps', type=int, default=5000)
     parser.add_argument('--seed', type=int)
     parser.add_argument('--warmup-steps', type=int, default=0)
@@ -270,7 +406,33 @@ def _parser():
 
 def main(argv=None):
     """Run the benchmark command line interface."""
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+
+    if args.profile_rom:
+        try:
+            results = run_mapper_profile(
+                args.profile_rom,
+                steps=args.steps,
+                warmup_steps=args.warmup_steps,
+            )
+        except KeyboardInterrupt:
+            return 130
+
+        if args.json_output:
+            print(json.dumps(
+                [result.to_dict() for result in results],
+                sort_keys=True,
+            ))
+        else:
+            print(format_mapper_profile(results))
+        return 0
+
+    if args.rom is None:
+        parser.error(
+            '--rom is required unless --profile-rom is provided'
+        )
+
     config = BenchmarkConfig(
         rom=args.rom,
         steps=args.steps,

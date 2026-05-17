@@ -125,13 +125,21 @@ package provides these tools for free.
 To access the NES emulator from the command line use the following command.
 
 ```shell
-nes_py -r <path_to_rom>
+python3 -m nes_py.play --rom <path_to_rom>
 ```
 
 To print out documentation for the command line interface execute:
 
 ```shell
-nes_py -h
+python3 -m nes_py.play -h
+```
+
+The play command supports keyboard controls and random controls. Random play can
+run with or without a graphical window:
+
+```shell
+python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500
+python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500 --no-render
 ```
 
 ## Controls
@@ -149,13 +157,17 @@ nes_py -h
 
 ## Parallelism Caveats
 
-both the `threading` and `multiprocessing` packages are supported by
-`nes-py` with some caveats related to rendering:
+Both the `threading` and `multiprocessing` packages are supported by
+`nes-py`. The rendering caveats only apply to windowed `human` rendering:
 
-1.  rendering **is not** supported from instances of `threading.Thread`
-2.  rendering **is** supported from instances of `multiprocessing.Process`,
-    but `nes-py` must be imported within the process that executes the render
-    call
+1.  `rgb_array` rendering is supported from `threading.Thread` and
+    `multiprocessing.Process` instances.
+2.  `human` rendering **is not** supported from instances of
+    `threading.Thread`; it must run on the process's main Python thread.
+3.  `human` rendering **is** supported from instances of
+    `multiprocessing.Process`, but the viewer must be created in the process
+    that owns the render call. Importing `nes-py` or `nes_py.play` in a parent
+    process does not initialize the windowing backend.
 
 # Development
 
@@ -167,6 +179,43 @@ There you will find instructions for:
 -   designing environments based on the `NESEnv` class
 -   reference material for the `NESEnv` API
 -   documentation for the `nes_py.wrappers` module
+
+Project metadata, runtime dependencies, release extras, console scripts, and
+package discovery are configured in `pyproject.toml`. The native emulator
+source tree lives under `nes_emu`, with public and internal headers below
+`nes_emu/include/nes_emu` and C++ sources below `nes_emu/src/nes_emu`. CMake
+builds those sources into the `nes_py._native` extension through
+scikit-build-core. The runtime binding imports `nes_py._native` directly; the
+old `ctypes` shared-library discovery path is no longer used. For local
+development, install the package in editable mode and build distributions
+through the standard PEP 517 frontend:
+
+```shell
+python -m pip install --upgrade pip build
+python -m pip install --editable . --config-settings=editable.mode=inplace
+python -m unittest discover .
+./main.sh clean
+python -m build
+```
+
+Native emulator internals are tested and benchmarked through opt-in CMake
+targets so normal Python installs do not fetch test dependencies:
+
+```shell
+cmake -S . -B build/nes-emu-debug -DCMAKE_BUILD_TYPE=Debug -DNES_EMU_BUILD_TESTS=ON
+cmake --build build/nes-emu-debug --target nes_emu_tests
+ctest --test-dir build/nes-emu-debug --output-on-failure
+cmake -S . -B build/nes-emu-release -DCMAKE_BUILD_TYPE=Release -DNES_EMU_BUILD_BENCHMARKS=ON
+cmake --build build/nes-emu-release --target nes_emu_benchmarks
+```
+
+PyPI releases are published by the `Publish to PyPI` GitHub Actions workflow
+through PyPI trusted publishing, not by local `twine` credentials. Configure the
+PyPI project publisher with owner `Kautenja`, repository `nes-py`, workflow
+filename `publish.yml`, and environment `pypi`. Then create a GitHub release
+from a tag matching `pyproject.toml`'s version, with or without a leading `v`.
+The workflow builds the source distribution and CPython 3.13 wheels for Linux,
+Windows, and macOS before publishing.
 
 ## Benchmarking
 
@@ -190,8 +239,8 @@ on.
 2.  UxROM
 3.  CNROM
 
-You can check the compatibility for each ROM in the following
-[list](https://github.com/Kautenja/nes-py/blob/master/nesmapper.txt)
+Planned mapper expansion is tracked in the umbrella repository's
+[mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/mappers).
 
 # Disclaimer
 

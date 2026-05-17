@@ -1,5 +1,15 @@
 # MARK: Project Files
 build/
+.cmake/
+CMakeFiles/
+CMakeCache.txt
+CMakeInit.txt
+build.ninja
+cmake_install.cmake
+.ninja_deps
+.ninja_log
+.skbuild-info.json
+generated/
 
 
 
@@ -14,6 +24,7 @@ __pycache__/
 # C extensions
 # TODO: this might not need ignored for this package
 *.so
+*.pyd
 
 # Distribution / packaging
 MANIFEST

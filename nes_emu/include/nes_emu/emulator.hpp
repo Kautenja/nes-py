@@ -126,22 +126,6 @@ class Emulator {
     inline int get_name_table_mirroring() {
         return mapper->getNameTableMirroring();
     }
-
-    /// Read active mapper PRG data through the mapper implementation.
-    NES_Byte read_prg(NES_Address address);
-
-    /// Write active mapper PRG data through the mapper implementation.
-    void write_prg(NES_Address address, NES_Byte value);
-
-    /// Read active mapper CHR data through the mapper implementation.
-    inline NES_Byte read_chr(NES_Address address) {
-        return mapper->readCHR(address);
-    }
-
-    /// Write active mapper CHR data through the mapper implementation.
-    inline void write_chr(NES_Address address, NES_Byte value) {
-        mapper->writeCHR(address, value);
-    }
 };
 
 }  // namespace NES

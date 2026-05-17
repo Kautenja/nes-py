@@ -70,47 +70,10 @@ cdef extern from "nes_emu/emulator.hpp" namespace "NES":
         size_t get_chr_rom_size()
         cpp_bool has_chr_ram()
         int get_name_table_mirroring()
-        NES_Byte read_prg(NES_Address address)
-        void write_prg(NES_Address address, NES_Byte value)
-        NES_Byte read_chr(NES_Address address)
-        void write_chr(NES_Address address, NES_Byte value)
 
 
 cdef extern from "nes_emu/mapper_factory.hpp" namespace "NES":
     cpp_bool IsMapperSupported(uint16_t mapper_id)
-
-
-cdef extern from *:
-    """
-    extern "C" int MapperIRQSmokeTest();
-    extern "C" int MapperCPUCycleHookSmokeTest();
-    extern "C" int MapperPPUHookSmokeTest();
-    extern "C" int MapperExpansionSmokeTest();
-    extern "C" int MapperPRGRAMSmokeTest();
-    extern "C" int MapperNameTableSmokeTest();
-    extern "C" unsigned int MapperBankHelperSmokeResults();
-    extern "C" unsigned int CPUCharacterizationSmokeResults();
-    extern "C" unsigned int MainBusCharacterizationSmokeResults();
-    extern "C" unsigned int PPUCharacterizationSmokeResults();
-    extern "C" double NativeCPUDispatchBenchmark(int iterations);
-    extern "C" double NativeMainBusIODispatchBenchmark(int iterations);
-    extern "C" double NativeMapperUnhookedCycleBenchmark(int iterations);
-    extern "C" double NativeMapperHookedCycleBenchmark(int iterations);
-    """
-    int MapperIRQSmokeTest()
-    int MapperCPUCycleHookSmokeTest()
-    int MapperPPUHookSmokeTest()
-    int MapperExpansionSmokeTest()
-    int MapperPRGRAMSmokeTest()
-    int MapperNameTableSmokeTest()
-    unsigned int MapperBankHelperSmokeResults()
-    unsigned int CPUCharacterizationSmokeResults()
-    unsigned int MainBusCharacterizationSmokeResults()
-    unsigned int PPUCharacterizationSmokeResults()
-    double NativeCPUDispatchBenchmark(int iterations)
-    double NativeMainBusIODispatchBenchmark(int iterations)
-    double NativeMapperUnhookedCycleBenchmark(int iterations)
-    double NativeMapperHookedCycleBenchmark(int iterations)
 
 
 cdef string _rom_path_string(object rom_path) except *:
@@ -268,32 +231,6 @@ cdef class NativeEmulator:
         self._require_open()
         return int(self._emu.get_name_table_mirroring())
 
-    def read_prg(self, object address):
-        """Read one byte through the active mapper PRG path."""
-        self._require_open()
-        return int(self._emu.read_prg(<NES_Address> int(address)))
-
-    def write_prg(self, object address, object value):
-        """Write one byte through the active mapper PRG path."""
-        self._require_open()
-        self._emu.write_prg(
-            <NES_Address> int(address),
-            <NES_Byte> int(value),
-        )
-
-    def read_chr(self, object address):
-        """Read one byte through the active mapper CHR path."""
-        self._require_open()
-        return int(self._emu.read_chr(<NES_Address> int(address)))
-
-    def write_chr(self, object address, object value):
-        """Write one byte through the active mapper CHR path."""
-        self._require_open()
-        self._emu.write_chr(
-            <NES_Address> int(address),
-            <NES_Byte> int(value),
-        )
-
 
 def cartridge_error(object rom_path):
     """Return the native cartridge validation error for a ROM path, if any."""
@@ -337,94 +274,3 @@ def cartridge_metadata(object rom_path):
 def is_mapper_supported(object mapper):
     """Return whether a mapper ID has a native implementation."""
     return bool(IsMapperSupported(<uint16_t> int(mapper)))
-
-
-def mapper_hook_smoke_results():
-    """Run focused native mapper hook smoke checks."""
-    return {
-        'irq': bool(MapperIRQSmokeTest()),
-        'cpu_cycle': bool(MapperCPUCycleHookSmokeTest()),
-        'ppu': bool(MapperPPUHookSmokeTest()),
-        'expansion': bool(MapperExpansionSmokeTest()),
-        'prg_ram': bool(MapperPRGRAMSmokeTest()),
-        'nametable': bool(MapperNameTableSmokeTest()),
-    }
-
-
-def mapper_bank_helper_smoke_results():
-    """Run focused native mapper bank helper smoke checks."""
-    cdef unsigned int results = MapperBankHelperSmokeResults()
-    return {
-        'prg_8k': bool(results & (1 << 0)),
-        'prg_16k': bool(results & (1 << 1)),
-        'prg_32k': bool(results & (1 << 2)),
-        'chr_1k': bool(results & (1 << 3)),
-        'chr_2k': bool(results & (1 << 4)),
-        'chr_4k': bool(results & (1 << 5)),
-        'chr_8k': bool(results & (1 << 6)),
-        'masks_and_bus_conflicts': bool(results & (1 << 7)),
-    }
-
-
-def cpu_characterization_smoke_results():
-    """Run focused native CPU characterization checks."""
-    cdef unsigned int results = CPUCharacterizationSmokeResults()
-    return {
-        'reset_vector': bool(results & (1 << 0)),
-        'stack_push_pop': bool(results & (1 << 1)),
-        'addressing_modes': bool(results & (1 << 2)),
-        'branch_page_crossing': bool(results & (1 << 3)),
-        'interrupt_entry': bool(results & (1 << 4)),
-        'dma_cycle_skipping': bool(results & (1 << 5)),
-        'flag_behavior': bool(results & (1 << 6)),
-    }
-
-
-def main_bus_characterization_smoke_results():
-    """Run focused native main-bus characterization checks."""
-    cdef unsigned int results = MainBusCharacterizationSmokeResults()
-    return {
-        'ram_mirroring': bool(results & (1 << 0)),
-        'ppu_register_mirroring': bool(results & (1 << 1)),
-        'controller_reads': bool(results & (1 << 2)),
-        'oam_dma_page_access': bool(results & (1 << 3)),
-        'expansion_area': bool(results & (1 << 4)),
-        'prg_ram_access': bool(results & (1 << 5)),
-        'mapper_prg_access': bool(results & (1 << 6)),
-    }
-
-
-def ppu_characterization_smoke_results():
-    """Run focused native PPU and picture-bus characterization checks."""
-    cdef unsigned int results = PPUCharacterizationSmokeResults()
-    return {
-        'pattern_table_reads_writes': bool(results & (1 << 0)),
-        'nametable_mirroring': bool(results & (1 << 1)),
-        'four_screen_mirroring': bool(results & (1 << 2)),
-        'one_screen_mirroring': bool(results & (1 << 3)),
-        'palette_mirroring': bool(results & (1 << 4)),
-        'address_3fff': bool(results & (1 << 5)),
-        'ppudata_buffer_original_address': bool(results & (1 << 6)),
-        'ppu_reset_latches': bool(results & (1 << 7)),
-        'render_hook_sequence': bool(results & (1 << 8)),
-    }
-
-
-def native_cpu_dispatch_benchmark(int iterations):
-    """Return elapsed seconds for native CPU dispatch benchmarking."""
-    return float(NativeCPUDispatchBenchmark(iterations))
-
-
-def native_main_bus_io_dispatch_benchmark(int iterations):
-    """Return elapsed seconds for native main-bus I/O benchmarking."""
-    return float(NativeMainBusIODispatchBenchmark(iterations))
-
-
-def native_mapper_unhooked_cycle_benchmark(int iterations):
-    """Return elapsed seconds for unhooked mapper CPU-cycle dispatch."""
-    return float(NativeMapperUnhookedCycleBenchmark(iterations))
-
-
-def native_mapper_hooked_cycle_benchmark(int iterations):
-    """Return elapsed seconds for hooked mapper CPU-cycle dispatch."""
-    return float(NativeMapperHookedCycleBenchmark(iterations))

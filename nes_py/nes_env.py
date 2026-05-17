@@ -24,31 +24,6 @@ def _is_mapper_supported(mapper):
     return _native.is_mapper_supported(mapper)
 
 
-def _native_mapper_hook_smoke_results():
-    """Run focused native mapper hook smoke checks."""
-    return _native.mapper_hook_smoke_results()
-
-
-def _native_mapper_bank_helper_smoke_results():
-    """Run focused native mapper bank helper smoke checks."""
-    return _native.mapper_bank_helper_smoke_results()
-
-
-def _native_cpu_characterization_smoke_results():
-    """Run focused native CPU characterization checks."""
-    return _native.cpu_characterization_smoke_results()
-
-
-def _native_main_bus_characterization_smoke_results():
-    """Run focused native main-bus characterization checks."""
-    return _native.main_bus_characterization_smoke_results()
-
-
-def _native_ppu_characterization_smoke_results():
-    """Run focused native PPU and picture-bus characterization checks."""
-    return _native.ppu_characterization_smoke_results()
-
-
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _native.SCREEN_HEIGHT
 # width in pixels of the NES screen
@@ -169,22 +144,6 @@ class NESEnv(gym.Env):
     def _name_table_mirroring(self):
         """Return the active native mapper name table mirroring mode."""
         return self._env.name_table_mirroring()
-
-    def _read_prg(self, address):
-        """Read a byte through the active native PRG mapper."""
-        return self._env.read_prg(address)
-
-    def _write_prg(self, address, value):
-        """Write a byte through the active native PRG mapper."""
-        self._env.write_prg(address, value)
-
-    def _read_chr(self, address):
-        """Read a byte through the active native CHR mapper."""
-        return self._env.read_chr(address)
-
-    def _write_chr(self, address, value):
-        """Write a byte through the active native CHR mapper."""
-        self._env.write_chr(address, value)
 
     def _frame_advance(self, action):
         """

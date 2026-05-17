@@ -197,6 +197,17 @@ python -m unittest discover .
 python -m build
 ```
 
+Native emulator internals are tested and benchmarked through opt-in CMake
+targets so normal Python installs do not fetch test dependencies:
+
+```shell
+cmake -S . -B build/nes-emu-debug -DCMAKE_BUILD_TYPE=Debug -DNES_EMU_BUILD_TESTS=ON
+cmake --build build/nes-emu-debug --target nes_emu_tests
+ctest --test-dir build/nes-emu-debug --output-on-failure
+cmake -S . -B build/nes-emu-release -DCMAKE_BUILD_TYPE=Release -DNES_EMU_BUILD_BENCHMARKS=ON
+cmake --build build/nes-emu-release --target nes_emu_benchmarks
+```
+
 Release upload tooling is available with `python -m pip install ".[release]"`.
 
 ## Benchmarking

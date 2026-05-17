@@ -75,23 +75,4 @@ void Emulator::restore() {
     wire_mapper();
 }
 
-NES_Byte Emulator::read_prg(NES_Address address) {
-    if (address < 0x6000)
-        return mapper->readExpansion(address);
-    if (address < 0x8000)
-        return mapper->readPRGRAM(address);
-    return mapper->readPRG(address);
-}
-
-void Emulator::write_prg(NES_Address address, NES_Byte value) {
-    if (address < 0x6000) {
-        mapper->writeExpansion(address, value);
-    } else if (address < 0x8000) {
-        mapper->writePRGRAM(address, value);
-    } else {
-        mapper->writePRG(address, mapper->resolveBusConflict(address, value));
-    }
-    synchronize_mapper_mirroring();
-}
-
 }  // namespace NES

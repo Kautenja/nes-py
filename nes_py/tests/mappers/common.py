@@ -13,12 +13,6 @@ ONE_SCREEN_LOWER = 9
 ONE_SCREEN_HIGHER = 10
 
 
-def _write_mmc1_register(env, address, value):
-    """Write an MMC1/SxROM register value through its serial load register."""
-    for bit in range(5):
-        env._write_prg(address, (value >> bit) & 0x01)
-
-
 class MapperTestCase(TestCase):
     """Base test case that owns synthetic ROM temporary files."""
 
@@ -44,3 +38,23 @@ class MapperTestCase(TestCase):
         """Close an environment if it is still open."""
         if env._env is not None:
             env.close()
+
+    def assert_env_smoke(self, path):
+        """Assert public NESEnv workflows operate for a ROM path."""
+        env = self.env(path)
+
+        state = env.reset()
+        self.assertEqual((240, 256, 3), state.shape)
+        state, reward, done, info = env.step(0)
+        self.assertEqual((240, 256, 3), state.shape)
+        self.assertIsInstance(reward, float)
+        self.assertIsInstance(done, bool)
+        self.assertIsInstance(info, dict)
+        self.assertEqual((240, 256, 3), env.render('rgb_array').shape)
+
+        env._backup()
+        env.step(0)
+        env._restore()
+        env.done = False
+        state, _, _, _ = env.step(0)
+        self.assertEqual((240, 256, 3), state.shape)

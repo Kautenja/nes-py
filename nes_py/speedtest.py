@@ -13,9 +13,7 @@ import numpy as np
 from tqdm import tqdm
 
 from ._rom import ROM
-from . import _native
 from .nes_env import NESEnv
-from .nes_env import _native_mapper_hook_smoke_results
 
 
 ActionPolicy = Callable[[NESEnv, int, np.random.RandomState], int] | str
@@ -75,44 +73,6 @@ class MapperBenchmarkResult:
     warmup_steps: int
     elapsed_seconds: float
     steps_per_second: float
-
-    def to_dict(self):
-        """Return this result as a JSON-serializable dictionary."""
-        return asdict(self)
-
-
-@dataclass(frozen=True)
-class MapperHookBenchmarkResult:
-    """Structured result from the native mapper hook smoke benchmark."""
-
-    environment: str
-    compiler: str
-    platform: str
-    operation: str
-    measured_iterations: int
-    warmup_steps: int
-    elapsed_seconds: float
-    iterations_per_second: float
-    results: dict[str, bool]
-
-    def to_dict(self):
-        """Return this result as a JSON-serializable dictionary."""
-        return asdict(self)
-
-
-@dataclass(frozen=True)
-class NativeHotPathBenchmarkResult:
-    """Structured result from a native CPU/bus/frame hot-path benchmark."""
-
-    environment: str
-    compiler: str
-    platform: str
-    operation: str
-    measured_iterations: int
-    warmup_steps: int
-    elapsed_seconds: float
-    iterations_per_second: float
-    rom: str | None = None
 
     def to_dict(self):
         """Return this result as a JSON-serializable dictionary."""
@@ -281,127 +241,6 @@ def run_mapper_profile(
     return results
 
 
-def run_mapper_hook_profile(iterations=5000, warmup_steps=100):
-    """
-    Run a portable benchmark profile for native mapper timing/IRQ hooks.
-
-    This benchmark intentionally repeats the focused C++ smoke checks from the
-    mapper lifecycle tests. It is informational, not a CI timing threshold.
-    """
-    if iterations <= 0:
-        raise ValueError('iterations must be positive')
-    _validate_non_negative('warmup_steps', warmup_steps)
-
-    for _ in range(warmup_steps):
-        _native_mapper_hook_smoke_results()
-
-    results = {}
-    started_at = time.perf_counter()
-    for _ in range(iterations):
-        results = _native_mapper_hook_smoke_results()
-    elapsed = time.perf_counter() - started_at
-    iterations_per_second = iterations / elapsed if elapsed > 0 else 0.0
-    return MapperHookBenchmarkResult(
-        environment=_environment_name(),
-        compiler=_compiler_name(),
-        platform=platform_module.platform(),
-        operation='mapper_hook_smoke',
-        measured_iterations=iterations,
-        warmup_steps=warmup_steps,
-        elapsed_seconds=elapsed,
-        iterations_per_second=iterations_per_second,
-        results=results,
-    )
-
-
-def _run_native_elapsed(operation, iterations):
-    """Run one native elapsed-time microbenchmark operation."""
-    if operation == 'cpu_dispatch':
-        return _native.native_cpu_dispatch_benchmark(iterations)
-    if operation == 'main_bus_io_dispatch':
-        return _native.native_main_bus_io_dispatch_benchmark(iterations)
-    if operation == 'mapper_cycle_unhooked':
-        return _native.native_mapper_unhooked_cycle_benchmark(iterations)
-    if operation == 'mapper_cycle_hooked':
-        return _native.native_mapper_hooked_cycle_benchmark(iterations)
-    raise ValueError('unknown native benchmark operation: {}'.format(
-        operation
-    ))
-
-
-def _native_hot_path_result(
-    operation,
-    measured_iterations,
-    warmup_steps,
-    elapsed_seconds,
-    rom=None,
-):
-    """Create a native hot-path result with standard runtime metadata."""
-    elapsed_seconds = max(float(elapsed_seconds), sys.float_info.min)
-    iterations_per_second = (
-        measured_iterations / elapsed_seconds
-        if elapsed_seconds > 0 else
-        0.0
-    )
-    return NativeHotPathBenchmarkResult(
-        environment=_environment_name(),
-        compiler=_compiler_name(),
-        platform=platform_module.platform(),
-        operation=operation,
-        measured_iterations=measured_iterations,
-        warmup_steps=warmup_steps,
-        elapsed_seconds=elapsed_seconds,
-        iterations_per_second=iterations_per_second,
-        rom=rom,
-    )
-
-
-def run_native_hot_path_profile(rom, steps=5000, warmup_steps=100):
-    """
-    Run the spec 017 CPU, bus, mapper-hook, and frame-step benchmark profile.
-
-    Native microbenchmarks isolate CPU dispatch, direct main-bus I/O dispatch,
-    and mapper CPU-cycle hook overhead. The final result is a normal
-    ``NESEnv.step`` throughput measurement for the provided ROM.
-    """
-    if steps <= 0:
-        raise ValueError('steps must be positive')
-    _validate_non_negative('warmup_steps', warmup_steps)
-
-    results = []
-    for operation in (
-        'cpu_dispatch',
-        'main_bus_io_dispatch',
-        'mapper_cycle_unhooked',
-        'mapper_cycle_hooked',
-    ):
-        if warmup_steps:
-            _run_native_elapsed(operation, warmup_steps)
-        elapsed = _run_native_elapsed(operation, steps)
-        results.append(_native_hot_path_result(
-            operation,
-            steps,
-            warmup_steps,
-            elapsed,
-        ))
-
-    env_result = run_benchmark(BenchmarkConfig(
-        rom=rom,
-        steps=steps,
-        warmup_steps=warmup_steps,
-        action_policy='noop',
-        progress=False,
-    ))
-    results.append(_native_hot_path_result(
-        'nes_env_step',
-        env_result.measured_steps,
-        env_result.warmup_steps,
-        env_result.elapsed_seconds,
-        rom=rom,
-    ))
-    return results
-
-
 def run_benchmark(config=None, **kwargs):
     """
     Run an NES throughput benchmark and return a structured result.
@@ -538,26 +377,6 @@ def format_mapper_profile(results):
     return '\n'.join(lines)
 
 
-def format_mapper_hook_profile(result):
-    """Return human-readable native mapper hook benchmark output."""
-    return (
-        'NES mapper hook benchmark profile\n'
-        '  {operation}: {iterations_per_second:.2f} iterations/s '
-        '({elapsed_seconds:.6f}s)'
-    ).format(**result.to_dict())
-
-
-def format_native_hot_path_profile(results):
-    """Return human-readable native CPU/bus/frame benchmark output."""
-    lines = ['NES native hot-path benchmark profile']
-    for result in results:
-        lines.append(
-            '  {operation}: {iterations_per_second:.2f} iterations/s '
-            '({elapsed_seconds:.6f}s)'.format(**result.to_dict())
-        )
-    return '\n'.join(lines)
-
-
 def _parser():
     """Build the command line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -567,16 +386,6 @@ def _parser():
         action='append',
         default=[],
         help='path to a .nes ROM fixture to include in the mapper profile',
-    )
-    parser.add_argument(
-        '--mapper-hook-profile',
-        action='store_true',
-        help='run the native mapper timing/IRQ hook smoke benchmark',
-    )
-    parser.add_argument(
-        '--native-hot-path-profile',
-        action='store_true',
-        help='run native CPU, bus, mapper-hook, and NESEnv.step benchmarks',
     )
     parser.add_argument('--steps', type=int, default=5000)
     parser.add_argument('--seed', type=int)
@@ -599,51 +408,6 @@ def main(argv=None):
     """Run the benchmark command line interface."""
     parser = _parser()
     args = parser.parse_args(argv)
-    profile_modes = sum(bool(value) for value in (
-        args.mapper_hook_profile,
-        bool(args.profile_rom),
-        args.native_hot_path_profile,
-    ))
-    if profile_modes > 1:
-        parser.error(
-            'profile modes cannot be combined'
-        )
-
-    if args.mapper_hook_profile:
-        try:
-            result = run_mapper_hook_profile(
-                iterations=args.steps,
-                warmup_steps=args.warmup_steps,
-            )
-        except KeyboardInterrupt:
-            return 130
-
-        if args.json_output:
-            print(json.dumps(result.to_dict(), sort_keys=True))
-        else:
-            print(format_mapper_hook_profile(result))
-        return 0
-
-    if args.native_hot_path_profile:
-        if args.rom is None:
-            parser.error('--rom is required with --native-hot-path-profile')
-        try:
-            results = run_native_hot_path_profile(
-                args.rom,
-                steps=args.steps,
-                warmup_steps=args.warmup_steps,
-            )
-        except KeyboardInterrupt:
-            return 130
-
-        if args.json_output:
-            print(json.dumps(
-                [result.to_dict() for result in results],
-                sort_keys=True,
-            ))
-        else:
-            print(format_native_hot_path_profile(results))
-        return 0
 
     if args.profile_rom:
         try:
@@ -666,8 +430,7 @@ def main(argv=None):
 
     if args.rom is None:
         parser.error(
-            '--rom is required unless --profile-rom or '
-            '--mapper-hook-profile is provided'
+            '--rom is required unless --profile-rom is provided'
         )
 
     config = BenchmarkConfig(

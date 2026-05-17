@@ -243,5 +243,5 @@ class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
         env = NESEnv(path)
         self.addCleanup(env.close)
         self.assertTrue(env._has_chr_ram())
-        env._write_chr(0x0123, 0x5a)
-        self.assertEqual(0x5a, env._read_chr(0x0123))
+        self.assertEqual((240, 256, 3), env.reset().shape)
+        self.assertEqual((240, 256, 3), env.step(0)[0].shape)

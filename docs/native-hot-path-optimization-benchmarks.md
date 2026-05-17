@@ -96,10 +96,14 @@ run_benchmark(BenchmarkConfig(
 Mapper profiles used synthetic mapper 0-3 fixtures with
 `run_mapper_profile(..., steps=100, warmup_steps=20)`.
 
-Mapper timing/IRQ hook profiling used the new portable benchmark:
+Mapper timing/IRQ hook profiling used the native benchmark target. In the
+current tree this is built separately from the Python extension with
+`-DNES_EMU_BUILD_BENCHMARKS=ON` and run through the `nes_emu_benchmarks`
+executable, so native microbenchmarks do not expand the Python package API.
 
-```py
-run_mapper_hook_profile(iterations=5000, warmup_steps=100)
+```sh
+cmake --build build/nes-emu-release --config Release --target nes_emu_benchmarks
+build/nes-emu-release/nes_emu_benchmarks --benchmark-samples 1 --benchmark-resamples 1
 ```
 
 Umbrella specs 017 and 018 were still incomplete, so there were no landed

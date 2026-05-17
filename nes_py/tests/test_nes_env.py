@@ -2,7 +2,6 @@
 from unittest import TestCase
 import gym
 import numpy as np
-from nes_py import _native
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
 from nes_py.nes_env import SCREEN_SHAPE_24_BIT
@@ -44,7 +43,6 @@ class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
         env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
         self.assertIsInstance(env, gym.Env)
-        self.assertIsInstance(env._env, _native.NativeEmulator)
         env.close()
 
 
@@ -95,12 +93,6 @@ class ShouldExposeNativeBuffersWithoutCopies(TestCase):
         self._assert_native_view(ram, (0x800,))
         self._assert_native_view(controller, (1,))
         self.assertEqual(1, controller[0])
-
-    def test_native_initialization_errors_are_python_exceptions(self):
-        with self.assertRaises(RuntimeError) as error:
-            _native.NativeEmulator('not_a_file.nes')
-        self.assertIn('failed to open ROM file', str(error.exception))
-
 
 class ShouldReadAndWriteMemory(TestCase):
     def test(self):

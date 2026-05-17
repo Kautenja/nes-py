@@ -5,19 +5,23 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <chrono>
 #include <cstdint>
 #include <exception>
+#include <initializer_list>
 #include <memory>
 #include <string>
 #include <vector>
 #include "common.hpp"
 #include "cartridge.hpp"
+#include "controller.hpp"
 #include "cpu.hpp"
 #include "emulator.hpp"
 #include "main_bus.hpp"
 #include "mapper_bank.hpp"
 #include "mapper_factory.hpp"
 #include "picture_bus.hpp"
+#include "ppu.hpp"
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -55,6 +59,24 @@ const unsigned int BANK_HELPER_CHR_4K = 1u << 5;
 const unsigned int BANK_HELPER_CHR_8K = 1u << 6;
 const unsigned int BANK_HELPER_MASKS = 1u << 7;
 
+const unsigned int CPU_CHAR_RESET_VECTOR = 1u << 0;
+const unsigned int CPU_CHAR_STACK = 1u << 1;
+const unsigned int CPU_CHAR_ADDRESSING = 1u << 2;
+const unsigned int CPU_CHAR_BRANCH_PAGE_CROSS = 1u << 3;
+const unsigned int CPU_CHAR_INTERRUPT = 1u << 4;
+const unsigned int CPU_CHAR_DMA_STALL = 1u << 5;
+const unsigned int CPU_CHAR_FLAGS = 1u << 6;
+
+const unsigned int BUS_CHAR_RAM_MIRRORING = 1u << 0;
+const unsigned int BUS_CHAR_PPU_MIRRORING = 1u << 1;
+const unsigned int BUS_CHAR_CONTROLLER_READS = 1u << 2;
+const unsigned int BUS_CHAR_OAM_DMA_PAGE = 1u << 3;
+const unsigned int BUS_CHAR_EXPANSION = 1u << 4;
+const unsigned int BUS_CHAR_PRG_RAM = 1u << 5;
+const unsigned int BUS_CHAR_MAPPER_PRG = 1u << 6;
+
+volatile NES::NES_Byte native_benchmark_sink = 0;
+
 void FillBankMarkers(
     std::vector<NES::NES_Byte>& memory,
     std::size_t bank_size,
@@ -62,6 +84,88 @@ void FillBankMarkers(
 ) {
     for (std::size_t index = 0; index < memory.size(); ++index)
         memory[index] = first_marker + (index / bank_size);
+}
+
+class ProgramTestMapper : public NES::Mapper {
+ private:
+    std::vector<NES::NES_Byte> prg;
+    std::vector<NES::NES_Byte> chr;
+    NES::NES_Address last_prg_write_address;
+    NES::NES_Byte last_prg_write_value;
+
+ public:
+    ProgramTestMapper() :
+        NES::Mapper(nullptr),
+        prg(0x8000, 0xea),
+        chr(0x2000, 0),
+        last_prg_write_address(0),
+        last_prg_write_value(0) {
+        setResetVector(0x8000);
+        setIRQVector(0x9000);
+        setNMIVector(0x9000);
+        resizePRGRAM(0x2000);
+    }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new ProgramTestMapper(*this));
+    }
+
+    inline void setByte(NES::NES_Address address, NES::NES_Byte value) {
+        prg[(address - 0x8000) & 0x7fff] = value;
+    }
+
+    inline void load(
+        NES::NES_Address address,
+        std::initializer_list<NES::NES_Byte> bytes
+    ) {
+        for (auto value : bytes)
+            setByte(address++, value);
+    }
+
+    inline void setResetVector(NES::NES_Address address) {
+        setByte(0xfffc, static_cast<NES::NES_Byte>(address));
+        setByte(0xfffd, static_cast<NES::NES_Byte>(address >> 8));
+    }
+
+    inline void setIRQVector(NES::NES_Address address) {
+        setByte(0xfffe, static_cast<NES::NES_Byte>(address));
+        setByte(0xffff, static_cast<NES::NES_Byte>(address >> 8));
+    }
+
+    inline void setNMIVector(NES::NES_Address address) {
+        setByte(0xfffa, static_cast<NES::NES_Byte>(address));
+        setByte(0xfffb, static_cast<NES::NES_Byte>(address >> 8));
+    }
+
+    inline NES::NES_Address lastPRGWriteAddress() const {
+        return last_prg_write_address;
+    }
+
+    inline NES::NES_Byte lastPRGWriteValue() const {
+        return last_prg_write_value;
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        return prg[(address - 0x8000) & 0x7fff];
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        last_prg_write_address = address;
+        last_prg_write_value = value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        return chr[address & 0x1fff];
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        chr[address & 0x1fff] = value;
+    }
+};
+
+void RunCPUCycles(NES::CPU& cpu, NES::MainBus& bus, int cycles) {
+    for (int index = 0; index < cycles; ++index)
+        cpu.cycle(bus);
 }
 
 class IRQTestMapper : public NES::Mapper {
@@ -424,6 +528,386 @@ bool RunMapperNameTableSmokeTest() {
     return bus.read(0x2401) == 0x66;
 }
 
+bool RunCPUResetVectorCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    mapper.setResetVector(0x8123);
+    mapper.load(0x8123, {
+        0xa9, 0x42,       // LDA #$42
+        0x85, 0x01,       // STA $01
+        0x4c, 0x27, 0x81  // JMP $8127
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+    RunCPUCycles(cpu, bus, 24);
+    return bus.read(0x0001) == 0x42;
+}
+
+bool RunCPUStackCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    mapper.load(0x8000, {
+        0xa9, 0x5a,       // LDA #$5a
+        0x48,             // PHA
+        0xa9, 0x00,       // LDA #$00
+        0x68,             // PLA
+        0x85, 0x02,       // STA $02
+        0x38,             // SEC
+        0x08,             // PHP
+        0x18,             // CLC
+        0x28,             // PLP
+        0xb0, 0x07,       // BCS success
+        0xa9, 0x00,       // fail: LDA #$00
+        0x85, 0x03,       // STA $03
+        0x4c, 0x1c, 0x80, // JMP end
+        0xa9, 0x01,       // success: LDA #$01
+        0x85, 0x03,       // STA $03
+        0x4c, 0x1c, 0x80  // end: JMP end
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+    RunCPUCycles(cpu, bus, 96);
+    return bus.read(0x0002) == 0x5a && bus.read(0x0003) == 0x01;
+}
+
+bool RunCPUAddressingCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    bus.write(0x0010, 0x77);
+    bus.write(0x0203, 0x88);
+    bus.write(0x0334, 0x99);
+    bus.write(0x0024, 0x03);
+    bus.write(0x0025, 0x04);
+    bus.write(0x0406, 0xaa);
+    bus.write(0x0034, 0x00);
+    bus.write(0x0035, 0x05);
+    bus.write(0x0500, 0xbb);
+    mapper.load(0x8000, {
+        0xa2, 0x04,       // LDX #$04
+        0xa0, 0x03,       // LDY #$03
+        0xb5, 0x0c,       // LDA $0c,X -> $10
+        0x85, 0x20,       // STA $20
+        0xb9, 0x00, 0x02, // LDA $0200,Y -> $0203
+        0x85, 0x21,       // STA $21
+        0xbd, 0x30, 0x03, // LDA $0330,X -> $0334
+        0x85, 0x22,       // STA $22
+        0xb1, 0x24,       // LDA ($24),Y -> $0406
+        0x85, 0x23,       // STA $23
+        0xa1, 0x30,       // LDA ($30,X) -> ($34) -> $0500
+        0x85, 0x26,       // STA $26
+        0x4c, 0x1c, 0x80  // JMP end
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+    RunCPUCycles(cpu, bus, 180);
+    return (
+        bus.read(0x0020) == 0x77 &&
+        bus.read(0x0021) == 0x88 &&
+        bus.read(0x0022) == 0x99 &&
+        bus.read(0x0023) == 0xaa &&
+        bus.read(0x0026) == 0xbb
+    );
+}
+
+bool RunCPUBranchPageCrossCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    mapper.setResetVector(0x80fa);
+    mapper.load(0x80fa, {
+        0xa9, 0x00,       // LDA #$00
+        0xf0, 0x05,       // BEQ $8103, crossing the $80xx page
+        0xa9, 0x00,       // fail: LDA #$00
+        0x85, 0x04,       // STA $04
+        0xea              // NOP filler before target
+    });
+    mapper.load(0x8103, {
+        0xa9, 0x01,       // success: LDA #$01
+        0x85, 0x04,       // STA $04
+        0x4c, 0x08, 0x81  // JMP end
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+    RunCPUCycles(cpu, bus, 72);
+    return bus.read(0x0004) == 0x01;
+}
+
+bool RunCPUDMAStallCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::PictureBus picture_bus;
+    NES::PPU ppu;
+    NES::CPU cpu;
+    NES::Controller controllers[2];
+    mapper.load(0x8000, {
+        0xa9, 0x02,       // LDA #$02
+        0x8d, 0x14, 0x40, // STA $4014
+        0xa9, 0x55,       // LDA #$55
+        0x85, 0x06,       // STA $06
+        0x4c, 0x09, 0x80  // JMP end
+    });
+    bus.set_mapper(&mapper);
+    picture_bus.set_mapper(&mapper);
+    ppu.reset();
+    bus.connect_devices(&cpu, &ppu, &picture_bus, controllers);
+    bus.write(0x0200, 0xcc);
+    cpu.reset(bus);
+    RunCPUCycles(cpu, bus, 40);
+    bool stalled = bus.read(0x0006) == 0x00;
+    RunCPUCycles(cpu, bus, 620);
+    bus.write(NES::OAMADDR, 0x00);
+    return stalled && bus.read(0x0006) == 0x55 && bus.read(NES::OAMDATA) == 0xcc;
+}
+
+bool RunCPUFlagCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    mapper.load(0x8000, {
+        0xa9, 0x00,       // LDA #$00
+        0x08,             // PHP
+        0x68,             // PLA
+        0x85, 0x10,       // STA $10
+        0xa9, 0x80,       // LDA #$80
+        0x08,             // PHP
+        0x68,             // PLA
+        0x85, 0x11,       // STA $11
+        0x18,             // CLC
+        0xa9, 0x7f,       // LDA #$7f
+        0x69, 0x01,       // ADC #$01
+        0x08,             // PHP
+        0x68,             // PLA
+        0x85, 0x12,       // STA $12
+        0x38,             // SEC
+        0xa9, 0x01,       // LDA #$01
+        0xe9, 0x01,       // SBC #$01
+        0x08,             // PHP
+        0x68,             // PLA
+        0x85, 0x13,       // STA $13
+        0x4c, 0x25, 0x80  // JMP end
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+    RunCPUCycles(cpu, bus, 180);
+    NES::NES_Byte zero_status = bus.read(0x0010);
+    NES::NES_Byte negative_status = bus.read(0x0011);
+    NES::NES_Byte overflow_status = bus.read(0x0012);
+    NES::NES_Byte subtract_status = bus.read(0x0013);
+    return (
+        (zero_status & NES::CPU_Flags::FLAG_ZERO) &&
+        !(zero_status & NES::CPU_Flags::FLAG_NEGATIVE) &&
+        (negative_status & NES::CPU_Flags::FLAG_NEGATIVE) &&
+        !(negative_status & NES::CPU_Flags::FLAG_ZERO) &&
+        (overflow_status & NES::CPU_Flags::FLAG_OVERFLOW) &&
+        (overflow_status & NES::CPU_Flags::FLAG_NEGATIVE) &&
+        (subtract_status & NES::CPU_Flags::FLAG_CARRY) &&
+        (subtract_status & NES::CPU_Flags::FLAG_ZERO)
+    );
+}
+
+unsigned int RunCPUCharacterizationSmokeTests() {
+    unsigned int results = 0;
+    if (RunCPUResetVectorCharacterization())
+        results |= CPU_CHAR_RESET_VECTOR;
+    if (RunCPUStackCharacterization())
+        results |= CPU_CHAR_STACK;
+    if (RunCPUAddressingCharacterization())
+        results |= CPU_CHAR_ADDRESSING;
+    if (RunCPUBranchPageCrossCharacterization())
+        results |= CPU_CHAR_BRANCH_PAGE_CROSS;
+    if (RunMapperIRQSmokeTest())
+        results |= CPU_CHAR_INTERRUPT;
+    if (RunCPUDMAStallCharacterization())
+        results |= CPU_CHAR_DMA_STALL;
+    if (RunCPUFlagCharacterization())
+        results |= CPU_CHAR_FLAGS;
+    return results;
+}
+
+bool RunMainBusRAMMirroringCharacterization() {
+    NES::MainBus bus;
+    bus.write(0x0002, 0x12);
+    return (
+        bus.read(0x0002) == 0x12 &&
+        bus.read(0x0802) == 0x12 &&
+        bus.read(0x1002) == 0x12 &&
+        bus.read(0x1802) == 0x12
+    );
+}
+
+bool RunMainBusPPUMirroringCharacterization() {
+    NES::MainBus bus;
+    NES::NES_Byte written = 0;
+    int writes = 0;
+    bus.set_write_callback(NES::PPUCTRL, [&](NES::NES_Byte value) {
+        written = value;
+        ++writes;
+    });
+    bus.set_read_callback(NES::PPUSTATUS, [&]() {
+        return static_cast<NES::NES_Byte>(0xa5);
+    });
+    bus.write(0x2008, 0x5c);
+    return writes == 1 && written == 0x5c && bus.read(0x200a) == 0xa5;
+}
+
+bool RunMainBusControllerReadCharacterization() {
+    NES::MainBus bus;
+    NES::Controller controllers[2];
+    controllers[0].write_buttons(0x05);
+    bus.connect_devices(nullptr, nullptr, nullptr, controllers);
+    bus.write(NES::JOY1, 0x00);
+    NES::NES_Byte first = bus.read(NES::JOY1);
+    NES::NES_Byte second = bus.read(NES::JOY1);
+    NES::NES_Byte third = bus.read(NES::JOY1);
+    return first == 0x41 && second == 0x40 && third == 0x41;
+}
+
+bool RunMainBusOAMDMAPageCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::PictureBus picture_bus;
+    NES::PPU ppu;
+    NES::CPU cpu;
+    NES::Controller controllers[2];
+    bus.set_mapper(&mapper);
+    picture_bus.set_mapper(&mapper);
+    ppu.reset();
+    cpu.reset(bus);
+    bus.connect_devices(&cpu, &ppu, &picture_bus, controllers);
+    bus.write(0x0300, 0x6d);
+    bus.write(NES::OAMADDR, 0x00);
+    bus.write(NES::OAMDMA, 0x03);
+    bus.write(NES::OAMADDR, 0x00);
+    return bus.read(NES::OAMDATA) == 0x6d;
+}
+
+bool RunMainBusExpansionCharacterization() {
+    ExpansionTestMapper mapper;
+    NES::MainBus mapped_bus;
+    NES::MainBus default_bus;
+    mapped_bus.set_mapper(&mapper);
+    mapped_bus.write(0x5000, 0x5a);
+    return mapped_bus.read(0x5000) == 0x5a && default_bus.read(0x5000) == 0x00;
+}
+
+bool RunMainBusPRGRAMCharacterization() {
+    PRGRAMTestMapper mapper;
+    NES::MainBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x6001, 0x27);
+    return bus.read(0x6001) == 0x27;
+}
+
+bool RunMainBusMapperPRGCharacterization() {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    mapper.setByte(0x8123, 0x9e);
+    bus.set_mapper(&mapper);
+    bus.write(0x9000, 0x44);
+    return (
+        bus.read(0x8123) == 0x9e &&
+        mapper.lastPRGWriteAddress() == 0x9000 &&
+        mapper.lastPRGWriteValue() == 0x44
+    );
+}
+
+unsigned int RunMainBusCharacterizationSmokeTests() {
+    unsigned int results = 0;
+    if (RunMainBusRAMMirroringCharacterization())
+        results |= BUS_CHAR_RAM_MIRRORING;
+    if (RunMainBusPPUMirroringCharacterization())
+        results |= BUS_CHAR_PPU_MIRRORING;
+    if (RunMainBusControllerReadCharacterization())
+        results |= BUS_CHAR_CONTROLLER_READS;
+    if (RunMainBusOAMDMAPageCharacterization())
+        results |= BUS_CHAR_OAM_DMA_PAGE;
+    if (RunMainBusExpansionCharacterization())
+        results |= BUS_CHAR_EXPANSION;
+    if (RunMainBusPRGRAMCharacterization())
+        results |= BUS_CHAR_PRG_RAM;
+    if (RunMainBusMapperPRGCharacterization())
+        results |= BUS_CHAR_MAPPER_PRG;
+    return results;
+}
+
+double ElapsedSecondsSince(std::chrono::steady_clock::time_point started_at) {
+    std::chrono::duration<double> elapsed =
+        std::chrono::steady_clock::now() - started_at;
+    return elapsed.count();
+}
+
+double RunNativeCPUDispatchBenchmark(int iterations) {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    mapper.load(0x8000, {
+        0xa9, 0x01,       // LDA #$01
+        0xaa,             // TAX
+        0xe8,             // INX
+        0x85, 0x00,       // STA $00
+        0xa2, 0x02,       // LDX #$02
+        0xc0, 0x02,       // CPY #$02
+        0x4c, 0x00, 0x80  // JMP $8000
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+    auto started_at = std::chrono::steady_clock::now();
+    RunCPUCycles(cpu, bus, iterations);
+    native_benchmark_sink ^= bus.read(0x0000);
+    return ElapsedSecondsSince(started_at);
+}
+
+double RunNativeMainBusIODispatchBenchmark(int iterations) {
+    ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::PictureBus picture_bus;
+    NES::PPU ppu;
+    NES::CPU cpu;
+    NES::Controller controllers[2];
+    bus.set_mapper(&mapper);
+    picture_bus.set_mapper(&mapper);
+    ppu.reset();
+    cpu.reset(bus);
+    controllers[0].write_buttons(0x01);
+    bus.connect_devices(&cpu, &ppu, &picture_bus, controllers);
+    auto started_at = std::chrono::steady_clock::now();
+    for (int index = 0; index < iterations; ++index) {
+        NES::NES_Byte value = static_cast<NES::NES_Byte>(index);
+        bus.write(0x0000, value);
+        native_benchmark_sink ^= bus.read(0x0800);
+        bus.write(NES::OAMADDR, 0x00);
+        bus.write(NES::OAMDATA, value);
+        native_benchmark_sink ^= bus.read(NES::OAMDATA);
+        bus.write(NES::JOY1, 0x00);
+        native_benchmark_sink ^= bus.read(NES::JOY1);
+        bus.write(0x6000, value);
+        native_benchmark_sink ^= bus.read(0x6000);
+        bus.write(0x9000, value);
+        native_benchmark_sink ^= bus.read(0x8000);
+    }
+    return ElapsedSecondsSince(started_at);
+}
+
+double RunNativeMapperCycleBenchmark(int iterations, bool hooked) {
+    CPUCycleHookMapper hooked_mapper;
+    ProgramTestMapper unhooked_mapper;
+    NES::Mapper* mapper = hooked ?
+        static_cast<NES::Mapper*>(&hooked_mapper) :
+        static_cast<NES::Mapper*>(&unhooked_mapper);
+    volatile bool observes = mapper->observesCPUCycles();
+    auto started_at = std::chrono::steady_clock::now();
+    for (int index = 0; index < iterations; ++index) {
+        if (observes)
+            mapper->onCPUCycle();
+    }
+    if (hooked)
+        native_benchmark_sink ^= static_cast<NES::NES_Byte>(hooked_mapper.cpu_cycles);
+    return ElapsedSecondsSince(started_at);
+}
+
 unsigned int RunMapperBankHelperSmokeTests() {
     unsigned int results = 0;
 
@@ -682,6 +1166,36 @@ extern "C" {
     /// Return a pass bitmask for focused native mapper bank helper checks.
     EXP unsigned int MapperBankHelperSmokeResults() {
         return RunMapperBankHelperSmokeTests();
+    }
+
+    /// Return a pass bitmask for focused native CPU behavior checks.
+    EXP unsigned int CPUCharacterizationSmokeResults() {
+        return RunCPUCharacterizationSmokeTests();
+    }
+
+    /// Return a pass bitmask for focused native main-bus behavior checks.
+    EXP unsigned int MainBusCharacterizationSmokeResults() {
+        return RunMainBusCharacterizationSmokeTests();
+    }
+
+    /// Return elapsed seconds for the native CPU dispatch benchmark.
+    EXP double NativeCPUDispatchBenchmark(int iterations) {
+        return RunNativeCPUDispatchBenchmark(iterations);
+    }
+
+    /// Return elapsed seconds for the native main-bus dispatch benchmark.
+    EXP double NativeMainBusIODispatchBenchmark(int iterations) {
+        return RunNativeMainBusIODispatchBenchmark(iterations);
+    }
+
+    /// Return elapsed seconds for unhooked mapper CPU-cycle dispatch.
+    EXP double NativeMapperUnhookedCycleBenchmark(int iterations) {
+        return RunNativeMapperCycleBenchmark(iterations, false);
+    }
+
+    /// Return elapsed seconds for hooked mapper CPU-cycle dispatch.
+    EXP double NativeMapperHookedCycleBenchmark(int iterations) {
+        return RunNativeMapperCycleBenchmark(iterations, true);
     }
 
     /// Return a pointer to a controller on the machine

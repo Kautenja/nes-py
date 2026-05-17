@@ -12,6 +12,7 @@ from nes_py.speedtest import main
 from nes_py.speedtest import run_benchmark
 from nes_py.speedtest import run_mapper_hook_profile
 from nes_py.speedtest import run_mapper_profile
+from nes_py.speedtest import run_native_hot_path_profile
 
 
 class ShouldRunBenchmark(TestCase):
@@ -203,3 +204,57 @@ class ShouldRunMapperHookBenchmarkProfile(TestCase):
         self.assertGreater(data['elapsed_seconds'], 0)
         self.assertGreater(data['iterations_per_second'], 0)
         self.assertTrue(all(data['results'].values()), data['results'])
+
+
+class ShouldRunNativeHotPathBenchmarkProfile(TestCase):
+    def test_returns_shape_and_positive_timings(self):
+        results = run_native_hot_path_profile(
+            rom_file_abs_path('super-mario-bros-1.nes'),
+            steps=2,
+            warmup_steps=1,
+        )
+
+        self.assertEqual(5, len(results))
+        self.assertEqual({
+            'cpu_dispatch',
+            'main_bus_io_dispatch',
+            'mapper_cycle_unhooked',
+            'mapper_cycle_hooked',
+            'nes_env_step',
+        }, {result.operation for result in results})
+        for result in results:
+            data = result.to_dict()
+            self.assertIn('environment', data)
+            self.assertIn('compiler', data)
+            self.assertIn('platform', data)
+            self.assertGreater(data['elapsed_seconds'], 0)
+            self.assertGreater(data['iterations_per_second'], 0)
+
+    def test_cli_json_output(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = main([
+                '--native-hot-path-profile',
+                '--rom',
+                rom_file_abs_path('super-mario-bros-1.nes'),
+                '--steps',
+                '2',
+                '--warmup-steps',
+                '1',
+                '--json',
+                '--no-progress',
+            ])
+
+        self.assertEqual(0, status)
+        data = json.loads(output.getvalue())
+        self.assertEqual(5, len(data))
+        self.assertEqual({
+            'cpu_dispatch',
+            'main_bus_io_dispatch',
+            'mapper_cycle_unhooked',
+            'mapper_cycle_hooked',
+            'nes_env_step',
+        }, {result['operation'] for result in data})
+        for result in data:
+            self.assertGreater(result['elapsed_seconds'], 0)
+            self.assertGreater(result['iterations_per_second'], 0)

@@ -34,6 +34,16 @@ def _native_mapper_bank_helper_smoke_results():
     return _native.mapper_bank_helper_smoke_results()
 
 
+def _native_cpu_characterization_smoke_results():
+    """Run focused native CPU characterization checks."""
+    return _native.cpu_characterization_smoke_results()
+
+
+def _native_main_bus_characterization_smoke_results():
+    """Run focused native main-bus characterization checks."""
+    return _native.main_bus_characterization_smoke_results()
+
+
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _native.SCREEN_HEIGHT
 # width in pixels of the NES screen

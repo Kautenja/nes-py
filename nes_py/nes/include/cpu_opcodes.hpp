@@ -118,20 +118,64 @@ enum OperationImplied {
     SED = 0xf8,
 };
 
-/// A structure for working with the flags register
-typedef union {
-    struct {
-        bool N : 1,
-             V : 1,
-             ONE : 1,
-             B : 1,
-             D : 1,
-             I : 1,
-             Z : 1,
-             C : 1;
-    } bits;
+/// A portable structure for working with the 6502 status register.
+struct CPU_Flags {
+    static const NES_Byte FLAG_CARRY = 0x01;
+    static const NES_Byte FLAG_ZERO = 0x02;
+    static const NES_Byte FLAG_INTERRUPT_DISABLE = 0x04;
+    static const NES_Byte FLAG_DECIMAL = 0x08;
+    static const NES_Byte FLAG_BREAK = 0x10;
+    static const NES_Byte FLAG_UNUSED = 0x20;
+    static const NES_Byte FLAG_OVERFLOW = 0x40;
+    static const NES_Byte FLAG_NEGATIVE = 0x80;
+
     NES_Byte byte;
-} CPU_Flags;
+
+    CPU_Flags() : byte(FLAG_UNUSED) { }
+
+    inline bool get(NES_Byte mask) const { return (byte & mask) != 0; }
+
+    inline void set(NES_Byte mask, bool value) {
+        if (value)
+            byte |= mask;
+        else
+            byte &= static_cast<NES_Byte>(~mask);
+    }
+
+    inline void set_byte(NES_Byte value) { byte = value | FLAG_UNUSED; }
+
+    inline NES_Byte status(bool break_flag) const {
+        NES_Byte value = byte | FLAG_UNUSED;
+        if (break_flag)
+            value |= FLAG_BREAK;
+        else
+            value &= static_cast<NES_Byte>(~FLAG_BREAK);
+        return value;
+    }
+
+    inline bool C() const { return get(FLAG_CARRY); }
+    inline bool Z() const { return get(FLAG_ZERO); }
+    inline bool I() const { return get(FLAG_INTERRUPT_DISABLE); }
+    inline bool D() const { return get(FLAG_DECIMAL); }
+    inline bool V() const { return get(FLAG_OVERFLOW); }
+    inline bool N() const { return get(FLAG_NEGATIVE); }
+
+    inline void set_ZN(NES_Byte value) {
+        byte &= static_cast<NES_Byte>(~(FLAG_ZERO | FLAG_NEGATIVE));
+        if (value == 0)
+            byte |= FLAG_ZERO;
+        if (value & 0x80)
+            byte |= FLAG_NEGATIVE;
+        byte |= FLAG_UNUSED;
+    }
+
+    inline void set_C(bool value) { set(FLAG_CARRY, value); }
+    inline void set_Z(bool value) { set(FLAG_ZERO, value); }
+    inline void set_I(bool value) { set(FLAG_INTERRUPT_DISABLE, value); }
+    inline void set_D(bool value) { set(FLAG_DECIMAL, value); }
+    inline void set_V(bool value) { set(FLAG_OVERFLOW, value); }
+    inline void set_N(bool value) { set(FLAG_NEGATIVE, value); }
+};
 
 /// a mapping of opcodes to the number of cycles used by the opcode. 0 implies
 /// an unused opcode.

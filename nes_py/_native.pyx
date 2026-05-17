@@ -89,6 +89,12 @@ cdef extern from *:
     extern "C" int MapperPRGRAMSmokeTest();
     extern "C" int MapperNameTableSmokeTest();
     extern "C" unsigned int MapperBankHelperSmokeResults();
+    extern "C" unsigned int CPUCharacterizationSmokeResults();
+    extern "C" unsigned int MainBusCharacterizationSmokeResults();
+    extern "C" double NativeCPUDispatchBenchmark(int iterations);
+    extern "C" double NativeMainBusIODispatchBenchmark(int iterations);
+    extern "C" double NativeMapperUnhookedCycleBenchmark(int iterations);
+    extern "C" double NativeMapperHookedCycleBenchmark(int iterations);
     """
     int MapperIRQSmokeTest()
     int MapperCPUCycleHookSmokeTest()
@@ -97,6 +103,12 @@ cdef extern from *:
     int MapperPRGRAMSmokeTest()
     int MapperNameTableSmokeTest()
     unsigned int MapperBankHelperSmokeResults()
+    unsigned int CPUCharacterizationSmokeResults()
+    unsigned int MainBusCharacterizationSmokeResults()
+    double NativeCPUDispatchBenchmark(int iterations)
+    double NativeMainBusIODispatchBenchmark(int iterations)
+    double NativeMapperUnhookedCycleBenchmark(int iterations)
+    double NativeMapperHookedCycleBenchmark(int iterations)
 
 
 cdef string _rom_path_string(object rom_path) except *:
@@ -350,3 +362,51 @@ def mapper_bank_helper_smoke_results():
         'chr_8k': bool(results & (1 << 6)),
         'masks_and_bus_conflicts': bool(results & (1 << 7)),
     }
+
+
+def cpu_characterization_smoke_results():
+    """Run focused native CPU characterization checks."""
+    cdef unsigned int results = CPUCharacterizationSmokeResults()
+    return {
+        'reset_vector': bool(results & (1 << 0)),
+        'stack_push_pop': bool(results & (1 << 1)),
+        'addressing_modes': bool(results & (1 << 2)),
+        'branch_page_crossing': bool(results & (1 << 3)),
+        'interrupt_entry': bool(results & (1 << 4)),
+        'dma_cycle_skipping': bool(results & (1 << 5)),
+        'flag_behavior': bool(results & (1 << 6)),
+    }
+
+
+def main_bus_characterization_smoke_results():
+    """Run focused native main-bus characterization checks."""
+    cdef unsigned int results = MainBusCharacterizationSmokeResults()
+    return {
+        'ram_mirroring': bool(results & (1 << 0)),
+        'ppu_register_mirroring': bool(results & (1 << 1)),
+        'controller_reads': bool(results & (1 << 2)),
+        'oam_dma_page_access': bool(results & (1 << 3)),
+        'expansion_area': bool(results & (1 << 4)),
+        'prg_ram_access': bool(results & (1 << 5)),
+        'mapper_prg_access': bool(results & (1 << 6)),
+    }
+
+
+def native_cpu_dispatch_benchmark(int iterations):
+    """Return elapsed seconds for native CPU dispatch benchmarking."""
+    return float(NativeCPUDispatchBenchmark(iterations))
+
+
+def native_main_bus_io_dispatch_benchmark(int iterations):
+    """Return elapsed seconds for native main-bus I/O benchmarking."""
+    return float(NativeMainBusIODispatchBenchmark(iterations))
+
+
+def native_mapper_unhooked_cycle_benchmark(int iterations):
+    """Return elapsed seconds for unhooked mapper CPU-cycle dispatch."""
+    return float(NativeMapperUnhookedCycleBenchmark(iterations))
+
+
+def native_mapper_hooked_cycle_benchmark(int iterations):
+    """Return elapsed seconds for hooked mapper CPU-cycle dispatch."""
+    return float(NativeMapperHookedCycleBenchmark(iterations))

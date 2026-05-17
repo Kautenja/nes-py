@@ -17,6 +17,16 @@ namespace NES {
 /// The MOS6502 CPU for the Nintendo Entertainment System (NES)
 class CPU {
  private:
+    /// Instruction families used to avoid repeated failed decoder probes.
+    enum InstructionFamily {
+        IMPLIED_INSTRUCTION,
+        BRANCH_INSTRUCTION,
+        TYPE1_INSTRUCTION,
+        TYPE2_INSTRUCTION,
+        TYPE0_INSTRUCTION,
+        INVALID_INSTRUCTION,
+    };
+
     /// The program counter register
     NES_Address register_PC;
     /// The stack pointer register
@@ -39,8 +49,14 @@ class CPU {
     /// @param value the value to set the zero and negative flags using
     ///
     inline void set_ZN(NES_Byte value) {
-        flags.bits.Z = !value; flags.bits.N = value & 0x80;
+        flags.set_ZN(value);
     }
+
+    /// Return the decoder family for an opcode.
+    static InstructionFamily instruction_family(NES_Byte opcode);
+
+    /// Execute one opcode using the pre-classified instruction family.
+    bool execute_opcode(MainBus &bus, NES_Byte opcode);
 
     /// Read a 16-bit address from the bus given an address.
     ///

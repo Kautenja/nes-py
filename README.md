@@ -170,9 +170,11 @@ There you will find instructions for:
 
 Project metadata, runtime dependencies, release extras, console scripts, and
 package discovery are configured in `pyproject.toml`. `setup.py` is kept only
-for the native emulator extension and its platform-specific compiler flags.
-For local development, install the package in editable mode and build
-distributions through the standard PEP 517 frontend:
+for the Cython native emulator extension and its platform-specific compiler
+flags. The runtime binding imports `nes_py._native` directly; the old `ctypes`
+shared-library discovery path is no longer used. For local development, install
+the package in editable mode and build distributions through the standard PEP
+517 frontend:
 
 ```shell
 python -m pip install --upgrade pip build

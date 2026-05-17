@@ -6,15 +6,16 @@ cleanly without custom build hooks.
 """
 from pathlib import Path
 
+import numpy as np
+from Cython.Build import cythonize
 from setuptools import Extension
 from setuptools import setup
 from setuptools.command.build_ext import build_ext
 
 
-# The prefix name for the .so library to build. It will follow the format
-# lib_nes_env.*.so where the * changes depending on the build system
-LIB_NAME = 'nes_py.lib_nes_env'
+EXTENSION_NAME = 'nes_py._native'
 NATIVE_ROOT = Path('nes_py') / 'nes'
+CYTHON_SOURCES = [str(Path('nes_py') / '_native.pyx')]
 
 
 def _native_sources():
@@ -26,10 +27,9 @@ def _native_sources():
 
 
 # The directory pointing to header files used by the LaiNES cpp files.
-INCLUDE_DIRS = ['nes_py/nes/include']
-# The official extension using the name, source, headers, and build args
-LIB_NES_ENV = Extension(LIB_NAME,
-    sources=_native_sources(),
+INCLUDE_DIRS = ['nes_py/nes/include', np.get_include()]
+NATIVE_EXTENSION = Extension(EXTENSION_NAME,
+    sources=CYTHON_SOURCES + _native_sources(),
     include_dirs=INCLUDE_DIRS,
     language='c++',
 )
@@ -51,6 +51,10 @@ class BuildExt(build_ext):
 
 
 setup(
-    ext_modules=[LIB_NES_ENV],
+    ext_modules=cythonize(
+        [NATIVE_EXTENSION],
+        build_dir='build/cythonized',
+        compiler_directives={'language_level': '3'},
+    ),
     cmdclass={'build_ext': BuildExt},
 )

@@ -2,6 +2,7 @@
 from unittest import TestCase
 import gym
 import numpy as np
+from nes_py import _native
 from .rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
 from nes_py.nes_env import SCREEN_SHAPE_24_BIT
@@ -43,12 +44,62 @@ class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
         env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
         self.assertIsInstance(env, gym.Env)
+        self.assertIsInstance(env._env, _native.NativeEmulator)
         env.close()
 
 
 def create_smb1_instance():
     """Return a new SMB1 instance."""
     return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
+
+
+class ShouldExposeNativeBuffersWithoutCopies(TestCase):
+    def _assert_native_view(self, array, shape):
+        self.assertIsInstance(array, np.ndarray)
+        self.assertEqual(shape, array.shape)
+        self.assertEqual(np.uint8, array.dtype)
+        self.assertTrue(array.flags.writeable)
+
+    def test_screen_ram_and_controller_views_keep_layout_across_operations(self):
+        env = create_smb1_instance()
+        screen = env.screen
+        ram = env.ram
+        controller = env.controllers[0]
+
+        self._assert_native_view(screen, SCREEN_SHAPE_24_BIT)
+        self._assert_native_view(ram, (0x800,))
+        self._assert_native_view(controller, (1,))
+        self.assertIs(screen.base, env._env)
+        self.assertIs(ram.base, env._env)
+        self.assertIs(controller.base, env._env)
+        self.assertEqual((SCREEN_SHAPE_24_BIT[1] * 4, 4, -1), screen.strides)
+
+        ram[0x0776] = 0x2a
+        controller[0] = 0x81
+        self.assertEqual(0x2a, ram[0x0776])
+        self.assertEqual(0x81, controller[0])
+
+        env.reset()
+        env._backup()
+        env.step(1)
+        env._restore()
+
+        self.assertIs(screen, env.screen)
+        self.assertIs(ram, env.ram)
+        self.assertIs(controller, env.controllers[0])
+        self._assert_native_view(env.screen, SCREEN_SHAPE_24_BIT)
+        self._assert_native_view(env.ram, (0x800,))
+        self._assert_native_view(env.controllers[0], (1,))
+        env.close()
+        self._assert_native_view(screen, SCREEN_SHAPE_24_BIT)
+        self._assert_native_view(ram, (0x800,))
+        self._assert_native_view(controller, (1,))
+        self.assertEqual(1, controller[0])
+
+    def test_native_initialization_errors_are_python_exceptions(self):
+        with self.assertRaises(RuntimeError) as error:
+            _native.NativeEmulator('not_a_file.nes')
+        self.assertIn('failed to open ROM file', str(error.exception))
 
 
 class ShouldReadAndWriteMemory(TestCase):

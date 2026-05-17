@@ -1,6 +1,6 @@
 //  Program:      nes-py
 //  File:         lib_nes_env.cpp
-//  Description:  file describes the outward facing ctypes API for Python
+//  Description:  legacy C ABI helpers linked into the Cython native module
 //
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
@@ -21,7 +21,7 @@
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
-    // setup the module initializer. required to link visual studio C++ ctypes
+    // setup the legacy module initializer for older Windows build exports
     void PyInit_lib_nes_env() { }
     // setup the function modifier to export in the DLL
     #define EXP __declspec(dllexport)

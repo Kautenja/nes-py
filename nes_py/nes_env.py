@@ -1,243 +1,47 @@
-"""A CTypes interface to the C++ NES environment."""
-import ctypes
-import glob
+"""A Python interface to the Cython native NES environment."""
 import itertools
-import os
-import sys
-from pathlib import Path
 import gym
 from gym.spaces import Box
 from gym.spaces import Discrete
 import numpy as np
 from ._rom import ROM
 from ._image_viewer import ImageViewer
-
-
-# the path to the directory this file is in
-_MODULE_PATH = os.path.dirname(__file__)
-# the pattern to find the C++ shared object library
-_SO_PATH = 'lib_nes_env*'
-
-
-def _library_paths():
-    """Yield candidate paths for the compiled C++ shared library."""
-    package_paths = [Path(_MODULE_PATH)]
-    package_paths.extend(Path(path or os.getcwd()) / 'nes_py' for path in sys.path)
-    for package_path in dict.fromkeys(package_paths):
-        yield from sorted(glob.glob(str(package_path / _SO_PATH)))
-
-
-# load the library from the shared object file
-for _LIB_PATH in _library_paths():
-    try:
-        _LIB = ctypes.cdll.LoadLibrary(_LIB_PATH)
-        break
-    except OSError:
-        continue
-else:
-    raise OSError('missing static lib_nes_env* library!')
-
-
-# setup the argument and return types for Width
-_LIB.Width.argtypes = None
-_LIB.Width.restype = ctypes.c_uint
-# setup the argument and return types for Height
-_LIB.Height.argtypes = None
-_LIB.Height.restype = ctypes.c_uint
-# setup the argument and return types for Initialize
-_LIB.Initialize.argtypes = [ctypes.c_wchar_p]
-_LIB.Initialize.restype = ctypes.c_void_p
-# setup the argument and return types for Controller
-_LIB.Controller.argtypes = [ctypes.c_void_p, ctypes.c_uint]
-_LIB.Controller.restype = ctypes.c_void_p
-# setup the argument and return types for Screen
-_LIB.Screen.argtypes = [ctypes.c_void_p]
-_LIB.Screen.restype = ctypes.c_void_p
-# setup the argument and return types for GetMemoryBuffer
-_LIB.Memory.argtypes = [ctypes.c_void_p]
-_LIB.Memory.restype = ctypes.c_void_p
-# setup mapper characterization hooks used by focused native tests
-_LIB.MapperNumber.argtypes = [ctypes.c_void_p]
-_LIB.MapperNumber.restype = ctypes.c_uint
-_LIB.PRGROMSize.argtypes = [ctypes.c_void_p]
-_LIB.PRGROMSize.restype = ctypes.c_uint
-_LIB.CHRROMSize.argtypes = [ctypes.c_void_p]
-_LIB.CHRROMSize.restype = ctypes.c_uint
-_LIB.HasCHRRAM.argtypes = [ctypes.c_void_p]
-_LIB.HasCHRRAM.restype = ctypes.c_uint
-_LIB.NameTableMirroring.argtypes = [ctypes.c_void_p]
-_LIB.NameTableMirroring.restype = ctypes.c_uint
-_LIB.ReadPRG.argtypes = [ctypes.c_void_p, ctypes.c_uint]
-_LIB.ReadPRG.restype = ctypes.c_uint
-_LIB.WritePRG.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
-_LIB.WritePRG.restype = None
-_LIB.ReadCHR.argtypes = [ctypes.c_void_p, ctypes.c_uint]
-_LIB.ReadCHR.restype = ctypes.c_uint
-_LIB.WriteCHR.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_uint]
-_LIB.WriteCHR.restype = None
-# setup the argument and return types for Reset
-_LIB.Reset.argtypes = [ctypes.c_void_p]
-_LIB.Reset.restype = None
-# setup the argument and return types for Step
-_LIB.Step.argtypes = [ctypes.c_void_p]
-_LIB.Step.restype = None
-# setup the argument and return types for Backup
-_LIB.Backup.argtypes = [ctypes.c_void_p]
-_LIB.Backup.restype = None
-# setup the argument and return types for Restore
-_LIB.Restore.argtypes = [ctypes.c_void_p]
-_LIB.Restore.restype = None
-# setup the argument and return types for Close
-_LIB.Close.argtypes = [ctypes.c_void_p]
-_LIB.Close.restype = None
-# setup native cartridge metadata helpers used by parser alignment tests
-_LIB.CartridgeError.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeError.restype = ctypes.c_char_p
-_LIB.CartridgeMapperNumber.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeMapperNumber.restype = ctypes.c_uint
-_LIB.CartridgeSubmapper.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeSubmapper.restype = ctypes.c_uint
-_LIB.CartridgePRGROMSize.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgePRGROMSize.restype = ctypes.c_size_t
-_LIB.CartridgePRGROMBanks.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgePRGROMBanks.restype = ctypes.c_size_t
-_LIB.CartridgeCHRROMSize.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeCHRROMSize.restype = ctypes.c_size_t
-_LIB.CartridgeCHRROMBanks.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeCHRROMBanks.restype = ctypes.c_size_t
-_LIB.CartridgePRGRAMSize.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgePRGRAMSize.restype = ctypes.c_size_t
-_LIB.CartridgePRGBatteryRAMSize.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgePRGBatteryRAMSize.restype = ctypes.c_size_t
-_LIB.CartridgeCHRRAMSize.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeCHRRAMSize.restype = ctypes.c_size_t
-_LIB.CartridgeCHRBatteryRAMSize.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeCHRBatteryRAMSize.restype = ctypes.c_size_t
-_LIB.CartridgeHasTrainer.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeHasTrainer.restype = ctypes.c_uint
-_LIB.CartridgeTrainerStart.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeTrainerStart.restype = ctypes.c_size_t
-_LIB.CartridgeTrainerStop.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeTrainerStop.restype = ctypes.c_size_t
-_LIB.CartridgeHasBattery.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeHasBattery.restype = ctypes.c_uint
-_LIB.CartridgeNameTableMirroring.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeNameTableMirroring.restype = ctypes.c_uint
-_LIB.CartridgeHasVSUnisystem.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeHasVSUnisystem.restype = ctypes.c_uint
-_LIB.CartridgeHasPlayChoice10.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeHasPlayChoice10.restype = ctypes.c_uint
-_LIB.CartridgeIsPAL.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeIsPAL.restype = ctypes.c_uint
-_LIB.CartridgeIsNES2.argtypes = [ctypes.c_wchar_p]
-_LIB.CartridgeIsNES2.restype = ctypes.c_uint
-_LIB.IsMapperSupported.argtypes = [ctypes.c_uint]
-_LIB.IsMapperSupported.restype = ctypes.c_uint
-_LIB.MapperIRQSmokeTest.argtypes = None
-_LIB.MapperIRQSmokeTest.restype = ctypes.c_uint
-_LIB.MapperCPUCycleHookSmokeTest.argtypes = None
-_LIB.MapperCPUCycleHookSmokeTest.restype = ctypes.c_uint
-_LIB.MapperPPUHookSmokeTest.argtypes = None
-_LIB.MapperPPUHookSmokeTest.restype = ctypes.c_uint
-_LIB.MapperExpansionSmokeTest.argtypes = None
-_LIB.MapperExpansionSmokeTest.restype = ctypes.c_uint
-_LIB.MapperPRGRAMSmokeTest.argtypes = None
-_LIB.MapperPRGRAMSmokeTest.restype = ctypes.c_uint
-_LIB.MapperNameTableSmokeTest.argtypes = None
-_LIB.MapperNameTableSmokeTest.restype = ctypes.c_uint
-_LIB.MapperBankHelperSmokeResults.argtypes = None
-_LIB.MapperBankHelperSmokeResults.restype = ctypes.c_uint
+from . import _native
 
 
 def _native_cartridge_error(rom_path):
     """Return the native cartridge validation error for a ROM path, if any."""
-    error = _LIB.CartridgeError(rom_path)
-    if error is None:
-        return None
-    return error.decode('utf-8')
+    return _native.cartridge_error(rom_path)
 
 
 def _native_cartridge_metadata(rom_path):
     """Return parsed native cartridge metadata for a ROM path."""
-    return {
-        'mapper': int(_LIB.CartridgeMapperNumber(rom_path)),
-        'submapper': int(_LIB.CartridgeSubmapper(rom_path)),
-        'prg_rom_byte_size': int(_LIB.CartridgePRGROMSize(rom_path)),
-        'prg_rom_banks': int(_LIB.CartridgePRGROMBanks(rom_path)),
-        'chr_rom_byte_size': int(_LIB.CartridgeCHRROMSize(rom_path)),
-        'chr_rom_banks': int(_LIB.CartridgeCHRROMBanks(rom_path)),
-        'prg_ram_byte_size': int(_LIB.CartridgePRGRAMSize(rom_path)),
-        'prg_battery_ram_byte_size': int(
-            _LIB.CartridgePRGBatteryRAMSize(rom_path)
-        ),
-        'chr_ram_byte_size': int(_LIB.CartridgeCHRRAMSize(rom_path)),
-        'chr_battery_ram_byte_size': int(
-            _LIB.CartridgeCHRBatteryRAMSize(rom_path)
-        ),
-        'has_trainer': bool(_LIB.CartridgeHasTrainer(rom_path)),
-        'trainer_rom_start': int(_LIB.CartridgeTrainerStart(rom_path)),
-        'trainer_rom_stop': int(_LIB.CartridgeTrainerStop(rom_path)),
-        'has_battery_backed_ram': bool(_LIB.CartridgeHasBattery(rom_path)),
-        'name_table_mirroring': int(
-            _LIB.CartridgeNameTableMirroring(rom_path)
-        ),
-        'has_vs_unisystem': bool(_LIB.CartridgeHasVSUnisystem(rom_path)),
-        'has_play_choice_10': bool(_LIB.CartridgeHasPlayChoice10(rom_path)),
-        'is_pal': bool(_LIB.CartridgeIsPAL(rom_path)),
-        'is_nes2': bool(_LIB.CartridgeIsNES2(rom_path)),
-    }
+    return _native.cartridge_metadata(rom_path)
 
 
 def _is_mapper_supported(mapper):
     """Return whether a mapper ID has a native implementation."""
-    return bool(_LIB.IsMapperSupported(mapper))
+    return _native.is_mapper_supported(mapper)
 
 
 def _native_mapper_hook_smoke_results():
     """Run focused native mapper hook smoke checks."""
-    return {
-        'irq': bool(_LIB.MapperIRQSmokeTest()),
-        'cpu_cycle': bool(_LIB.MapperCPUCycleHookSmokeTest()),
-        'ppu': bool(_LIB.MapperPPUHookSmokeTest()),
-        'expansion': bool(_LIB.MapperExpansionSmokeTest()),
-        'prg_ram': bool(_LIB.MapperPRGRAMSmokeTest()),
-        'nametable': bool(_LIB.MapperNameTableSmokeTest()),
-    }
+    return _native.mapper_hook_smoke_results()
 
 
 def _native_mapper_bank_helper_smoke_results():
     """Run focused native mapper bank helper smoke checks."""
-    results = int(_LIB.MapperBankHelperSmokeResults())
-    return {
-        'prg_8k': bool(results & (1 << 0)),
-        'prg_16k': bool(results & (1 << 1)),
-        'prg_32k': bool(results & (1 << 2)),
-        'chr_1k': bool(results & (1 << 3)),
-        'chr_2k': bool(results & (1 << 4)),
-        'chr_4k': bool(results & (1 << 5)),
-        'chr_8k': bool(results & (1 << 6)),
-        'masks_and_bus_conflicts': bool(results & (1 << 7)),
-    }
+    return _native.mapper_bank_helper_smoke_results()
 
 
 # height in pixels of the NES screen
-SCREEN_HEIGHT = _LIB.Height()
+SCREEN_HEIGHT = _native.SCREEN_HEIGHT
 # width in pixels of the NES screen
-SCREEN_WIDTH = _LIB.Width()
+SCREEN_WIDTH = _native.SCREEN_WIDTH
 # shape of the screen as 24-bit RGB (standard for NumPy)
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 # shape of the screen as 32-bit RGB (C++ memory arrangement)
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
-# create a type for the screen tensor matrix from C++
-SCREEN_TENSOR = ctypes.c_byte * int(np.prod(SCREEN_SHAPE_32_BIT))
-
-
-# create a type for the RAM vector from C++
-RAM_VECTOR = ctypes.c_byte * 0x800
-
-
-# create a type for the controller buffers from C++
-CONTROLLER_VECTOR = ctypes.c_byte * 1
 
 
 class NESEnv(gym.Env):
@@ -298,7 +102,7 @@ class NESEnv(gym.Env):
         # store the ROM path
         self._rom_path = rom_path
         # initialize the C++ object for running the environment
-        self._env = _LIB.Initialize(self._rom_path)
+        self._env = _native.NativeEmulator(self._rom_path)
         # setup a placeholder for a 'human' render mode viewer
         self.viewer = None
         # setup a placeholder for a pointer to a backup state
@@ -312,29 +116,11 @@ class NESEnv(gym.Env):
 
     def _screen_buffer(self):
         """Setup the screen buffer from the C++ code."""
-        # get the address of the screen
-        address = _LIB.Screen(self._env)
-        # create a buffer from the contents of the address location
-        buffer_ = ctypes.cast(address, ctypes.POINTER(SCREEN_TENSOR)).contents
-        # create a NumPy array from the buffer
-        screen = np.frombuffer(buffer_, dtype='uint8')
-        # reshape the screen from a column vector to a tensor
-        screen = screen.reshape(SCREEN_SHAPE_32_BIT)
-        # flip the bytes if the machine is little-endian (which it likely is)
-        if sys.byteorder == 'little':
-            # invert the little-endian BGRx channels to big-endian xRGB
-            screen = screen[:, :, ::-1]
-        # remove the 0th axis (padding from storing colors in 32 bit)
-        return screen[:, :, 1:]
+        return self._env.screen_buffer()
 
     def _ram_buffer(self):
         """Setup the RAM buffer from the C++ code."""
-        # get the address of the RAM
-        address = _LIB.Memory(self._env)
-        # create a buffer from the contents of the address location
-        buffer_ = ctypes.cast(address, ctypes.POINTER(RAM_VECTOR)).contents
-        # create a NumPy array from the buffer
-        return np.frombuffer(buffer_, dtype='uint8')
+        return self._env.ram_buffer()
 
     def _controller_buffer(self, port):
         """
@@ -347,48 +133,43 @@ class NESEnv(gym.Env):
             a NumPy buffer with the controller's binary data
 
         """
-        # get the address of the controller
-        address = _LIB.Controller(self._env, port)
-        # create a memory buffer using the ctypes pointer for this vector
-        buffer_ = ctypes.cast(address, ctypes.POINTER(CONTROLLER_VECTOR)).contents
-        # create a NumPy buffer from the binary data and return it
-        return np.frombuffer(buffer_, dtype='uint8')
+        return self._env.controller_buffer(port)
 
     def _mapper_number(self):
         """Return the active native mapper number."""
-        return int(_LIB.MapperNumber(self._env))
+        return self._env.mapper_number()
 
     def _prg_rom_size(self):
         """Return the native PRG ROM size in bytes."""
-        return int(_LIB.PRGROMSize(self._env))
+        return self._env.prg_rom_size()
 
     def _chr_rom_size(self):
         """Return the native CHR ROM size in bytes."""
-        return int(_LIB.CHRROMSize(self._env))
+        return self._env.chr_rom_size()
 
     def _has_chr_ram(self):
         """Return whether the active native mapper uses CHR RAM."""
-        return bool(_LIB.HasCHRRAM(self._env))
+        return self._env.has_chr_ram()
 
     def _name_table_mirroring(self):
         """Return the active native mapper name table mirroring mode."""
-        return int(_LIB.NameTableMirroring(self._env))
+        return self._env.name_table_mirroring()
 
     def _read_prg(self, address):
         """Read a byte through the active native PRG mapper."""
-        return int(_LIB.ReadPRG(self._env, address))
+        return self._env.read_prg(address)
 
     def _write_prg(self, address, value):
         """Write a byte through the active native PRG mapper."""
-        _LIB.WritePRG(self._env, address, value)
+        self._env.write_prg(address, value)
 
     def _read_chr(self, address):
         """Read a byte through the active native CHR mapper."""
-        return int(_LIB.ReadCHR(self._env, address))
+        return self._env.read_chr(address)
 
     def _write_chr(self, address, value):
         """Write a byte through the active native CHR mapper."""
-        _LIB.WriteCHR(self._env, address, value)
+        self._env.write_chr(address, value)
 
     def _frame_advance(self, action):
         """
@@ -401,19 +182,16 @@ class NESEnv(gym.Env):
             None
 
         """
-        # set the action on the controller
-        self.controllers[0][:] = action
-        # perform a step on the emulator
-        _LIB.Step(self._env)
+        self._env.frame_advance(action)
 
     def _backup(self):
         """Backup the NES state in the emulator."""
-        _LIB.Backup(self._env)
+        self._env.backup()
         self._has_backup = True
 
     def _restore(self):
         """Restore the backup state into the NES emulator."""
-        _LIB.Restore(self._env)
+        self._env.restore()
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""
@@ -460,7 +238,7 @@ class NESEnv(gym.Env):
         if self._has_backup:
             self._restore()
         else:
-            _LIB.Reset(self._env)
+            self._env.reset()
         # call the after reset callback
         self._did_reset()
         # set the done flag to false
@@ -490,10 +268,8 @@ class NESEnv(gym.Env):
         # if the environment is done, raise an error
         if self.done:
             raise ValueError('cannot step in a done environment! call `reset`')
-        # set the action on the controller
-        self.controllers[0][:] = action
         # pass the action to the emulator as an unsigned byte
-        _LIB.Step(self._env)
+        self._env.frame_advance(action)
         # get the reward for this step
         reward = float(self._get_reward())
         # get the done flag for this step
@@ -540,8 +316,8 @@ class NESEnv(gym.Env):
         # make sure the environment hasn't already been closed
         if self._env is None:
             raise ValueError('env has already been closed.')
-        # purge the environment from C++ memory
-        _LIB.Close(self._env)
+        # close native operations
+        self._env.close()
         # deallocate the object locally
         self._env = None
         # if there is an image viewer open, delete it

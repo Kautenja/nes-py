@@ -1,5 +1,7 @@
 [build-system]
 requires = [
+    "Cython>=3.0",
+    "numpy>=2.1",
     "setuptools>=77",
     "wheel>=0.43",
 ]
@@ -60,6 +62,7 @@ exclude = ["nes_py.tests", "nes_py.tests.*"]
 
 [tool.setuptools.package-data]
 nes_py = [
+    "_native.pyx",
     "nes/include/*.hpp",
     "nes/include/mappers/*.hpp",
     "nes/src/*.cpp",

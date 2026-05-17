@@ -22,8 +22,10 @@
 
 namespace NES {
 
-/// An NES Emulator and OpenAI Gym interface
+/// An NES Emulator and Gymnasium interface
 class Emulator {
+    friend struct EmulatorInspector;
+
  private:
     /// The number of cycles in 1 frame
     static const int CYCLES_PER_FRAME = 29781;

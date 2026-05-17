@@ -1,4 +1,4 @@
-"""The nes-py NES emulator for Python 2 & 3."""
+"""The nes-py NES emulator and Gymnasium environment package."""
 from .nes_env import NESEnv
 
 

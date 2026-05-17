@@ -8,8 +8,8 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "nes_py"
-version = "8.2.1"
-description = "An NES Emulator and OpenAI Gym interface"
+version = "9.0.0"
+description = "An NES Emulator and Gymnasium interface"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
@@ -17,7 +17,7 @@ license-files = ["LICENSE"]
 authors = [
     {name = "Christian Kauten", email = "kautencreations@gmail.com"},
 ]
-keywords = ["NES", "Emulator", "OpenAI-Gym"]
+keywords = ["NES", "Emulator", "Gymnasium"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
@@ -28,12 +28,13 @@ classifiers = [
     "Programming Language :: C++",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Games/Entertainment",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: System :: Emulators",
 ]
 dependencies = [
-    "gym>=0.17.2",
+    "gymnasium>=1.0.0",
     "numpy>=1.18.5",
     "pyglet<=1.5.21,>=1.4.0",
     "tqdm>=4.48.2",
@@ -63,7 +64,7 @@ sdist.exclude = [
 wheel.exclude = ["nes_py/tests/**"]
 
 [tool.cibuildwheel]
-build = "cp313-*"
+build = "cp313-* cp314-*"
 skip = "*-musllinux_*"
 test-command = 'python -c "import nes_py; import nes_py._native"'
 build-verbosity = 1

@@ -22,9 +22,28 @@
 [python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
 [python-home]: https://python.org
 
-nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
-Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
-The supported CI target is Python 3.13.
+# nes-py
+
+`nes-py` is a native NES emulator with a modern Gymnasium interface for
+reinforcement learning, scripted gameplay, emulator experimentation, and custom
+environment design. It runs on macOS, Linux, and Windows, builds on the
+[SimpleNES](https://github.com/amhndu/SimpleNES) emulator, and currently
+supports CPython 3.13 and 3.14 in CI.
+
+Bring your own legally obtained `.nes` ROM, then use `nes-py` directly as a
+Gymnasium environment, from the bundled command-line player, or through one of
+the game-specific environment packages in the same ecosystem.
+
+## Highlights
+
+-   Gymnasium-native `reset`, `step`, render-mode, and seeding semantics.
+-   Native C++ emulator core packaged as the `nes_py._native` extension.
+-   Manual, random, windowed, and headless command-line play modes.
+-   NES joypad wrappers for compact reinforcement-learning action spaces.
+-   Mapper support for common cartridges including NROM, MMC1, UxROM, CNROM,
+    MMC3, MMC5, AxROM, MMC2, and Sunsoft FME-7.
+-   Cross-platform wheels and source distributions published through PyPI
+    trusted publishing.
 
 <table align="center">
     <tr>
@@ -38,7 +57,7 @@ The supported CI target is Python 3.13.
         <td>
              <img
                 width="256"
-                alt="Castelvania II"
+                alt="Castlevania II"
                 src="https://user-images.githubusercontent.com/2184469/84821323-8ceb7e00-afe0-11ea-89f1-56d379ae4286.png"
             />
         </td>
@@ -98,15 +117,29 @@ The supported CI target is Python 3.13.
     </tr>
 </table>
 
-# Installation
+## Ecosystem
 
-The preferred installation of `nes-py` is from `pip`:
+Use `nes-py` directly for arbitrary NES ROMs, or start from one of the focused
+Gymnasium environment packages:
+
+-   [gym-super-mario-bros](https://github.com/Kautenja/gym-super-mario-bros)
+    for Super Mario Bros.
+-   [gym-tetris](https://github.com/Kautenja/gym-tetris) for Tetris.
+-   [gym-zelda-1](https://github.com/Kautenja/gym-zelda-1) for The Legend of
+    Zelda.
+
+## Installation
+
+Install `nes-py` from PyPI:
 
 ```shell
 pip install nes-py
 ```
 
-## Debian
+Python 3.13 or newer is required. The supported CI wheel targets are CPython
+3.13 and 3.14.
+
+### Debian
 
 Make sure you have the `clang++` compiler installed:
 
@@ -114,35 +147,64 @@ Make sure you have the `clang++` compiler installed:
 sudo apt-get install clang
 ```
 
-## Windows
+### Windows
 
 You'll need to install the Visual-Studio 17.0 tools for Windows installation.
 The [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
 package provides these tools for free.
 
-# Usage
+## Usage
 
-To access the NES emulator from the command line use the following command.
+### Command Line
+
+Launch an interactive emulator session with a local ROM:
 
 ```shell
 python3 -m nes_py.play --rom <path_to_rom>
 ```
 
-To print out documentation for the command line interface execute:
+The installed console script exposes the same interface:
+
+```shell
+nes_py --rom <path_to_rom>
+```
+
+Print the command-line help with:
 
 ```shell
 python3 -m nes_py.play -h
 ```
 
-The play command supports keyboard controls and random controls. Random play can
-run with or without a graphical window:
+The play command supports keyboard controls and random controls. Random play is
+handy for smoke tests and can run with or without a graphical window:
 
 ```shell
 python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500
 python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500 --no-render
 ```
 
-## Controls
+### Python API
+
+Construct the environment with the desired Gymnasium render mode, seed through
+`reset`, and handle the separated termination and truncation flags:
+
+```python
+from nes_py.nes_env import NESEnv
+
+env = NESEnv("<path_to_rom>", render_mode="rgb_array")
+observation, info = env.reset(seed=123)
+terminated = False
+truncated = False
+
+while not (terminated or truncated):
+    action = env.action_space.sample()
+    observation, reward, terminated, truncated, info = env.step(action)
+    frame = env.render()
+
+env.close()
+```
+
+### Controls
 
 | Keyboard Key | NES Joypad    |
 |:-------------|:--------------|
@@ -155,7 +217,7 @@ python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500 --no-render
 | Enter        | Start         |
 | Space        | Select        |
 
-## Parallelism Caveats
+### Parallelism Caveats
 
 Both the `threading` and `multiprocessing` packages are supported by
 `nes-py`. The rendering caveats only apply to windowed `human` rendering:
@@ -169,11 +231,10 @@ Both the `threading` and `multiprocessing` packages are supported by
     that owns the render call. Importing `nes-py` or `nes_py.play` in a parent
     process does not initialize the windowing backend.
 
-# Development
+## Development
 
-To design a custom environment using `nes-py`, introduce new features, or fix
-a bug, please refer to the [Wiki](https://github.com/Kautenja/nes-py/wiki).
-There you will find instructions for:
+To design a custom environment, introduce new emulator features, or fix a bug,
+start with the [Wiki](https://github.com/Kautenja/nes-py/wiki). It includes:
 
 -   setting up the development environment
 -   designing environments based on the `NESEnv` class
@@ -187,8 +248,8 @@ source tree lives under `nes_emu`, with public and internal headers below
 builds those sources into the `nes_py._native` extension through
 scikit-build-core. The runtime binding imports `nes_py._native` directly; the
 old `ctypes` shared-library discovery path is no longer used. For local
-development, install the package in editable mode and build distributions
-through the standard PEP 517 frontend:
+development, install the package in editable mode, run the Python test suite,
+and build distributions through the standard PEP 517 frontend:
 
 ```shell
 python -m pip install --upgrade pip build
@@ -198,8 +259,8 @@ python -m unittest discover .
 python -m build
 ```
 
-Native emulator internals are tested and benchmarked through opt-in CMake
-targets so normal Python installs do not fetch test dependencies:
+Native emulator internals use opt-in CMake test and benchmark targets so normal
+Python installs do not fetch C++ test dependencies:
 
 ```shell
 cmake -S . -B build/nes-emu-debug -DCMAKE_BUILD_TYPE=Debug -DNES_EMU_BUILD_TESTS=ON
@@ -214,10 +275,10 @@ through PyPI trusted publishing, not by local `twine` credentials. Configure the
 PyPI project publisher with owner `Kautenja`, repository `nes-py`, workflow
 filename `publish.yml`, and environment `pypi`. Then create a GitHub release
 from a tag matching `pyproject.toml`'s version, with or without a leading `v`.
-The workflow builds the source distribution and CPython 3.13 wheels for Linux,
-Windows, and macOS before publishing.
+The workflow builds the source distribution and CPython 3.13 and 3.14 wheels
+for Linux, Windows, and macOS before publishing.
 
-## Benchmarking
+### Benchmarking
 
 Developer throughput checks are available through the packaged speedtest
 module:
@@ -232,17 +293,40 @@ correctness criteria. Backup and restore stress options use explicit interval
 semantics, so `--backup-interval 12` runs a backup at steps 12, 24, 36, and so
 on.
 
-# Cartridge Mapper Compatibility
+## Cartridge Mapper Compatibility
+
+`nes-py` supports the following cartridge mappers:
 
 0.  NROM
 1.  MMC1 / SxROM
 2.  UxROM
 3.  CNROM
+4.  MMC3 / TxROM
+5.  MMC5 / ExROM
+7.  AxROM / AOROM
+9.  MMC2 / PxROM
+69. Sunsoft FME-7 / Sunsoft 5B
 
-Planned mapper expansion is tracked in the umbrella repository's
-[mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/mappers).
+MMC5 vertical split rendering and MMC5 pulse/PCM audio are not implemented yet.
+Sunsoft 5B audio register state is preserved, but expansion-audio mixing is not
+implemented yet. Planned mapper expansion is tracked in the umbrella
+repository's [mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/mappers).
 
-# Disclaimer
+## Citation
+
+Please cite `nes-py` if you use it in your research.
+
+```tex
+@misc{nes-py,
+  author = {Christian Kauten},
+  howpublished = {GitHub},
+  title = {{NES-py}: An {NES} Emulator and {Gymnasium} Interface},
+  URL = {https://github.com/Kautenja/nes-py},
+  year = {2018},
+}
+```
+
+## Disclaimer
 
 **This project is provided for educational purposes only. It is not
 affiliated with and has not been approved by Nintendo.**

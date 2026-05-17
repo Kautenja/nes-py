@@ -16,7 +16,10 @@ def play(steps):
         for step in range(steps):
             if done:
                 _ = env.reset(seed=step)
-            _, _, done, _ = env.step(step % env.action_space.n)
+            _, _, terminated, truncated, _ = env.step(
+                step % env.action_space.n
+            )
+            done = terminated or truncated
     finally:
         env.close()
 
@@ -78,7 +81,8 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
                     if dones[idx]:
                         _ = env.reset(seed=idx)
                     action = (step + idx) % env.action_space.n
-                    _, _, dones[idx], _ = env.step(action)
+                    _, _, terminated, truncated, _ = env.step(action)
+                    dones[idx] = terminated or truncated
 
             envs[0].ram[0] = 0x2a
             envs[1].ram[0] = 0x11
@@ -90,7 +94,7 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
             self.assertEqual(0x01, envs[1].controllers[0][0])
 
             envs[0].close()
-            _, _, _, _ = envs[1].step(0)
+            _, _, _, _, _ = envs[1].step(0)
         finally:
             for env in envs:
                 try:

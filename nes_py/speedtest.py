@@ -92,27 +92,17 @@ def _validate_interval(name, value):
 
 
 def _reset(env, seed=None):
-    """Reset an environment and normalize Gym/Gymnasium return values."""
+    """Reset a Gymnasium environment."""
     if seed is None:
-        result = env.reset()
+        return env.reset()
     else:
-        try:
-            result = env.reset(seed=seed)
-        except TypeError:
-            env.seed(seed)
-            result = env.reset()
-    if isinstance(result, tuple) and len(result) == 2:
-        return result
-    return result, {}
+        return env.reset(seed=seed)
 
 
 def _step(env, action):
-    """Step an environment and normalize Gym/Gymnasium return values."""
-    result = env.step(action)
-    if len(result) == 5:
-        observation, reward, terminated, truncated, info = result
-        return observation, reward, bool(terminated or truncated), info
-    observation, reward, done, info = result
+    """Step a Gymnasium environment and return a combined done flag."""
+    observation, reward, terminated, truncated, info = env.step(action)
+    done = terminated or truncated
     return observation, reward, bool(done), info
 
 
@@ -167,7 +157,7 @@ def _measure_mapper_operation(env, operation, steps, warmup_steps):
         action = lambda: _step(env, 0)
     elif operation == 'render_rgb_array':
         env.reset()
-        action = lambda: env.render('rgb_array')
+        action = lambda: env.render()
     elif operation == 'backup_restore':
         env.reset()
         action = lambda: (env._backup(), env._restore(), _mark_not_done(env))
@@ -215,7 +205,8 @@ def run_mapper_profile(
     for rom in roms:
         mapper = ROM(rom).mapper
         for operation in operations:
-            env = NESEnv(rom)
+            render_mode = 'rgb_array' if operation == 'render_rgb_array' else None
+            env = NESEnv(rom, render_mode=render_mode)
             try:
                 elapsed, steps_per_second = _measure_mapper_operation(
                     env,
@@ -264,7 +255,7 @@ def run_benchmark(config=None, **kwargs):
 
     action, action_name = _resolve_action(config.action_policy)
     rng = np.random.RandomState(config.seed)
-    env = NESEnv(config.rom)
+    env = NESEnv(config.rom, render_mode=config.render_mode)
     elapsed = 0.0
     measured = 0
     resets = 0
@@ -301,7 +292,7 @@ def run_benchmark(config=None, **kwargs):
                 measured += 1
 
             if config.render_mode is not None:
-                env.render(config.render_mode)
+                env.render()
                 if measured_step:
                     frames_rendered += 1
 

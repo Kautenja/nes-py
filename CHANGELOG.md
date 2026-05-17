@@ -3,6 +3,16 @@
 Notable release notes for `nes-py` are collected here from the
 [GitHub Releases](https://github.com/Kautenja/nes-py/releases) history.
 
+## [9.0.0](https://github.com/Kautenja/nes-py/releases/tag/9.0.0) - 2026-05-17
+
+**Migrate to Gymnasium**
+
+- Replaced the legacy OpenAI Gym runtime dependency with Gymnasium.
+- Updated `NESEnv.reset` to return `(observation, info)`.
+- Updated `NESEnv.step` to return
+  `(observation, reward, terminated, truncated, info)`.
+- Moved render mode selection to environment construction.
+
 ## [8.2.1](https://github.com/Kautenja/nes-py/releases/tag/8.2.1) - 2022-06-21
 
 **Resolve warnings from gym >0.20**

@@ -117,7 +117,12 @@ def synthetic_rom_path(
 ):
     """Write a synthetic iNES ROM and return its filesystem path."""
     if reset_vector is None:
-        reset_vector = 0xc000 if mapper in {1, 2} and prg_banks > 1 else 0x8000
+        if mapper == 5 and prg_banks > 1:
+            reset_vector = 0xe000
+        elif mapper in {1, 2} and prg_banks > 1:
+            reset_vector = 0xc000
+        else:
+            reset_vector = 0x8000
 
     data = bytearray(ines_header(
         mapper,
@@ -149,6 +154,18 @@ def synthetic_rom_path(
             (reset_vector >> 8) & 0xff,
         ])
         prg.extend(bank_data)
+
+    if mapper == 5 and reset_vector == 0xe000:
+        reset_offset = len(prg) - (PRG_BANK_SIZE // 2)
+    else:
+        reset_offset = (reset_vector - 0x8000) % len(prg)
+    if reset_offset + 4 <= len(prg):
+        prg[reset_offset:reset_offset + 4] = bytes([
+            0xea,
+            0x4c,
+            reset_vector & 0xff,
+            (reset_vector >> 8) & 0xff,
+        ])
 
     vector_offset = len(prg) - 4
     prg[vector_offset] = reset_vector & 0xff

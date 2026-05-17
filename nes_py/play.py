@@ -13,20 +13,15 @@ _NOP = 0
 
 
 def _reset(env):
-    """Reset an environment and normalize Gym/Gymnasium return values."""
-    result = env.reset()
-    if isinstance(result, tuple) and len(result) == 2:
-        return result[0]
-    return result
+    """Reset a Gymnasium environment and return the observation."""
+    observation, _ = env.reset()
+    return observation
 
 
 def _step(env, action):
-    """Step an environment and normalize Gym/Gymnasium return values."""
-    result = env.step(action)
-    if len(result) == 5:
-        observation, reward, terminated, truncated, info = result
-        return observation, reward, bool(terminated or truncated), info
-    observation, reward, done, info = result
+    """Step a Gymnasium environment and return a combined done flag."""
+    observation, reward, terminated, truncated, info = env.step(action)
+    done = terminated or truncated
     return observation, reward, bool(done), info
 
 
@@ -74,7 +69,7 @@ def play_human(env, callback=None):
     Play the environment graphically using the keyboard.
 
     Args:
-        env: the initialized gym environment to play
+        env: the initialized Gymnasium environment to play
         callback: a callback to receive output from the environment
 
     Returns:
@@ -89,7 +84,7 @@ def play_human(env, callback=None):
     from pyglet import clock
 
     done = True
-    target_frame_duration = 1 / env.metadata['video.frames_per_second']
+    target_frame_duration = 1 / env.metadata['render_fps']
     last_frame_time = 0
 
     try:
@@ -129,7 +124,7 @@ def play_random(env, steps, render=True, progress=True):
     Play the environment by sampling uniformly random actions.
 
     Args:
-        env: the initialized gym environment to play
+        env: the initialized Gymnasium environment to play
         steps: the number of random steps to take
         render: whether to render frames to a graphical window
         progress: whether to display a progress bar
@@ -154,7 +149,7 @@ def play_random(env, steps, render=True, progress=True):
             if progress:
                 step_numbers.set_postfix(reward=reward, info=info)
             if render:
-                env.render('human')
+                env.render()
     except KeyboardInterrupt:
         pass
     finally:
@@ -210,7 +205,8 @@ def main(argv=None):
     if args.mode == 'random' and args.steps <= 0:
         parser.error('--steps must be positive in random mode')
 
-    env = NESEnv(args.rom)
+    render_mode = 'human' if args.mode == 'random' and args.render else None
+    env = NESEnv(args.rom, render_mode=render_mode)
     if args.mode == 'human':
         play_human(env)
     else:

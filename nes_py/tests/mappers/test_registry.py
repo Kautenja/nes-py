@@ -15,6 +15,11 @@ class ShouldLoadSupportedMapperFixtures(MapperTestCase):
             ('sxrom.nes', 1, 4, 0, 'horizontal'),
             ('uxrom.nes', 2, 4, 0, 'vertical'),
             ('cnrom.nes', 3, 2, 4, 'horizontal'),
+            ('mmc3.nes', 4, 4, 2, 'horizontal'),
+            ('mmc5.nes', 5, 16, 16, 'horizontal'),
+            ('axrom.nes', 7, 2, 0, 'horizontal'),
+            ('mmc2.nes', 9, 4, 8, 'horizontal'),
+            ('fme7.nes', 69, 4, 1, 'horizontal'),
         )
 
         for (
@@ -33,28 +38,32 @@ class ShouldLoadSupportedMapperFixtures(MapperTestCase):
                     mirroring=mirroring,
                 )
                 rom = ROM(path)
-                env = self.env(path)
+                env = self.env(path, render_mode='rgb_array')
 
                 self.assertEqual(mapper, rom.mapper)
                 self.assertEqual(prg_banks * 16, rom.prg_rom_size)
                 self.assertEqual(chr_banks * 8, rom.chr_rom_size)
                 self.assertEqual(mirroring, rom.mirroring)
-                self.assertEqual((240, 256, 3), env.reset().shape)
-                state, reward, done, info = env.step(0)
+                state, reset_info = env.reset()
+                self.assertEqual((240, 256, 3), state.shape)
+                self.assertIsInstance(reset_info, dict)
+                state, reward, terminated, truncated, info = env.step(0)
                 self.assertEqual((240, 256, 3), state.shape)
                 self.assertIsInstance(reward, float)
-                self.assertIsInstance(done, bool)
+                self.assertIsInstance(terminated, bool)
+                self.assertIsInstance(truncated, bool)
+                self.assertFalse(truncated)
                 self.assertIsInstance(info, dict)
-                self.assertEqual((240, 256, 3), env.render('rgb_array').shape)
+                self.assertEqual((240, 256, 3), env.render().shape)
 
     def test_public_constructor_rejects_unsupported_mapper(self):
         path = self.synthetic_rom(
             'unsupported.nes',
-            mapper=4,
+            mapper=255,
             prg_banks=2,
             chr_banks=1,
         )
 
         with self.assertRaises(ValueError) as error:
             NESEnv(path)
-        self.assertIn('unsupported mapper number 4', str(error.exception))
+        self.assertIn('unsupported mapper number 255', str(error.exception))

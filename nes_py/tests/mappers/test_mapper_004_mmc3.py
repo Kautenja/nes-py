@@ -1,7 +1,7 @@
-"""Mapper 003 / CNROM public environment tests.
+"""Mapper 004 / MMC3 public environment tests.
 
 The representative-title integration test uses only a local, legally supplied
-ROM fixture at ``nes_py/tests/games/adventure-island.nes``. It never fetches
+ROM fixture at ``nes_py/tests/games/super-mario-bros-3.nes``. It never fetches
 or downloads ROMs from the network.
 """
 
@@ -13,39 +13,40 @@ from nes_py.tests.mappers.common import MapperTestCase
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 
 
-REPRESENTATIVE_TITLE = 'Adventure Island (USA)'
-REPRESENTATIVE_ROM = rom_file_abs_path('adventure-island.nes')
+REPRESENTATIVE_TITLE = 'Super Mario Bros. 3 (USA)'
+REPRESENTATIVE_ROM = rom_file_abs_path('super-mario-bros-3.nes')
 DETERMINISTIC_ACTIONS = (0, 1, 2, 4, 8, 16, 32, 64)
 CONTINUATION_ACTIONS = (255, 128, 64, 32, 16, 8, 4, 2)
 
 
-class ShouldLoadMapper003CNROM(MapperTestCase):
-    """Exercise CNROM through the package API."""
+class ShouldLoadMapper004MMC3(MapperTestCase):
+    """Exercise MMC3 through the package API."""
 
     def test_chr_rom_fixture_constructs_steps_and_renders(self):
         path = self.synthetic_rom(
-            'cnrom.nes',
-            mapper=3,
-            prg_banks=2,
-            chr_banks=4,
+            'mmc3.nes',
+            mapper=4,
+            prg_banks=4,
+            chr_banks=2,
         )
 
         rom = ROM(path)
-        self.assertEqual(3, rom.mapper)
-        self.assertEqual(32, rom.prg_rom_size)
-        self.assertEqual(32, rom.chr_rom_size)
+        self.assertEqual(4, rom.mapper)
+        self.assertEqual(64, rom.prg_rom_size)
+        self.assertEqual(16, rom.chr_rom_size)
+        self.assertEqual('horizontal', rom.mirroring)
         self.assert_public_env_workflow(path)
 
 
-class ShouldExerciseRepresentativeMapper003Title(MapperTestCase):
-    """Exercise the representative CNROM title through the package API."""
+class ShouldExerciseRepresentativeMapper004Title(MapperTestCase):
+    """Exercise the representative MMC3 title through the package API."""
 
     def require_representative_rom(self):
         """Return the local representative ROM path or skip narrowly."""
         if not os.path.exists(REPRESENTATIVE_ROM):
             message = (
                 'place a legally owned {} dump at {} to run this '
-                'representative mapper 003 integration test; the test never '
+                'representative mapper 004 integration test; the test never '
                 'fetches or downloads ROMs'
             )
             self.skipTest(message.format(
@@ -54,14 +55,17 @@ class ShouldExerciseRepresentativeMapper003Title(MapperTestCase):
             ))
         return REPRESENTATIVE_ROM
 
-    def test_local_adventure_island_fixture_exercises_env_and_render(self):
+    def test_local_super_mario_bros_3_fixture_exercises_env_and_render(self):
         path = self.require_representative_rom()
         rom = ROM(path)
-        self.assertEqual(3, rom.mapper)
-        self.assertEqual(32, rom.prg_rom_size)
-        self.assertEqual(32, rom.chr_rom_size)
+        self.assertEqual(4, rom.mapper)
+        self.assertEqual(256, rom.prg_rom_size)
+        self.assertEqual(128, rom.chr_rom_size)
+        self.assertEqual(8, rom.prg_ram_size)
         self.assertFalse(rom.has_battery_backed_ram)
-        self.assertEqual('vertical', rom.mirroring)
+        self.assertFalse(rom.has_trainer)
+        self.assertFalse(rom.is_nes2)
+        self.assertEqual('horizontal', rom.mirroring)
 
         env = self.env(path, render_mode='rgb_array')
         state, info = env.reset(seed=17)

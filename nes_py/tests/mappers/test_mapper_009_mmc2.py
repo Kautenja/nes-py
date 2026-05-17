@@ -1,7 +1,7 @@
-"""Mapper 001 / MMC1 / SxROM public environment tests.
+"""Mapper 009 / MMC2 public environment tests.
 
 The representative-title integration test uses only a local, legally supplied
-ROM fixture at ``nes_py/tests/games/the-legend-of-zelda.nes``. It never
+ROM fixture at ``nes_py/tests/games/mike-tysons-punch-out.nes``. It never
 fetches ROMs from the network.
 """
 
@@ -15,54 +15,42 @@ from nes_py.tests.mappers.common import MapperTestCase
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 
 
-REPRESENTATIVE_TITLE = 'The Legend of Zelda (USA)'
-REPRESENTATIVE_ROM = rom_file_abs_path('the-legend-of-zelda.nes')
+REPRESENTATIVE_TITLE = "Mike Tyson's Punch-Out!! (USA)"
+REPRESENTATIVE_ROM = rom_file_abs_path('mike-tysons-punch-out.nes')
 DETERMINISTIC_ACTIONS = (0, 1, 2, 4, 8, 16, 32, 64)
-CONTINUATION_ACTIONS = (255, 128, 64, 32, 16, 8, 4, 2, 1, 0)
+CONTINUATION_ACTIONS = (255, 128, 64, 32, 16, 8, 4, 2)
 
 
-class ShouldLoadMapper001SxROM(MapperTestCase):
-    """Exercise SxROM through the package API."""
-
-    def test_chr_ram_fixture_constructs_and_steps(self):
-        path = self.synthetic_rom(
-            'sxrom-chr-ram.nes',
-            mapper=1,
-            prg_banks=4,
-            chr_banks=0,
-        )
-
-        rom = ROM(path)
-        self.assertEqual(1, rom.mapper)
-        self.assertEqual(64, rom.prg_rom_size)
-        self.assertEqual(0, rom.chr_rom_size)
-        self.assertEqual(8 * 2**10, rom.chr_ram_byte_size)
-        self.assert_public_env_workflow(path)
+class ShouldLoadMapper009MMC2(MapperTestCase):
+    """Exercise MMC2 through the package API."""
 
     def test_chr_rom_fixture_constructs_and_steps(self):
         path = self.synthetic_rom(
-            'sxrom-chr-rom.nes',
-            mapper=1,
+            'mmc2-chr-rom.nes',
+            mapper=9,
             prg_banks=4,
-            chr_banks=4,
+            chr_banks=8,
             chr_4k_markers=True,
+            reset_vector=0x8000,
         )
 
         rom = ROM(path)
-        self.assertEqual(1, rom.mapper)
-        self.assertEqual(32, rom.chr_rom_size)
+        self.assertEqual(9, rom.mapper)
+        self.assertEqual(64, rom.prg_rom_size)
+        self.assertEqual(64, rom.chr_rom_size)
         self.assert_public_env_workflow(path)
 
 
-class ShouldExerciseRepresentativeMapper001Title(MapperTestCase):
-    """Exercise the representative MMC1 title through the package API."""
+class ShouldExerciseRepresentativeMapper009Title(MapperTestCase):
+    """Exercise the representative MMC2 title through the package API."""
 
     def require_representative_rom(self):
         """Return the local representative ROM path or skip narrowly."""
         if not os.path.exists(REPRESENTATIVE_ROM):
             message = (
                 'place a legally owned {} dump at {} to run this '
-                'representative mapper 001 integration test'
+                'representative mapper 009 integration test; the test never '
+                'downloads commercial ROMs'
             )
             self.skipTest(message.format(
                 REPRESENTATIVE_TITLE,
@@ -96,18 +84,18 @@ class ShouldExerciseRepresentativeMapper001Title(MapperTestCase):
             ))
         return outputs
 
-    def test_local_zelda_fixture_exercises_env_render_and_backup_restore(self):
+    def test_local_punch_out_fixture_exercises_env_render_and_backup_restore(self):
         path = self.require_representative_rom()
         rom = ROM(path)
-        self.assertEqual(1, rom.mapper)
+        self.assertEqual(9, rom.mapper)
         self.assertEqual(128, rom.prg_rom_size)
-        self.assertEqual(0, rom.chr_rom_size)
-        self.assertEqual(8, rom.prg_ram_size)
-        self.assertTrue(rom.has_battery_backed_ram)
+        self.assertEqual(128, rom.chr_rom_size)
+        self.assertFalse(rom.has_trainer)
+        self.assertFalse(rom.is_pal)
         self.assertEqual('horizontal', rom.mirroring)
 
         env = self.env(path, render_mode='rgb_array')
-        state, info = env.reset(seed=17)
+        state, info = env.reset(seed=37)
         self.assert_valid_frame(state)
         self.assertIsInstance(info, dict)
         self.step_and_capture(env, DETERMINISTIC_ACTIONS)

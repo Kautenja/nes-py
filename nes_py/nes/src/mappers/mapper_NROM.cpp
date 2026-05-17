@@ -6,38 +6,25 @@
 //
 
 #include "mappers/mapper_NROM.hpp"
-#include "log.hpp"
 
 namespace NES {
 
 MapperNROM::MapperNROM(Cartridge* cart) :
     Mapper(cart),
-    is_one_bank(cart->getROM().size() == 0x4000),
-    has_character_ram(cart->getVROM().size() == 0) {
-    if (has_character_ram) {
-        character_ram.resize(cart->getCHRRAMSize());
-        LOG(Info) << "Uses character RAM" << std::endl;
-    }
+    chr_memory(cart) {
+    first_prg.selectFirst(cart->getROM().size(), 0x4000);
+    second_prg.selectFinal(cart->getROM().size(), 0x4000);
+    chr_rom.selectFirst(cart->getVROM().size(), 0x2000);
 }
 
 void MapperNROM::writePRG(NES_Address address, NES_Byte value) {
-    LOG(InfoVerbose) <<
-        "ROM memory write attempt at " <<
-        +address <<
-        " to set " <<
-        +value <<
-        std::endl;
+    (void) address;
+    (void) value;
 }
 
 void MapperNROM::writeCHR(NES_Address address, NES_Byte value) {
-    if (has_character_ram)
-        character_ram[address] = value;
-    else
-        LOG(Info) <<
-            "Read-only CHR memory write attempt at " <<
-            std::hex <<
-            address <<
-            std::endl;
+    if (chr_memory.usesRAM())
+        chr_memory.write(address, value);
 }
 
 }  // namespace NES

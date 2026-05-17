@@ -15,6 +15,7 @@
 #include "cpu.hpp"
 #include "emulator.hpp"
 #include "main_bus.hpp"
+#include "mapper_bank.hpp"
 #include "mapper_factory.hpp"
 #include "picture_bus.hpp"
 
@@ -44,6 +45,24 @@ NES::Cartridge LoadCartridgeMetadata(wchar_t* path) {
 }
 
 thread_local std::string cartridge_error;
+
+const unsigned int BANK_HELPER_PRG_8K = 1u << 0;
+const unsigned int BANK_HELPER_PRG_16K = 1u << 1;
+const unsigned int BANK_HELPER_PRG_32K = 1u << 2;
+const unsigned int BANK_HELPER_CHR_1K = 1u << 3;
+const unsigned int BANK_HELPER_CHR_2K = 1u << 4;
+const unsigned int BANK_HELPER_CHR_4K = 1u << 5;
+const unsigned int BANK_HELPER_CHR_8K = 1u << 6;
+const unsigned int BANK_HELPER_MASKS = 1u << 7;
+
+void FillBankMarkers(
+    std::vector<NES::NES_Byte>& memory,
+    std::size_t bank_size,
+    NES::NES_Byte first_marker
+) {
+    for (std::size_t index = 0; index < memory.size(); ++index)
+        memory[index] = first_marker + (index / bank_size);
+}
 
 class IRQTestMapper : public NES::Mapper {
  private:
@@ -405,6 +424,92 @@ bool RunMapperNameTableSmokeTest() {
     return bus.read(0x2401) == 0x66;
 }
 
+unsigned int RunMapperBankHelperSmokeTests() {
+    unsigned int results = 0;
+
+    std::vector<NES::NES_Byte> prg_8k(4 * 0x2000, 0);
+    FillBankMarkers(prg_8k, 0x2000, 0x10);
+    NES::MapperBank::BankWindow prg_8k_window;
+    prg_8k_window.selectBank(prg_8k.size(), 0x2000, 2);
+    if (
+        prg_8k_window.read(prg_8k, 0x8000, 0x8000) == 0x12 &&
+        prg_8k_window.read(prg_8k, 0x9fff, 0x8000) == 0x12
+    ) {
+        results |= BANK_HELPER_PRG_8K;
+    }
+
+    std::vector<NES::NES_Byte> prg_16k(4 * 0x4000, 0);
+    FillBankMarkers(prg_16k, 0x4000, 0x20);
+    NES::MapperBank::BankWindow first_prg_16k;
+    NES::MapperBank::BankWindow final_prg_16k;
+    first_prg_16k.selectFirst(prg_16k.size(), 0x4000);
+    final_prg_16k.selectFinal(prg_16k.size(), 0x4000);
+    if (
+        first_prg_16k.read(prg_16k, 0x8000, 0x8000) == 0x20 &&
+        final_prg_16k.read(prg_16k, 0xc000, 0xc000) == 0x23
+    ) {
+        results |= BANK_HELPER_PRG_16K;
+    }
+
+    NES::MapperBank::BankWindow prg_32k_window;
+    prg_32k_window.selectWindow(prg_16k.size(), 0x4000, 0x8000, 3);
+    if (
+        prg_32k_window.bank() == 2 &&
+        prg_32k_window.read(prg_16k, 0x8000, 0x8000) == 0x22 &&
+        prg_32k_window.read(prg_16k, 0xc000, 0x8000) == 0x23
+    ) {
+        results |= BANK_HELPER_PRG_32K;
+    }
+
+    std::vector<NES::NES_Byte> chr_1k(16 * 0x0400, 0);
+    FillBankMarkers(chr_1k, 0x0400, 0x40);
+    NES::MapperBank::BankWindow chr_1k_window;
+    chr_1k_window.selectBank(chr_1k.size(), 0x0400, 7);
+    if (chr_1k_window.read(chr_1k, 0x0000, 0x0000) == 0x47)
+        results |= BANK_HELPER_CHR_1K;
+
+    NES::MapperBank::BankWindow chr_2k_window;
+    chr_2k_window.selectWindow(chr_1k.size(), 0x0400, 0x0800, 5);
+    if (
+        chr_2k_window.bank() == 4 &&
+        chr_2k_window.read(chr_1k, 0x0000, 0x0000) == 0x44 &&
+        chr_2k_window.read(chr_1k, 0x0400, 0x0000) == 0x45
+    ) {
+        results |= BANK_HELPER_CHR_2K;
+    }
+
+    NES::MapperBank::BankWindow chr_4k_window;
+    chr_4k_window.selectWindow(chr_1k.size(), 0x0400, 0x1000, 7);
+    if (
+        chr_4k_window.bank() == 4 &&
+        chr_4k_window.read(chr_1k, 0x0000, 0x0000) == 0x44 &&
+        chr_4k_window.read(chr_1k, 0x0c00, 0x0000) == 0x47
+    ) {
+        results |= BANK_HELPER_CHR_4K;
+    }
+
+    NES::MapperBank::BankWindow chr_8k_window;
+    chr_8k_window.selectWindow(chr_1k.size(), 0x0400, 0x2000, 13);
+    if (
+        chr_8k_window.bank() == 8 &&
+        chr_8k_window.read(chr_1k, 0x0000, 0x0000) == 0x48 &&
+        chr_8k_window.read(chr_1k, 0x1c00, 0x0000) == 0x4f
+    ) {
+        results |= BANK_HELPER_CHR_8K;
+    }
+
+    if (
+        NES::MapperBank::maskBankSelect(0x15, 4) == 1 &&
+        NES::MapperBank::maskBankSelect(3, 8, 2) == 2 &&
+        NES::MapperBank::resolveBusConflict(true, 0xf0, 0xcc) == 0xc0 &&
+        NES::MapperBank::resolveBusConflict(false, 0xf0, 0xcc) == 0xf0
+    ) {
+        results |= BANK_HELPER_MASKS;
+    }
+
+    return results;
+}
+
 }  // namespace
 
 // definitions of functions for the Python interface to access
@@ -572,6 +677,11 @@ extern "C" {
     /// Return 1 when mapper-owned nametable read/write routing works.
     EXP int MapperNameTableSmokeTest() {
         return RunMapperNameTableSmokeTest() ? 1 : 0;
+    }
+
+    /// Return a pass bitmask for focused native mapper bank helper checks.
+    EXP unsigned int MapperBankHelperSmokeResults() {
+        return RunMapperBankHelperSmokeTests();
     }
 
     /// Return a pointer to a controller on the machine

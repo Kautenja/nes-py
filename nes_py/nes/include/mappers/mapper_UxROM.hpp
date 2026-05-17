@@ -8,22 +8,22 @@
 #ifndef MAPPERUXROM_HPP
 #define MAPPERUXROM_HPP
 
-#include <vector>
 #include "common.hpp"
 #include "mapper.hpp"
+#include "mapper_bank.hpp"
 
 namespace NES {
 
 class MapperUxROM : public Mapper {
  private:
-    /// whether the cartridge use character RAM
-    bool has_character_ram;
-    /// the pointer to the last bank
-    std::size_t last_bank_pointer;
-    /// TODO: what is this?
-    NES_Address select_prg;
-    /// The character RAM on the mapper
-    std::vector<NES_Byte> character_ram;
+    /// Switchable PRG window mapped at $8000-$bfff.
+    MapperBank::BankWindow switchable_prg;
+    /// Fixed final PRG window mapped at $c000-$ffff.
+    MapperBank::BankWindow fixed_prg;
+    /// CHR ROM window mapped at PPU $0000-$1fff.
+    MapperBank::BankWindow chr_rom;
+    /// Optional writable CHR RAM.
+    MapperBank::CHRMemory chr_memory;
 
  public:
     /// Create a new mapper with a cartridge.
@@ -49,9 +49,7 @@ class MapperUxROM : public Mapper {
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
-    inline void writePRG(NES_Address address, NES_Byte value) {
-        select_prg = value;
-    }
+    void writePRG(NES_Address address, NES_Byte value);
 
     /// Read a byte from the CHR RAM.
     ///

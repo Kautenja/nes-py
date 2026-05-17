@@ -145,6 +145,8 @@ _LIB.MapperPRGRAMSmokeTest.argtypes = None
 _LIB.MapperPRGRAMSmokeTest.restype = ctypes.c_uint
 _LIB.MapperNameTableSmokeTest.argtypes = None
 _LIB.MapperNameTableSmokeTest.restype = ctypes.c_uint
+_LIB.MapperBankHelperSmokeResults.argtypes = None
+_LIB.MapperBankHelperSmokeResults.restype = ctypes.c_uint
 
 
 def _native_cartridge_error(rom_path):
@@ -200,6 +202,21 @@ def _native_mapper_hook_smoke_results():
         'expansion': bool(_LIB.MapperExpansionSmokeTest()),
         'prg_ram': bool(_LIB.MapperPRGRAMSmokeTest()),
         'nametable': bool(_LIB.MapperNameTableSmokeTest()),
+    }
+
+
+def _native_mapper_bank_helper_smoke_results():
+    """Run focused native mapper bank helper smoke checks."""
+    results = int(_LIB.MapperBankHelperSmokeResults())
+    return {
+        'prg_8k': bool(results & (1 << 0)),
+        'prg_16k': bool(results & (1 << 1)),
+        'prg_32k': bool(results & (1 << 2)),
+        'chr_1k': bool(results & (1 << 3)),
+        'chr_2k': bool(results & (1 << 4)),
+        'chr_4k': bool(results & (1 << 5)),
+        'chr_8k': bool(results & (1 << 6)),
+        'masks_and_bus_conflicts': bool(results & (1 << 7)),
     }
 
 

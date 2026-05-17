@@ -14,6 +14,7 @@
 #include <vector>
 #include "common.hpp"
 #include "cartridge.hpp"
+#include "mapper_bank.hpp"
 
 namespace NES {
 
@@ -267,7 +268,7 @@ class Mapper {
     ) {
         if (!hasBusConflicts())
             return value;
-        return value & readPRG(address);
+        return MapperBank::resolveBusConflict(true, value, readPRG(address));
     }
 };
 

@@ -6,44 +6,39 @@
 //
 
 #include "mappers/mapper_UxROM.hpp"
-#include "log.hpp"
 
 namespace NES {
 
 MapperUxROM::MapperUxROM(Cartridge* cart) :
     Mapper(cart),
-    has_character_ram(cart->getVROM().size() == 0),
-    last_bank_pointer(cart->getROM().size() - 0x4000),
-    select_prg(0) {
-    if (has_character_ram) {
-        character_ram.resize(cart->getCHRRAMSize());
-        LOG(Info) << "Uses character RAM" << std::endl;
-    }
+    chr_memory(cart) {
+    switchable_prg.selectFirst(cart->getROM().size(), 0x4000);
+    fixed_prg.selectFinal(cart->getROM().size(), 0x4000);
+    chr_rom.selectFirst(cart->getVROM().size(), 0x2000);
 }
 
 NES_Byte MapperUxROM::readPRG(NES_Address address) {
     if (address < 0xc000)
-        return cartridge->getROM()[((address - 0x8000) & 0x3fff) | (select_prg << 14)];
-    else
-        return cartridge->getROM()[last_bank_pointer + (address & 0x3fff)];
+        return switchable_prg.read(cartridge->getROM(), address, 0x8000);
+    return fixed_prg.read(cartridge->getROM(), address, 0xc000);
+}
+
+void MapperUxROM::writePRG(NES_Address address, NES_Byte value) {
+    (void) address;
+    // This implementation models no bus conflicts; MainBus resolves conflicts
+    // first if a mapper opts into them through hasBusConflicts().
+    switchable_prg.selectBank(cartridge->getROM().size(), 0x4000, value);
 }
 
 NES_Byte MapperUxROM::readCHR(NES_Address address) {
-    if (has_character_ram)
-        return character_ram[address];
-    else
-        return cartridge->getVROM()[address];
+    if (chr_memory.usesRAM())
+        return chr_memory.read(address);
+    return chr_rom.read(cartridge->getVROM(), address, 0x0000);
 }
 
 void MapperUxROM::writeCHR(NES_Address address, NES_Byte value) {
-    if (has_character_ram)
-        character_ram[address] = value;
-    else
-        LOG(Info) <<
-            "Read-only CHR memory write attempt at " <<
-            std::hex <<
-            address <<
-            std::endl;
+    if (chr_memory.usesRAM())
+        chr_memory.write(address, value);
 }
 
 }  // namespace NES

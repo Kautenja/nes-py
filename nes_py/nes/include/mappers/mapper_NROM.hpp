@@ -8,20 +8,22 @@
 #ifndef MAPPERNROM_HPP
 #define MAPPERNROM_HPP
 
-#include <vector>
 #include "common.hpp"
 #include "mapper.hpp"
+#include "mapper_bank.hpp"
 
 namespace NES {
 
 class MapperNROM : public Mapper {
  private:
-    /// whether there are 1 or 2 banks
-    bool is_one_bank;
-    /// whether this mapper uses character RAM
-    bool has_character_ram;
-    /// the character RAM on the mapper
-    std::vector<NES_Byte> character_ram;
+    /// PRG window mapped at $8000-$bfff.
+    MapperBank::BankWindow first_prg;
+    /// PRG window mapped at $c000-$ffff.
+    MapperBank::BankWindow second_prg;
+    /// CHR ROM window mapped at PPU $0000-$1fff.
+    MapperBank::BankWindow chr_rom;
+    /// Optional writable CHR RAM.
+    MapperBank::CHRMemory chr_memory;
 
  public:
     /// Create a new mapper with a cartridge.
@@ -41,10 +43,9 @@ class MapperNROM : public Mapper {
     /// @return the byte located at the given address in PRG RAM
     ///
     inline NES_Byte readPRG(NES_Address address) {
-        if (!is_one_bank)
-            return cartridge->getROM()[address - 0x8000];
-        else  // mirrored
-            return cartridge->getROM()[(address - 0x8000) & 0x3fff];
+        if (address < 0xc000)
+            return first_prg.read(cartridge->getROM(), address, 0x8000);
+        return second_prg.read(cartridge->getROM(), address, 0xc000);
     }
 
     /// Write a byte to an address in the PRG RAM.
@@ -60,10 +61,9 @@ class MapperNROM : public Mapper {
     /// @return the byte located at the given address in CHR RAM
     ///
     inline NES_Byte readCHR(NES_Address address) {
-        if (has_character_ram)
-            return character_ram[address];
-        else
-            return cartridge->getVROM()[address];
+        if (chr_memory.usesRAM())
+            return chr_memory.read(address);
+        return chr_rom.read(cartridge->getVROM(), address, 0x0000);
     }
 
     /// Write a byte to an address in the CHR RAM.

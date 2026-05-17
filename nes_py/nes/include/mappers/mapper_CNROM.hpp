@@ -10,15 +10,18 @@
 
 #include "common.hpp"
 #include "mapper.hpp"
+#include "mapper_bank.hpp"
 
 namespace NES {
 
 class MapperCNROM : public Mapper {
  private:
-    /// whether there are 1 or 2 banks
-    bool is_one_bank;
-    /// TODO: what is this value
-    NES_Address select_chr;
+    /// PRG window mapped at $8000-$bfff.
+    MapperBank::BankWindow first_prg;
+    /// PRG window mapped at $c000-$ffff.
+    MapperBank::BankWindow second_prg;
+    /// Switchable 8KB CHR ROM window.
+    MapperBank::BankWindow selected_chr;
 
  public:
     /// Create a new mapper with a cartridge.
@@ -26,9 +29,11 @@ class MapperCNROM : public Mapper {
     /// @param cart a reference to a cartridge for the mapper to access
     ///
     explicit MapperCNROM(Cartridge* cart) :
-        Mapper(cart),
-        is_one_bank(cart->getROM().size() == 0x4000),
-        select_chr(0) { }
+        Mapper(cart) {
+        first_prg.selectFirst(cart->getROM().size(), 0x4000);
+        second_prg.selectFinal(cart->getROM().size(), 0x4000);
+        selected_chr.selectFirst(cart->getVROM().size(), 0x2000);
+    }
 
     /// Return a copy of this mapper and its current state.
     inline std::unique_ptr<Mapper> clone() const {
@@ -41,10 +46,9 @@ class MapperCNROM : public Mapper {
     /// @return the byte located at the given address in PRG RAM
     ///
     inline NES_Byte readPRG(NES_Address address) {
-        if (!is_one_bank)
-            return cartridge->getROM()[address - 0x8000];
-        else  // mirrored
-            return cartridge->getROM()[(address - 0x8000) & 0x3fff];
+        if (address < 0xc000)
+            return first_prg.read(cartridge->getROM(), address, 0x8000);
+        return second_prg.read(cartridge->getROM(), address, 0xc000);
     }
 
     /// Write a byte to an address in the PRG RAM.
@@ -53,7 +57,10 @@ class MapperCNROM : public Mapper {
     /// @param value the byte to write to the given address
     ///
     inline void writePRG(NES_Address address, NES_Byte value) {
-        select_chr = value & 0x3;
+        (void) address;
+        // This implementation models no bus conflicts; MainBus resolves
+        // conflicts first for mappers that opt into hasBusConflicts().
+        selected_chr.selectBank(cartridge->getVROM().size(), 0x2000, value);
     }
 
     /// Read a byte from the CHR RAM.
@@ -62,7 +69,7 @@ class MapperCNROM : public Mapper {
     /// @return the byte located at the given address in CHR RAM
     ///
     inline NES_Byte readCHR(NES_Address address) {
-        return cartridge->getVROM()[address | (select_chr << 13)];
+        return selected_chr.read(cartridge->getVROM(), address, 0x0000);
     }
 
     /// Write a byte to an address in the CHR RAM.

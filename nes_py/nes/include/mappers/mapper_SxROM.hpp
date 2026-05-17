@@ -8,16 +8,14 @@
 #ifndef MAPPERSXROM_HPP
 #define MAPPERSXROM_HPP
 
-#include <vector>
 #include "common.hpp"
 #include "mapper.hpp"
+#include "mapper_bank.hpp"
 
 namespace NES {
 
 class MapperSxROM : public Mapper {
  private:
-    /// whether the cartridge uses character RAM
-    bool has_character_ram;
     /// the mode for CHR ROM
     int mode_chr;
     /// the mode for PRG ROM
@@ -32,19 +30,22 @@ class MapperSxROM : public Mapper {
     NES_Byte register_chr0;
     /// The second CHR register
     NES_Byte register_chr1;
-    /// The first PRG bank
-    std::size_t first_bank_prg;
-    /// The second PRG bank
-    std::size_t second_bank_prg;
-    /// The first CHR bank
-    std::size_t first_bank_chr;
-    /// The second CHR bank
-    std::size_t second_bank_chr;
-    /// The character RAM on the cartridge
-    std::vector<NES_Byte> character_ram;
+    /// PRG window mapped at $8000-$bfff.
+    MapperBank::BankWindow first_prg;
+    /// PRG window mapped at $c000-$ffff.
+    MapperBank::BankWindow second_prg;
+    /// CHR window mapped at PPU $0000-$0fff.
+    MapperBank::BankWindow first_chr;
+    /// CHR window mapped at PPU $1000-$1fff.
+    MapperBank::BankWindow second_chr;
+    /// Optional writable CHR RAM.
+    MapperBank::CHRMemory chr_memory;
 
-    /// TODO: what does this do
-    void calculatePRGPointers();
+    /// Recalculate PRG windows from the current MMC1 control and PRG registers.
+    void calculatePRGWindows();
+
+    /// Recalculate CHR windows from the current MMC1 CHR mode/registers.
+    void calculateCHRWindows();
 
  public:
     /// Create a new mapper with a cartridge.
@@ -65,9 +66,8 @@ class MapperSxROM : public Mapper {
     ///
     inline NES_Byte readPRG(NES_Address address) {
         if (address < 0xc000)
-            return cartridge->getROM()[first_bank_prg + (address & 0x3fff)];
-        else
-            return cartridge->getROM()[second_bank_prg + (address & 0x3fff)];
+            return first_prg.read(cartridge->getROM(), address, 0x8000);
+        return second_prg.read(cartridge->getROM(), address, 0xc000);
     }
 
     /// Write a byte to an address in the PRG RAM.
@@ -83,12 +83,11 @@ class MapperSxROM : public Mapper {
     /// @return the byte located at the given address in CHR RAM
     ///
     inline NES_Byte readCHR(NES_Address address) {
-        if (has_character_ram)
-            return character_ram[address];
-        else if (address < 0x1000)
-            return cartridge->getVROM()[first_bank_chr + address];
-        else
-            return cartridge->getVROM()[second_bank_chr + (address & 0xfff)];
+        if (chr_memory.usesRAM())
+            return chr_memory.read(address);
+        if (address < 0x1000)
+            return first_chr.read(cartridge->getVROM(), address, 0x0000);
+        return second_chr.read(cartridge->getVROM(), address, 0x1000);
     }
 
     /// Write a byte to an address in the CHR RAM.

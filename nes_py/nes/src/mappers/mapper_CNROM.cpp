@@ -6,16 +6,12 @@
 //
 
 #include "mappers/mapper_CNROM.hpp"
-#include "log.hpp"
 
 namespace NES {
 
 void MapperCNROM::writeCHR(NES_Address address, NES_Byte value) {
-    LOG(Info) <<
-        "Read-only CHR memory write attempt at " <<
-        std::hex <<
-        address <<
-        std::endl;
+    (void) address;
+    (void) value;
 }
 
 }  // namespace NES

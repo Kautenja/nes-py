@@ -16,6 +16,11 @@ def chr_bank_marker(bank):
     return (0x80 + bank) & 0xff
 
 
+def chr_page_marker(page):
+    """Return the stable marker byte used for a 4 KiB CHR page."""
+    return (0xc0 + page) & 0xff
+
+
 def ines_header(
     mapper,
     prg_banks,
@@ -108,6 +113,7 @@ def synthetic_rom_path(
     prg_battery_ram_shift=0,
     chr_ram_shift=0,
     chr_battery_ram_shift=0,
+    chr_4k_markers=False,
 ):
     """Write a synthetic iNES ROM and return its filesystem path."""
     if reset_vector is None:
@@ -149,8 +155,12 @@ def synthetic_rom_path(
     prg[vector_offset + 1] = (reset_vector >> 8) & 0xff
     data.extend(prg)
 
-    for bank in range(chr_banks):
-        data.extend(bytes([chr_bank_marker(bank)] * CHR_BANK_SIZE))
+    if chr_4k_markers:
+        for page in range(chr_banks * 2):
+            data.extend(bytes([chr_page_marker(page)] * (CHR_BANK_SIZE // 2)))
+    else:
+        for bank in range(chr_banks):
+            data.extend(bytes([chr_bank_marker(bank)] * CHR_BANK_SIZE))
 
     path = Path(directory) / name
     path.write_bytes(data)

@@ -16,6 +16,7 @@ class ShouldLoadSupportedMapperFixtures(MapperTestCase):
             ('uxrom.nes', 2, 4, 0, 'vertical'),
             ('cnrom.nes', 3, 2, 4, 'horizontal'),
             ('mmc3.nes', 4, 4, 2, 'horizontal'),
+            ('mmc5.nes', 5, 16, 16, 'horizontal'),
             ('axrom.nes', 7, 2, 0, 'horizontal'),
         )
 

@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <catch2/catch_test_macros.hpp>
+#include "nes_emu/test/nes_emu/support/emulator_inspector.hpp"
 #include "nes_emu/test/nes_emu/support/mapper_test_helpers.hpp"
 #include "nes_emu/test/nes_emu/support/synthetic_rom.hpp"
 
@@ -34,4 +35,39 @@ TEST_CASE("mapper 000 mirrors 16 KiB PRG and snapshots PRG RAM", "[mapper][nrom]
     mapper->writePRGRAM(0x6000, 0x7f);
     REQUIRE(mapper->readPRGRAM(0x6000) == 0x7f);
     REQUIRE(backup->readPRGRAM(0x6000) == 0x2a);
+}
+
+TEST_CASE("mapper 000 emulator save-state preserves PRG RAM", "[mapper][nrom]") {
+    NESTest::TemporaryROM rom("nrom_emulator_backup", 0, 2, 1, "vertical");
+    NES::Emulator emulator(rom.filename());
+    emulator.reset();
+    emulator.step();
+    REQUIRE(emulator.get_screen_buffer() != nullptr);
+
+    NES::Mapper& mapper = NES::EmulatorInspector::mapper(emulator);
+    REQUIRE(mapper.getPRGRAMSize() == 8 * 1024);
+    REQUIRE(mapper.getNameTableMirroring() == NES::VERTICAL);
+
+    mapper.writePRGRAM(0x6000, 0x33);
+    mapper.writePRGRAM(0x7fff, 0x44);
+    emulator.backup();
+
+    mapper.writePRGRAM(0x6000, 0xaa);
+    mapper.writePRGRAM(0x7fff, 0xbb);
+    REQUIRE(mapper.readPRGRAM(0x6000) == 0xaa);
+    REQUIRE(mapper.readPRGRAM(0x7fff) == 0xbb);
+
+    emulator.restore();
+    NES::Mapper& restored = NES::EmulatorInspector::mapper(emulator);
+    REQUIRE(restored.readPRGRAM(0x6000) == 0x33);
+    REQUIRE(restored.readPRGRAM(0x7fff) == 0x44);
+    REQUIRE(restored.getNameTableMirroring() == NES::VERTICAL);
+
+    restored.writePRGRAM(0x6000, 0x55);
+    REQUIRE(restored.readPRGRAM(0x6000) == 0x55);
+
+    emulator.restore();
+    NES::Mapper& restored_again = NES::EmulatorInspector::mapper(emulator);
+    REQUIRE(restored_again.readPRGRAM(0x6000) == 0x33);
+    REQUIRE(restored_again.readPRGRAM(0x7fff) == 0x44);
 }

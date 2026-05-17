@@ -1,4 +1,9 @@
-graft nes_py/nes
+include LICENSE
+include README.md
+include pyproject.toml
+include setup.py
+recursive-include nes_py/nes/include *.hpp
+recursive-include nes_py/nes/src *.cpp
 global-exclude .DS_Store
 global-exclude *.py[cod]
 global-exclude __pycache__

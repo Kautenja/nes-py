@@ -1,6 +1,67 @@
 [build-system]
 requires = [
-    "setuptools>=70",
+    "setuptools>=77",
     "wheel>=0.43",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "nes_py"
+version = "8.2.1"
+description = "An NES Emulator and OpenAI Gym interface"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    {name = "Christian Kauten", email = "kautencreations@gmail.com"},
+]
+keywords = ["NES", "Emulator", "OpenAI-Gym"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Games/Entertainment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Emulators",
+]
+dependencies = [
+    "gym>=0.17.2",
+    "numpy>=1.18.5",
+    "pyglet<=1.5.21,>=1.4.0",
+    "tqdm>=4.48.2",
+]
+
+[project.optional-dependencies]
+release = [
+    "twine>=6.1.0",
+]
+
+[project.scripts]
+nes_py = "nes_py.app.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Kautenja/nes-py"
+Repository = "https://github.com/Kautenja/nes-py"
+
+[tool.setuptools]
+include-package-data = true
+zip-safe = false
+
+[tool.setuptools.packages.find]
+include = ["nes_py", "nes_py.*"]
+exclude = ["nes_py.tests", "nes_py.tests.*"]
+
+[tool.setuptools.package-data]
+nes_py = [
+    "nes/include/*.hpp",
+    "nes/include/mappers/*.hpp",
+    "nes/src/*.cpp",
+    "nes/src/mappers/*.cpp",
+]

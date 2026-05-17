@@ -168,6 +168,21 @@ There you will find instructions for:
 -   reference material for the `NESEnv` API
 -   documentation for the `nes_py.wrappers` module
 
+Project metadata, runtime dependencies, release extras, console scripts, and
+package discovery are configured in `pyproject.toml`. `setup.py` is kept only
+for the native emulator extension and its platform-specific compiler flags.
+For local development, install the package in editable mode and build
+distributions through the standard PEP 517 frontend:
+
+```shell
+python -m pip install --upgrade pip build
+python -m pip install -e .
+python -m unittest discover .
+python -m build
+```
+
+Release upload tooling is available with `python -m pip install ".[release]"`.
+
 ## Benchmarking
 
 Developer throughput checks are available through the packaged speedtest

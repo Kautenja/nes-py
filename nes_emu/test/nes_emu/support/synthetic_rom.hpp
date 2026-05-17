@@ -29,12 +29,20 @@ inline NES::NES_Byte prg_bank_marker(std::size_t bank) {
     return static_cast<NES::NES_Byte>(((bank + 1) * 0x11) & 0xff);
 }
 
+inline NES::NES_Byte prg_8k_bank_marker(std::size_t bank) {
+    return static_cast<NES::NES_Byte>((0x20 + bank) & 0xff);
+}
+
 inline NES::NES_Byte chr_bank_marker(std::size_t bank) {
     return static_cast<NES::NES_Byte>((0x80 + bank) & 0xff);
 }
 
 inline NES::NES_Byte chr_page_marker(std::size_t page) {
     return static_cast<NES::NES_Byte>((0xc0 + page) & 0xff);
+}
+
+inline NES::NES_Byte chr_1k_page_marker(std::size_t page) {
+    return static_cast<NES::NES_Byte>((0x40 + page) & 0xff);
 }
 
 class TemporaryROM {
@@ -88,7 +96,9 @@ class TemporaryROM {
         std::size_t prg_banks,
         std::size_t chr_banks,
         const std::string& mirroring = "horizontal",
-        bool chr_4k_markers = false
+        bool chr_4k_markers = false,
+        bool prg_8k_markers = false,
+        bool chr_1k_markers = false
     ) : path(temporary_path(name)) {
         std::vector<NES::NES_Byte> bytes = ines_header(
             mapper,
@@ -99,23 +109,58 @@ class TemporaryROM {
 
         std::vector<NES::NES_Byte> prg;
         for (std::size_t bank = 0; bank < prg_banks; ++bank) {
-            prg.insert(
-                prg.end(),
-                PRG_BANK_SIZE,
-                prg_bank_marker(bank)
-            );
+            if (prg_8k_markers) {
+                prg.insert(
+                    prg.end(),
+                    PRG_BANK_SIZE / 2,
+                    prg_8k_bank_marker(bank * 2)
+                );
+                prg.insert(
+                    prg.end(),
+                    PRG_BANK_SIZE / 2,
+                    prg_8k_bank_marker(bank * 2 + 1)
+                );
+            } else {
+                prg.insert(
+                    prg.end(),
+                    PRG_BANK_SIZE,
+                    prg_bank_marker(bank)
+                );
+            }
         }
         if (!prg.empty()) {
+            const NES::NES_Byte reset_high = prg_banks > 1 ?
+                (mapper == 5 ? 0xe0 : 0xc0) :
+                0x80;
             prg[0] = 0xea;
             prg[1] = 0x4c;
             prg[2] = 0x00;
-            prg[3] = prg_banks > 1 ? 0xc0 : 0x80;
+            prg[3] = reset_high;
             prg[prg.size() - 4] = 0x00;
-            prg[prg.size() - 3] = prg_banks > 1 ? 0xc0 : 0x80;
+            prg[prg.size() - 3] = reset_high;
+            std::size_t reset_offset = mapper == 5 ?
+                prg.size() - PRG_BANK_SIZE / 2 :
+                (
+                    (static_cast<std::size_t>(reset_high) << 8) - 0x8000
+                ) % prg.size();
+            if (reset_offset + 4 <= prg.size()) {
+                prg[reset_offset] = 0xea;
+                prg[reset_offset + 1] = 0x4c;
+                prg[reset_offset + 2] = 0x00;
+                prg[reset_offset + 3] = reset_high;
+            }
         }
         bytes.insert(bytes.end(), prg.begin(), prg.end());
 
-        if (chr_4k_markers) {
+        if (chr_1k_markers) {
+            for (std::size_t page = 0; page < chr_banks * 8; ++page) {
+                bytes.insert(
+                    bytes.end(),
+                    CHR_BANK_SIZE / 8,
+                    chr_1k_page_marker(page)
+                );
+            }
+        } else if (chr_4k_markers) {
             for (std::size_t page = 0; page < chr_banks * 2; ++page) {
                 bytes.insert(
                     bytes.end(),

@@ -223,7 +223,7 @@ Notable release notes for `nes-py` are collected here from the
 
 ## [1.0.0](https://github.com/Kautenja/nes-py/releases/tag/1.0.0) - 2018-09-10
 
-**Pass a done parameter to _did_step**
+**Pass a done parameter to `_did_step`**
 
 - Passed a `done` parameter to `_did_step` so callbacks can base logic on an
   episode's completion state.

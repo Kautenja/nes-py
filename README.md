@@ -168,6 +168,21 @@ There you will find instructions for:
 -   reference material for the `NESEnv` API
 -   documentation for the `nes_py.wrappers` module
 
+## Benchmarking
+
+Developer throughput checks are available through the packaged speedtest
+module:
+
+```shell
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --steps 5000
+```
+
+Use `--json` for machine-readable output. Benchmark numbers are informational
+and vary by machine, compiler, runner load, and display settings; they are not
+correctness criteria. Backup and restore stress options use explicit interval
+semantics, so `--backup-interval 12` runs a backup at steps 12, 24, 36, and so
+on.
+
 # Cartridge Mapper Compatibility
 
 0.  NROM

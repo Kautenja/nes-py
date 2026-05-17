@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 from ._rom import ROM
 from .nes_env import NESEnv
+from .nes_env import _native_mapper_hook_smoke_results
 
 
 ActionPolicy = Callable[[NESEnv, int, np.random.RandomState], int] | str
@@ -73,6 +74,25 @@ class MapperBenchmarkResult:
     warmup_steps: int
     elapsed_seconds: float
     steps_per_second: float
+
+    def to_dict(self):
+        """Return this result as a JSON-serializable dictionary."""
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class MapperHookBenchmarkResult:
+    """Structured result from the native mapper hook smoke benchmark."""
+
+    environment: str
+    compiler: str
+    platform: str
+    operation: str
+    measured_iterations: int
+    warmup_steps: int
+    elapsed_seconds: float
+    iterations_per_second: float
+    results: dict[str, bool]
 
     def to_dict(self):
         """Return this result as a JSON-serializable dictionary."""
@@ -241,6 +261,39 @@ def run_mapper_profile(
     return results
 
 
+def run_mapper_hook_profile(iterations=5000, warmup_steps=100):
+    """
+    Run a portable benchmark profile for native mapper timing/IRQ hooks.
+
+    This benchmark intentionally repeats the focused C++ smoke checks from the
+    mapper lifecycle tests. It is informational, not a CI timing threshold.
+    """
+    if iterations <= 0:
+        raise ValueError('iterations must be positive')
+    _validate_non_negative('warmup_steps', warmup_steps)
+
+    for _ in range(warmup_steps):
+        _native_mapper_hook_smoke_results()
+
+    results = {}
+    started_at = time.perf_counter()
+    for _ in range(iterations):
+        results = _native_mapper_hook_smoke_results()
+    elapsed = time.perf_counter() - started_at
+    iterations_per_second = iterations / elapsed if elapsed > 0 else 0.0
+    return MapperHookBenchmarkResult(
+        environment=_environment_name(),
+        compiler=_compiler_name(),
+        platform=platform_module.platform(),
+        operation='mapper_hook_smoke',
+        measured_iterations=iterations,
+        warmup_steps=warmup_steps,
+        elapsed_seconds=elapsed,
+        iterations_per_second=iterations_per_second,
+        results=results,
+    )
+
+
 def run_benchmark(config=None, **kwargs):
     """
     Run an NES throughput benchmark and return a structured result.
@@ -377,6 +430,15 @@ def format_mapper_profile(results):
     return '\n'.join(lines)
 
 
+def format_mapper_hook_profile(result):
+    """Return human-readable native mapper hook benchmark output."""
+    return (
+        'NES mapper hook benchmark profile\n'
+        '  {operation}: {iterations_per_second:.2f} iterations/s '
+        '({elapsed_seconds:.6f}s)'
+    ).format(**result.to_dict())
+
+
 def _parser():
     """Build the command line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -386,6 +448,11 @@ def _parser():
         action='append',
         default=[],
         help='path to a .nes ROM fixture to include in the mapper profile',
+    )
+    parser.add_argument(
+        '--mapper-hook-profile',
+        action='store_true',
+        help='run the native mapper timing/IRQ hook smoke benchmark',
     )
     parser.add_argument('--steps', type=int, default=5000)
     parser.add_argument('--seed', type=int)
@@ -406,7 +473,28 @@ def _parser():
 
 def main(argv=None):
     """Run the benchmark command line interface."""
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.mapper_hook_profile and args.profile_rom:
+        parser.error(
+            '--mapper-hook-profile cannot be combined with --profile-rom'
+        )
+
+    if args.mapper_hook_profile:
+        try:
+            result = run_mapper_hook_profile(
+                iterations=args.steps,
+                warmup_steps=args.warmup_steps,
+            )
+        except KeyboardInterrupt:
+            return 130
+
+        if args.json_output:
+            print(json.dumps(result.to_dict(), sort_keys=True))
+        else:
+            print(format_mapper_hook_profile(result))
+        return 0
+
     if args.profile_rom:
         try:
             results = run_mapper_profile(
@@ -427,7 +515,10 @@ def main(argv=None):
         return 0
 
     if args.rom is None:
-        _parser().error('--rom is required unless --profile-rom is provided')
+        parser.error(
+            '--rom is required unless --profile-rom or '
+            '--mapper-hook-profile is provided'
+        )
 
     config = BenchmarkConfig(
         rom=args.rom,

@@ -8,13 +8,18 @@
 #ifndef MAIN_BUS_HPP
 #define MAIN_BUS_HPP
 
-#include <algorithm>
-#include <vector>
-#include <unordered_map>
+#include <array>
+#include <functional>
+#include <utility>
 #include "common.hpp"
 #include "mapper.hpp"
 
 namespace NES {
+
+class Controller;
+class CPU;
+class PictureBus;
+class PPU;
 
 /// The IO registers on the main bus
 enum IORegisters {
@@ -31,48 +36,61 @@ enum IORegisters {
     JOY2 = 0x4017,
 };
 
-/// An enum functor object for calculating the hash of an enum class
-/// https://stackoverflow.com/questions/18837857/cant-use-enum-class-as-unordered-map-key
-struct EnumClassHash {
-    template <typename T>
-    std::size_t operator()(T t) const { return static_cast<std::size_t>(t); }
-};
-
 /// a type for write callback functions
 typedef std::function<void(NES_Byte)> WriteCallback;
-/// a map type from IORegsiters to WriteCallbacks
-typedef std::unordered_map<IORegisters, WriteCallback, EnumClassHash> IORegisterToWriteCallbackMap;
 /// a type for read callback functions
 typedef std::function<NES_Byte(void)> ReadCallback;
-/// a map type from IORegsiters to ReadCallbacks
-typedef std::unordered_map<IORegisters, ReadCallback, EnumClassHash> IORegisterToReadCallbackMap;
 
 /// The main bus for data to travel along the NES hardware
 class MainBus {
  private:
+    /// Number of bytes in mirrored CPU work RAM.
+    static const std::size_t RAM_SIZE = 0x800;
+    /// Number of PPU registers visible on the CPU bus.
+    static const std::size_t PPU_REGISTER_COUNT = 8;
+    /// Number of callback-capable I/O registers from $4014 through $4017.
+    static const std::size_t IO_REGISTER_COUNT = 4;
     /// The RAM on the main bus
-    std::vector<NES_Byte> ram;
+    std::array<NES_Byte, RAM_SIZE> ram;
     /// a pointer to the mapper on the cartridge
     Mapper* mapper;
-    /// a map of IO registers to callback methods for writes
-    IORegisterToWriteCallbackMap write_callbacks;
-    /// a map of IO registers to callback methods for reads
-    IORegisterToReadCallbackMap read_callbacks;
+    /// Direct CPU device pointer for DMA cycle penalties.
+    CPU* cpu;
+    /// Direct PPU device pointer for register dispatch.
+    PPU* ppu;
+    /// Direct picture-bus pointer for PPUDATA dispatch.
+    PictureBus* picture_bus;
+    /// Direct controller pointer for joypad register dispatch.
+    Controller* controllers;
+    /// Direct callback slots for mirrored PPU register writes.
+    std::array<WriteCallback, PPU_REGISTER_COUNT> ppu_write_callbacks;
+    /// Direct callback slots for mirrored PPU register reads.
+    std::array<ReadCallback, PPU_REGISTER_COUNT> ppu_read_callbacks;
+    /// Direct callback slots for $4014-$4017 register writes.
+    std::array<WriteCallback, IO_REGISTER_COUNT> io_write_callbacks;
+    /// Direct callback slots for $4014-$4017 register reads.
+    std::array<ReadCallback, IO_REGISTER_COUNT> io_read_callbacks;
 
  public:
     /// Mutable main-bus state captured by backup/restore.
     struct State {
-        std::vector<NES_Byte> ram;
+        std::array<NES_Byte, RAM_SIZE> ram{};
     };
 
     /// Initialize a new main bus.
-    MainBus() : ram(0x800, 0), mapper(nullptr) { }
+    MainBus() :
+        ram(),
+        mapper(nullptr),
+        cpu(nullptr),
+        ppu(nullptr),
+        picture_bus(nullptr),
+        controllers(nullptr) { }
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
     /// @return a 8-bit pointer to the RAM buffer's first address
     ///
-    inline NES_Byte* get_memory_buffer() { return &ram.front(); }
+    inline NES_Byte* get_memory_buffer() { return ram.data(); }
 
     /// Read a byte from an address on the RAM.
     ///
@@ -95,23 +113,41 @@ class MainBus {
     ///
     inline void set_mapper(Mapper* mapper) { this->mapper = mapper; }
 
+    /// Connect native device pointers for direct hot-path register dispatch.
+    inline void connect_devices(
+        CPU* cpu,
+        PPU* ppu,
+        PictureBus* picture_bus,
+        Controller* controllers
+    ) {
+        this->cpu = cpu;
+        this->ppu = ppu;
+        this->picture_bus = picture_bus;
+        this->controllers = controllers;
+    }
+
     /// Return a copy of mutable bus state without callback or mapper wiring.
     inline State save_state() const { return {ram}; }
 
     /// Restore mutable bus state without changing callbacks or mapper wiring.
-    inline void load_state(const State& state) {
-        ram.resize(state.ram.size());
-        std::copy(state.ram.begin(), state.ram.end(), ram.begin());
-    }
+    inline void load_state(const State& state) { ram = state.ram; }
 
     /// Set a callback for when writes occur.
     inline void set_write_callback(IORegisters reg, WriteCallback callback) {
-        write_callbacks.insert({reg, callback});
+        if (reg >= PPUCTRL && reg <= PPUDATA) {
+            ppu_write_callbacks[reg - PPUCTRL] = std::move(callback);
+        } else if (reg >= OAMDMA && reg <= JOY2) {
+            io_write_callbacks[reg - OAMDMA] = std::move(callback);
+        }
     }
 
     /// Set a callback for when reads occur.
     inline void set_read_callback(IORegisters reg, ReadCallback callback) {
-        read_callbacks.insert({reg, callback});
+        if (reg >= PPUCTRL && reg <= PPUDATA) {
+            ppu_read_callbacks[reg - PPUCTRL] = std::move(callback);
+        } else if (reg >= OAMDMA && reg <= JOY2) {
+            io_read_callbacks[reg - OAMDMA] = std::move(callback);
+        }
     }
 
     /// Return a pointer to the page in memory.

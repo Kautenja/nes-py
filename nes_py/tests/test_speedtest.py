@@ -10,6 +10,7 @@ from .rom_file_abs_path import rom_file_abs_path
 from nes_py.speedtest import BenchmarkConfig
 from nes_py.speedtest import main
 from nes_py.speedtest import run_benchmark
+from nes_py.speedtest import run_mapper_hook_profile
 from nes_py.speedtest import run_mapper_profile
 
 
@@ -157,3 +158,48 @@ class ShouldRunCurrentMapperBenchmarkProfile(TestCase):
             self.assertIn(result['mapper'], {0, 1})
             self.assertGreater(result['elapsed_seconds'], 0)
             self.assertGreater(result['steps_per_second'], 0)
+
+
+class ShouldRunMapperHookBenchmarkProfile(TestCase):
+    def test_returns_shape_and_positive_timing(self):
+        result = run_mapper_hook_profile(iterations=2, warmup_steps=1)
+        data = result.to_dict()
+
+        self.assertEqual('mapper_hook_smoke', data['operation'])
+        self.assertEqual(2, data['measured_iterations'])
+        self.assertEqual(1, data['warmup_steps'])
+        self.assertIn('environment', data)
+        self.assertIn('compiler', data)
+        self.assertIn('platform', data)
+        self.assertGreater(data['elapsed_seconds'], 0)
+        self.assertGreater(data['iterations_per_second'], 0)
+        self.assertEqual({
+            'irq',
+            'cpu_cycle',
+            'ppu',
+            'expansion',
+            'prg_ram',
+            'nametable',
+        }, set(data['results']))
+        self.assertTrue(all(data['results'].values()), data['results'])
+
+    def test_cli_json_output(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = main([
+                '--mapper-hook-profile',
+                '--steps',
+                '2',
+                '--warmup-steps',
+                '1',
+                '--json',
+                '--no-progress',
+            ])
+
+        self.assertEqual(0, status)
+        data = json.loads(output.getvalue())
+        self.assertEqual('mapper_hook_smoke', data['operation'])
+        self.assertEqual(2, data['measured_iterations'])
+        self.assertGreater(data['elapsed_seconds'], 0)
+        self.assertGreater(data['iterations_per_second'], 0)
+        self.assertTrue(all(data['results'].values()), data['results'])

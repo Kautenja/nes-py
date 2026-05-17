@@ -14,22 +14,8 @@ namespace NES {
 
 Emulator::Emulator(std::string rom_path) :
     mapper_observes_cpu_cycles(false) {
-    // set the read callbacks
-    bus.set_read_callback(PPUSTATUS, [&](void) { return ppu.get_status();          });
-    bus.set_read_callback(PPUDATA,   [&](void) { return ppu.get_data(picture_bus); });
-    bus.set_read_callback(JOY1,      [&](void) { return controllers[0].read();     });
-    bus.set_read_callback(JOY2,      [&](void) { return controllers[1].read();     });
-    bus.set_read_callback(OAMDATA,   [&](void) { return ppu.get_OAM_data();        });
-    // set the write callbacks
-    bus.set_write_callback(PPUCTRL,  [&](NES_Byte b) { ppu.control(b);                                             });
-    bus.set_write_callback(PPUMASK,  [&](NES_Byte b) { ppu.set_mask(b);                                            });
-    bus.set_write_callback(OAMADDR,  [&](NES_Byte b) { ppu.set_OAM_address(b);                                     });
-    bus.set_write_callback(PPUADDR,  [&](NES_Byte b) { ppu.set_data_address(b);                                    });
-    bus.set_write_callback(PPUSCROL, [&](NES_Byte b) { ppu.set_scroll(b);                                          });
-    bus.set_write_callback(PPUDATA,  [&](NES_Byte b) { ppu.set_data(picture_bus, b);                               });
-    bus.set_write_callback(OAMDMA,   [&](NES_Byte b) { cpu.skip_DMA_cycles(); ppu.do_DMA(bus.get_page_pointer(b)); });
-    bus.set_write_callback(JOY1,     [&](NES_Byte b) { controllers[0].strobe(b); controllers[1].strobe(b);         });
-    bus.set_write_callback(OAMDATA,  [&](NES_Byte b) { ppu.set_OAM_data(b);                                        });
+    // Wire fixed devices once so CPU bus I/O avoids hash/callback dispatch.
+    bus.connect_devices(&cpu, &ppu, &picture_bus, controllers);
     // set the interrupt callback for the PPU
     ppu.set_interrupt_callback([&]() { cpu.interrupt(bus, CPU::NMI_INTERRUPT); });
     // load the ROM from disk, expect that the Python code has validated it

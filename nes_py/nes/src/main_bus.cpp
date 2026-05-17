@@ -6,7 +6,11 @@
 //
 
 #include "main_bus.hpp"
+#include "controller.hpp"
+#include "cpu.hpp"
 #include "log.hpp"
+#include "picture_bus.hpp"
+#include "ppu.hpp"
 
 namespace NES {
 
@@ -15,15 +19,39 @@ NES_Byte MainBus::read(NES_Address address) {
         return ram[address & 0x7ff];
     } else if (address < 0x4020) {
         if (address < 0x4000) {  // PPU registers, mirrored
-            auto reg = static_cast<IORegisters>(address & 0x2007);
-            if (read_callbacks.count(reg))
-                return read_callbacks.at(reg)();
+            if (ppu != nullptr) {
+                switch (address & 0x2007) {
+                    case PPUSTATUS:
+                        return ppu->get_status();
+                    case OAMDATA:
+                        return ppu->get_OAM_data();
+                    case PPUDATA:
+                        if (picture_bus != nullptr)
+                            return ppu->get_data(*picture_bus);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            const auto& callback = ppu_read_callbacks[address & 0x0007];
+            if (callback)
+                return callback();
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else if (address < 0x4018 && address >= 0x4014) {  // only *some* IO registers
-            auto reg = static_cast<IORegisters>(address);
-            if (read_callbacks.count(reg))
-                return read_callbacks.at(reg)();
+            if (controllers != nullptr) {
+                switch (address) {
+                    case JOY1:
+                        return controllers[0].read();
+                    case JOY2:
+                        return controllers[1].read();
+                    default:
+                        break;
+                }
+            }
+            const auto& callback = io_read_callbacks[address - 0x4014];
+            if (callback)
+                return callback();
             else
                 LOG(InfoVerbose) << "No read callback registered for I/O register at: " << std::hex << +address << std::endl;
         }
@@ -48,15 +76,55 @@ void MainBus::write(NES_Address address, NES_Byte value) {
         ram[address & 0x7ff] = value;
     } else if (address < 0x4020) {
         if (address < 0x4000) {  // PPU registers, mirrored
-            auto reg = static_cast<IORegisters>(address & 0x2007);
-            if (write_callbacks.count(reg))
-                return write_callbacks.at(reg)(value);
+            if (ppu != nullptr) {
+                switch (address & 0x2007) {
+                    case PPUCTRL:
+                        ppu->control(value);
+                        return;
+                    case PPUMASK:
+                        ppu->set_mask(value);
+                        return;
+                    case OAMADDR:
+                        ppu->set_OAM_address(value);
+                        return;
+                    case OAMDATA:
+                        ppu->set_OAM_data(value);
+                        return;
+                    case PPUSCROL:
+                        ppu->set_scroll(value);
+                        return;
+                    case PPUADDR:
+                        ppu->set_data_address(value);
+                        return;
+                    case PPUDATA:
+                        if (picture_bus != nullptr) {
+                            ppu->set_data(*picture_bus, value);
+                            return;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            const auto& callback = ppu_write_callbacks[address & 0x0007];
+            if (callback)
+                return callback(value);
             else
                 LOG(InfoVerbose) << "No write callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else if (address < 0x4017 && address >= 0x4014) {  // only some registers
-            auto reg = static_cast<IORegisters>(address);
-            if (write_callbacks.count(reg))
-                return write_callbacks.at(reg)(value);
+            if (address == OAMDMA && cpu != nullptr && ppu != nullptr) {
+                cpu->skip_DMA_cycles();
+                ppu->do_DMA(get_page_pointer(value));
+                return;
+            }
+            if (address == JOY1 && controllers != nullptr) {
+                controllers[0].strobe(value);
+                controllers[1].strobe(value);
+                return;
+            }
+            const auto& callback = io_write_callbacks[address - 0x4014];
+            if (callback)
+                return callback(value);
             else
                 LOG(InfoVerbose) << "No write callback registered for I/O register at: " << std::hex << +address << std::endl;
         } else {

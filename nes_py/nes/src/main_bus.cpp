@@ -31,11 +31,12 @@ NES_Byte MainBus::read(NES_Address address) {
             LOG(InfoVerbose) << "Read access attempt at: " << std::hex << +address << std::endl;
         }
     } else if (address < 0x6000) {
+        if (mapper != nullptr && mapper->handlesExpansion(address))
+            return mapper->readExpansion(address);
         LOG(InfoVerbose) << "Expansion ROM read attempted. This is currently unsupported" << std::endl;
     } else if (address < 0x8000) {
-        std::size_t offset = address - 0x6000;
-        if (mapper->hasExtendedRAM() && offset < extended_ram.size())
-            return extended_ram[offset];
+        if (mapper != nullptr)
+            return mapper->readPRGRAM(address);
     } else {
         return mapper->readPRG(address);
     }
@@ -62,13 +63,16 @@ void MainBus::write(NES_Address address, NES_Byte value) {
             LOG(InfoVerbose) << "Write access attmept at: " << std::hex << +address << std::endl;
         }
     } else if (address < 0x6000) {
+        if (mapper != nullptr && mapper->handlesExpansion(address)) {
+            mapper->writeExpansion(address, value);
+            return;
+        }
         LOG(InfoVerbose) << "Expansion ROM access attempted. This is currently unsupported" << std::endl;
     } else if (address < 0x8000) {
-        std::size_t offset = address - 0x6000;
-        if (mapper->hasExtendedRAM() && offset < extended_ram.size())
-            extended_ram[offset] = value;
+        if (mapper != nullptr)
+            mapper->writePRGRAM(address, value);
     } else {
-        mapper->writePRG(address, value);
+        mapper->writePRG(address, mapper->resolveBusConflict(address, value));
     }
 }
 
@@ -81,19 +85,11 @@ const NES_Byte* MainBus::get_page_pointer(NES_Byte page) {
     else if (address < 0x6000)
         LOG(Error) << "Expansion ROM access attempted, which is unsupported" << std::endl;
     else if (address < 0x8000) {
-        std::size_t offset = address - 0x6000;
-        if (mapper->hasExtendedRAM() && offset < extended_ram.size())
-            return &extended_ram[offset];
+        if (mapper != nullptr)
+            return mapper->getPRGRAMPointer(address);
     }
 
     return nullptr;
-}
-
-void MainBus::set_mapper(Mapper* mapper) {
-    this->mapper = mapper;
-    extended_ram.clear();
-    if (mapper != nullptr && mapper->hasExtendedRAM())
-        extended_ram.resize(mapper->getExtendedRAMSize());
 }
 
 }  // namespace NES

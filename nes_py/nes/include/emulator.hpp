@@ -9,6 +9,7 @@
 #define EMULATOR_HPP
 
 #include <cstddef>
+#include <memory>
 #include <string>
 #include "common.hpp"
 #include "cartridge.hpp"
@@ -40,18 +41,26 @@ class Emulator {
     /// the emulators' PPU
     PPU ppu;
     /// the active mapper on the loaded cartridge
-    Mapper* mapper;
+    std::unique_ptr<Mapper> mapper;
 
     /// the main data bus of the emulator
-    MainBus backup_bus;
+    MainBus::State backup_bus;
     /// the picture bus from the PPU of the emulator
-    PictureBus backup_picture_bus;
+    PictureBus::State backup_picture_bus;
     /// The emulator's CPU
     CPU backup_cpu;
     /// the emulators' PPU
-    PPU backup_ppu;
+    PPU::Snapshot backup_ppu;
     /// the mapper state captured in the backup snapshot
-    Mapper* backup_mapper;
+    std::unique_ptr<Mapper> backup_mapper;
+    /// cached mapper capability flag for CPU-cycle hook dispatch
+    bool mapper_observes_cpu_cycles;
+
+    /// Reconnect mapper pointers and callbacks after initialization/restore.
+    void wire_mapper();
+
+    /// Refresh picture-bus mirroring if the mapper changed it.
+    void synchronize_mapper_mirroring();
 
  public:
     /// The width of the NES screen in pixels
@@ -64,9 +73,6 @@ class Emulator {
     /// @param rom_path the path to the ROM for the emulator to run
     ///
     explicit Emulator(std::string rom_path);
-
-    /// Destroy this emulator and its owned mapper state.
-    ~Emulator();
 
     /// Return a 32-bit pointer to the screen buffer's first address.
     ///
@@ -90,7 +96,7 @@ class Emulator {
     }
 
     /// Load the ROM into the NES.
-    inline void reset() { cpu.reset(bus); ppu.reset(); }
+    inline void reset() { cpu.reset(bus); ppu.reset(); synchronize_mapper_mirroring(); }
 
     /// Perform a step on the emulator, i.e., a single frame.
     void step();
@@ -122,14 +128,10 @@ class Emulator {
     }
 
     /// Read active mapper PRG data through the mapper implementation.
-    inline NES_Byte read_prg(NES_Address address) {
-        return mapper->readPRG(address);
-    }
+    NES_Byte read_prg(NES_Address address);
 
     /// Write active mapper PRG data through the mapper implementation.
-    inline void write_prg(NES_Address address, NES_Byte value) {
-        mapper->writePRG(address, value);
-    }
+    void write_prg(NES_Address address, NES_Byte value);
 
     /// Read active mapper CHR data through the mapper implementation.
     inline NES_Byte read_chr(NES_Address address) {

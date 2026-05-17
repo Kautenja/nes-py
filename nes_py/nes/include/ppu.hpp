@@ -8,6 +8,7 @@
 #ifndef PPU_HPP
 #define PPU_HPP
 
+#include <vector>
 #include "common.hpp"
 #include "picture_bus.hpp"
 
@@ -35,7 +36,7 @@ class PPU {
     std::vector<NES_Byte> scanline_sprites;
 
     /// The current pipeline state of the PPU
-    enum State {
+    enum PipelineState {
         PRE_RENDER,
         RENDER,
         POST_RENDER,
@@ -104,6 +105,34 @@ class PPU {
     NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
 
  public:
+    /// Mutable PPU state captured by backup/restore.
+    struct Snapshot {
+        std::vector<NES_Byte> sprite_memory;
+        std::vector<NES_Byte> scanline_sprites;
+        int pipeline_state;
+        int cycles;
+        int scanline;
+        bool is_even_frame;
+        bool is_vblank;
+        bool is_sprite_zero_hit;
+        NES_Address data_address;
+        NES_Address temp_address;
+        NES_Byte fine_x_scroll;
+        bool is_first_write;
+        NES_Byte data_buffer;
+        NES_Byte sprite_data_address;
+        bool is_showing_sprites;
+        bool is_showing_background;
+        bool is_hiding_edge_sprites;
+        bool is_hiding_edge_background;
+        bool is_long_sprites;
+        bool is_interrupting;
+        int background_page;
+        int sprite_page;
+        NES_Address data_address_increment;
+        std::vector<NES_Pixel> screen;
+    };
+
     /// Initialize a new PPU.
     PPU() : sprite_memory(64 * 4) { }
 
@@ -112,6 +141,12 @@ class PPU {
 
     /// Reset the PPU.
     void reset();
+
+    /// Return a copy of mutable PPU state without callback wiring.
+    Snapshot save_state() const;
+
+    /// Restore mutable PPU state without replacing callback wiring.
+    void load_state(const Snapshot& snapshot);
 
     /// Set the interrupt callback for the CPU.
     inline void set_interrupt_callback(std::function<void(void)> cb) {

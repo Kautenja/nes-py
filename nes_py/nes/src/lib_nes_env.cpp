@@ -5,11 +5,18 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <cstdint>
 #include <exception>
+#include <memory>
 #include <string>
+#include <vector>
 #include "common.hpp"
 #include "cartridge.hpp"
+#include "cpu.hpp"
 #include "emulator.hpp"
+#include "main_bus.hpp"
+#include "mapper_factory.hpp"
+#include "picture_bus.hpp"
 
 // Windows-base systems
 #if defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
@@ -37,6 +44,366 @@ NES::Cartridge LoadCartridgeMetadata(wchar_t* path) {
 }
 
 thread_local std::string cartridge_error;
+
+class IRQTestMapper : public NES::Mapper {
+ private:
+    std::vector<NES::NES_Byte> prg;
+
+ public:
+    IRQTestMapper() : NES::Mapper(nullptr), prg(0x8000, 0xea) {
+        prg[0x0000] = 0x58;  // CLI
+        prg[0x1000] = 0xa9;  // LDA #$42
+        prg[0x1001] = 0x42;
+        prg[0x1002] = 0x85;  // STA $02
+        prg[0x1003] = 0x02;
+        prg[0x7ffc] = 0x00;  // reset vector = $8000
+        prg[0x7ffd] = 0x80;
+        prg[0x7ffe] = 0x00;  // IRQ vector = $9000
+        prg[0x7fff] = 0x90;
+    }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new IRQTestMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        return prg[(address - 0x8000) & 0x7fff];
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline void triggerIRQ() { requestIRQ(); }
+};
+
+class CPUCycleHookMapper : public NES::Mapper {
+ public:
+    int cpu_cycles;
+
+    CPUCycleHookMapper() : NES::Mapper(nullptr), cpu_cycles(0) { }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new CPUCycleHookMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline void onCPUCycle() { ++cpu_cycles; }
+
+    inline bool observesCPUCycles() const { return true; }
+};
+
+class PPUHookMapper : public NES::Mapper {
+ public:
+    int address_observations;
+    int read_observations;
+    int write_observations;
+    NES::NES_Address last_address;
+    NES::NES_Byte last_value;
+
+    PPUHookMapper() :
+        NES::Mapper(nullptr),
+        address_observations(0),
+        read_observations(0),
+        write_observations(0),
+        last_address(0),
+        last_value(0) { }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new PPUHookMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return 0x33;
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        last_value = value;
+    }
+
+    inline void onPPUAddress(NES::NES_Address address) {
+        ++address_observations;
+        last_address = address;
+    }
+
+    inline bool observesPPUAddresses() const { return true; }
+
+    inline void onPPURead(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        ++read_observations;
+        last_value = value;
+    }
+
+    inline bool observesPPUReads() const { return true; }
+
+    inline void onPPUWrite(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        ++write_observations;
+        last_value = value;
+    }
+
+    inline bool observesPPUWrites() const { return true; }
+};
+
+class ExpansionTestMapper : public NES::Mapper {
+ private:
+    NES::NES_Byte expansion[0x1fe0];
+
+ public:
+    ExpansionTestMapper() : NES::Mapper(nullptr), expansion() { }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new ExpansionTestMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline bool handlesExpansion(NES::NES_Address address) const {
+        return address >= 0x4020 && address < 0x6000;
+    }
+
+    inline NES::NES_Byte readExpansion(NES::NES_Address address) {
+        return expansion[address - 0x4020];
+    }
+
+    inline void writeExpansion(
+        NES::NES_Address address,
+        NES::NES_Byte value
+    ) {
+        expansion[address - 0x4020] = value;
+    }
+};
+
+class PRGRAMTestMapper : public NES::Mapper {
+ private:
+    std::size_t active_bank;
+
+ public:
+    PRGRAMTestMapper() : NES::Mapper(nullptr), active_bank(0) {
+        resizePRGRAM(0x4000);
+    }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new PRGRAMTestMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        active_bank = value & 1;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readPRGRAM(NES::NES_Address address) {
+        std::size_t offset = active_bank * 0x2000 + (address - 0x6000);
+        return prg_ram[offset];
+    }
+
+    inline void writePRGRAM(NES::NES_Address address, NES::NES_Byte value) {
+        std::size_t offset = active_bank * 0x2000 + (address - 0x6000);
+        if (prg_ram_writable)
+            prg_ram[offset] = value;
+    }
+
+    inline const NES::NES_Byte* getPRGRAMPointer(NES::NES_Address address) {
+        std::size_t offset = active_bank * 0x2000 + (address - 0x6000);
+        return &prg_ram[offset];
+    }
+
+    inline void protectPRGRAM() { setPRGRAMWritable(false); }
+};
+
+class NameTableTestMapper : public NES::Mapper {
+ private:
+    std::vector<NES::NES_Byte> name_table;
+
+ public:
+    NameTableTestMapper() : NES::Mapper(nullptr), name_table(0x1000, 0) { }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new NameTableTestMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline bool mapsNameTable(NES::NES_Address address) const {
+        return address >= 0x2000 && address < 0x3f00;
+    }
+
+    inline bool hasNameTableMapping() const { return true; }
+
+    inline NES::NES_Byte readNameTable(NES::NES_Address address) {
+        return name_table[address & 0x0fff];
+    }
+
+    inline void writeNameTable(
+        NES::NES_Address address,
+        NES::NES_Byte value
+    ) {
+        name_table[address & 0x0fff] = value;
+    }
+};
+
+bool RunMapperIRQSmokeTest() {
+    IRQTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    bus.set_mapper(&mapper);
+    mapper.setIRQCallback([&]() { cpu.interrupt(bus, NES::CPU::IRQ_INTERRUPT); });
+    cpu.reset(bus);
+    for (int i = 0; i < 4; ++i)
+        cpu.cycle(bus);
+    mapper.triggerIRQ();
+    for (int i = 0; i < 32; ++i)
+        cpu.cycle(bus);
+    return bus.read(0x0002) == 0x42;
+}
+
+bool RunMapperCPUCycleHookSmokeTest() {
+    CPUCycleHookMapper mapper;
+    mapper.onCPUCycle();
+    mapper.onCPUCycle();
+    mapper.onCPUCycle();
+    return mapper.cpu_cycles == 3;
+}
+
+bool RunMapperPPUHookSmokeTest() {
+    PPUHookMapper mapper;
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    NES::NES_Byte value = bus.read(0x0123);
+    bus.write(0x0456, 0x77);
+    return (
+        value == 0x33 &&
+        mapper.address_observations == 2 &&
+        mapper.read_observations == 1 &&
+        mapper.write_observations == 1 &&
+        mapper.last_address == 0x0456 &&
+        mapper.last_value == 0x77
+    );
+}
+
+bool RunMapperExpansionSmokeTest() {
+    ExpansionTestMapper mapper;
+    NES::MainBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x5000, 0x5a);
+    return bus.read(0x5000) == 0x5a;
+}
+
+bool RunMapperPRGRAMSmokeTest() {
+    PRGRAMTestMapper mapper;
+    NES::MainBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x6000, 0x11);
+    bus.write(0x8000, 0x01);
+    bus.write(0x6000, 0x22);
+    bool banked = bus.read(0x6000) == 0x22;
+    bus.write(0x8000, 0x00);
+    banked = banked && bus.read(0x6000) == 0x11;
+    mapper.protectPRGRAM();
+    bus.write(0x6000, 0x99);
+    return banked && bus.read(0x6000) == 0x11;
+}
+
+bool RunMapperNameTableSmokeTest() {
+    NameTableTestMapper mapper;
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x2401, 0x66);
+    return bus.read(0x2401) == 0x66;
+}
 
 }  // namespace
 
@@ -168,6 +535,43 @@ extern "C" {
     /// Return the parsed native NES 2.0 header flag.
     EXP int CartridgeIsNES2(wchar_t* path) {
         return LoadCartridgeMetadata(path).getMetadata().is_nes2 ? 1 : 0;
+    }
+
+    /// Return 1 when a mapper ID has a registered native implementation.
+    EXP int IsMapperSupported(unsigned int mapper_id) {
+        return NES::IsMapperSupported(
+            static_cast<std::uint16_t>(mapper_id)
+        ) ? 1 : 0;
+    }
+
+    /// Return 1 when a fake mapper IRQ reaches the CPU IRQ vector path.
+    EXP int MapperIRQSmokeTest() {
+        return RunMapperIRQSmokeTest() ? 1 : 0;
+    }
+
+    /// Return 1 when mapper CPU-cycle hooks are observable.
+    EXP int MapperCPUCycleHookSmokeTest() {
+        return RunMapperCPUCycleHookSmokeTest() ? 1 : 0;
+    }
+
+    /// Return 1 when mapper PPU address/read/write hooks are observable.
+    EXP int MapperPPUHookSmokeTest() {
+        return RunMapperPPUHookSmokeTest() ? 1 : 0;
+    }
+
+    /// Return 1 when mapper expansion-area read/write routing works.
+    EXP int MapperExpansionSmokeTest() {
+        return RunMapperExpansionSmokeTest() ? 1 : 0;
+    }
+
+    /// Return 1 when mapper PRG RAM banking and write protection work.
+    EXP int MapperPRGRAMSmokeTest() {
+        return RunMapperPRGRAMSmokeTest() ? 1 : 0;
+    }
+
+    /// Return 1 when mapper-owned nametable read/write routing works.
+    EXP int MapperNameTableSmokeTest() {
+        return RunMapperNameTableSmokeTest() ? 1 : 0;
     }
 
     /// Return a pointer to a controller on the machine

@@ -8,12 +8,12 @@
 #include "emulator.hpp"
 #include "mapper_factory.hpp"
 #include "log.hpp"
+#include <stdexcept>
 
 namespace NES {
 
 Emulator::Emulator(std::string rom_path) :
-    mapper(nullptr),
-    backup_mapper(nullptr) {
+    mapper_observes_cpu_cycles(false) {
     // set the read callbacks
     bus.set_read_callback(PPUSTATUS, [&](void) { return ppu.get_status();          });
     bus.set_read_callback(PPUDATA,   [&](void) { return ppu.get_data(picture_bus); });
@@ -35,15 +35,24 @@ Emulator::Emulator(std::string rom_path) :
     // load the ROM from disk, expect that the Python code has validated it
     cartridge.loadFromFile(rom_path);
     // create the mapper based on the mapper ID in the iNES header of the ROM
-    mapper = MapperFactory(&cartridge, [&](){ picture_bus.update_mirroring(); });
-    // give the IO buses a pointer to the mapper
-    bus.set_mapper(mapper);
-    picture_bus.set_mapper(mapper);
+    mapper = MapperFactory(&cartridge);
+    if (mapper == nullptr)
+        throw std::runtime_error("unsupported mapper");
+    wire_mapper();
 }
 
-Emulator::~Emulator() {
-    delete mapper;
-    delete backup_mapper;
+void Emulator::wire_mapper() {
+    mapper->setIRQCallback([&]() {
+        cpu.interrupt(bus, CPU::IRQ_INTERRUPT);
+    });
+    mapper_observes_cpu_cycles = mapper->observesCPUCycles();
+    bus.set_mapper(mapper.get());
+    picture_bus.set_mapper(mapper.get());
+}
+
+void Emulator::synchronize_mapper_mirroring() {
+    if (mapper != nullptr && mapper->hasNameTableMirroringChanged())
+        picture_bus.update_mirroring();
 }
 
 void Emulator::step() {
@@ -53,31 +62,50 @@ void Emulator::step() {
         ppu.cycle(picture_bus);
         ppu.cycle(picture_bus);
         ppu.cycle(picture_bus);
+        if (mapper_observes_cpu_cycles)
+            mapper->onCPUCycle();
         cpu.cycle(bus);
+        synchronize_mapper_mirroring();
     }
 }
 
 void Emulator::backup() {
-    delete backup_mapper;
     backup_mapper = mapper->clone();
-    backup_bus = bus;
-    backup_picture_bus = picture_bus;
+    backup_bus = bus.save_state();
+    backup_picture_bus = picture_bus.save_state();
     backup_cpu = cpu;
-    backup_ppu = ppu;
+    backup_ppu = ppu.save_state();
 }
 
 void Emulator::restore() {
     if (backup_mapper == nullptr)
         return;
 
-    delete mapper;
     mapper = backup_mapper->clone();
-    bus = backup_bus;
-    picture_bus = backup_picture_bus;
+    bus.load_state(backup_bus);
+    picture_bus.load_state(backup_picture_bus);
     cpu = backup_cpu;
-    ppu = backup_ppu;
-    bus.set_mapper(mapper);
-    picture_bus.set_mapper(mapper);
+    ppu.load_state(backup_ppu);
+    wire_mapper();
+}
+
+NES_Byte Emulator::read_prg(NES_Address address) {
+    if (address < 0x6000)
+        return mapper->readExpansion(address);
+    if (address < 0x8000)
+        return mapper->readPRGRAM(address);
+    return mapper->readPRG(address);
+}
+
+void Emulator::write_prg(NES_Address address, NES_Byte value) {
+    if (address < 0x6000) {
+        mapper->writeExpansion(address, value);
+    } else if (address < 0x8000) {
+        mapper->writePRGRAM(address, value);
+    } else {
+        mapper->writePRG(address, mapper->resolveBusConflict(address, value));
+    }
+    synchronize_mapper_mirroring();
 }
 
 }  // namespace NES

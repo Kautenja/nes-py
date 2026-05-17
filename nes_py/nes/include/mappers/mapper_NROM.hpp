@@ -31,8 +31,8 @@ class MapperNROM : public Mapper {
     explicit MapperNROM(Cartridge* cart);
 
     /// Return a copy of this mapper and its current state.
-    inline Mapper* clone() const {
-        return new MapperNROM(*this);
+    inline std::unique_ptr<Mapper> clone() const {
+        return std::unique_ptr<Mapper>(new MapperNROM(*this));
     }
 
     /// Read a byte from the PRG RAM.

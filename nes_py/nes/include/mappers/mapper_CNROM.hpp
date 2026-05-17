@@ -31,8 +31,8 @@ class MapperCNROM : public Mapper {
         select_chr(0) { }
 
     /// Return a copy of this mapper and its current state.
-    inline Mapper* clone() const {
-        return new MapperCNROM(*this);
+    inline std::unique_ptr<Mapper> clone() const {
+        return std::unique_ptr<Mapper>(new MapperCNROM(*this));
     }
 
     /// Read a byte from the PRG RAM.

@@ -10,10 +10,8 @@
 
 namespace NES {
 
-MapperSxROM::MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb) :
+MapperSxROM::MapperSxROM(Cartridge* cart) :
     Mapper(cart),
-    mirroring_callback(mirroring_cb),
-    mirroring(HORIZONTAL),
     mode_chr(0),
     mode_prg(3),
     temp_register(0),
@@ -45,12 +43,11 @@ void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
         if (write_counter == 5) {
             if (address <= 0x9fff) {
                 switch (temp_register & 0x3) {
-                    case 0: { mirroring = ONE_SCREEN_LOWER;   break; }
-                    case 1: { mirroring = ONE_SCREEN_HIGHER;  break; }
-                    case 2: { mirroring = VERTICAL;           break; }
-                    case 3: { mirroring = HORIZONTAL;         break; }
+                    case 0: { setNameTableMirroring(ONE_SCREEN_LOWER);  break; }
+                    case 1: { setNameTableMirroring(ONE_SCREEN_HIGHER); break; }
+                    case 2: { setNameTableMirroring(VERTICAL);          break; }
+                    case 3: { setNameTableMirroring(HORIZONTAL);        break; }
                 }
-                mirroring_callback();
 
                 mode_chr = (temp_register & 0x10) >> 4;
                 mode_prg = (temp_register & 0xc) >> 2;
@@ -76,10 +73,7 @@ void MapperSxROM::writePRG(NES_Address address, NES_Byte value) {
                 if(mode_chr == 1)
                     second_bank_chr = 0x1000 * temp_register;
             } else {
-                // TODO: PRG-RAM
-                if ((temp_register & 0x10) == 0x10) {
-                    LOG(Info) << "PRG-RAM activated" << std::endl;
-                }
+                setPRGRAMWritable((temp_register & 0x10) == 0);
                 temp_register &= 0xf;
                 register_prg = temp_register;
                 calculatePRGPointers();

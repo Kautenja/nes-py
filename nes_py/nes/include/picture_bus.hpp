@@ -8,6 +8,7 @@
 #ifndef PICTURE_BUS_HPP
 #define PICTURE_BUS_HPP
 
+#include <algorithm>
 #include <vector>
 #include <cstdlib>
 #include "common.hpp"
@@ -26,10 +27,28 @@ class PictureBus {
     std::vector<NES_Byte> palette;
     /// a pointer to the mapper on the cartridge
     Mapper* mapper;
+    /// cached mapper capability flags for hot-path PPU dispatch
+    bool mapper_observes_ppu_addresses;
+    bool mapper_observes_ppu_reads;
+    bool mapper_observes_ppu_writes;
+    bool mapper_has_name_table_mapping;
 
  public:
+    /// Mutable picture-bus state captured by backup/restore.
+    struct State {
+        std::vector<NES_Byte> ram;
+        std::vector<NES_Byte> palette;
+    };
+
     /// Initialize a new picture bus.
-    PictureBus() : ram(0x800), palette(0x20), mapper(nullptr) { }
+    PictureBus() :
+        ram(0x800),
+        palette(0x20),
+        mapper(nullptr),
+        mapper_observes_ppu_addresses(false),
+        mapper_observes_ppu_reads(false),
+        mapper_observes_ppu_writes(false),
+        mapper_has_name_table_mapping(false) { }
 
     /// Read a byte from an address on the VRAM.
     ///
@@ -51,7 +70,31 @@ class PictureBus {
     /// @param mapper the new mapper pointer for the bus to use
     ///
     inline void set_mapper(Mapper *mapper) {
-        this->mapper = mapper; update_mirroring();
+        this->mapper = mapper;
+        mapper_observes_ppu_addresses = (
+            mapper != nullptr && mapper->observesPPUAddresses()
+        );
+        mapper_observes_ppu_reads = (
+            mapper != nullptr && mapper->observesPPUReads()
+        );
+        mapper_observes_ppu_writes = (
+            mapper != nullptr && mapper->observesPPUWrites()
+        );
+        mapper_has_name_table_mapping = (
+            mapper != nullptr && mapper->hasNameTableMapping()
+        );
+        update_mirroring();
+    }
+
+    /// Return a copy of mutable picture-bus state without mapper wiring.
+    inline State save_state() const { return {ram, palette}; }
+
+    /// Restore mutable picture-bus state without changing mapper wiring.
+    inline void load_state(const State& state) {
+        ram.resize(state.ram.size());
+        palette.resize(state.palette.size());
+        std::copy(state.ram.begin(), state.ram.end(), ram.begin());
+        std::copy(state.palette.begin(), state.palette.end(), palette.begin());
     }
 
     /// Read a color index from the palette.

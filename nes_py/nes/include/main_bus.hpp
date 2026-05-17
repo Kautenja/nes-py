@@ -8,6 +8,7 @@
 #ifndef MAIN_BUS_HPP
 #define MAIN_BUS_HPP
 
+#include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include "common.hpp"
@@ -51,8 +52,6 @@ class MainBus {
  private:
     /// The RAM on the main bus
     std::vector<NES_Byte> ram;
-    /// The extended RAM (if the mapper has extended RAM)
-    std::vector<NES_Byte> extended_ram;
     /// a pointer to the mapper on the cartridge
     Mapper* mapper;
     /// a map of IO registers to callback methods for writes
@@ -61,6 +60,11 @@ class MainBus {
     IORegisterToReadCallbackMap read_callbacks;
 
  public:
+    /// Mutable main-bus state captured by backup/restore.
+    struct State {
+        std::vector<NES_Byte> ram;
+    };
+
     /// Initialize a new main bus.
     MainBus() : ram(0x800, 0), mapper(nullptr) { }
 
@@ -89,7 +93,16 @@ class MainBus {
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    void set_mapper(Mapper* mapper);
+    inline void set_mapper(Mapper* mapper) { this->mapper = mapper; }
+
+    /// Return a copy of mutable bus state without callback or mapper wiring.
+    inline State save_state() const { return {ram}; }
+
+    /// Restore mutable bus state without changing callbacks or mapper wiring.
+    inline void load_state(const State& state) {
+        ram.resize(state.ram.size());
+        std::copy(state.ram.begin(), state.ram.end(), ram.begin());
+    }
 
     /// Set a callback for when writes occur.
     inline void set_write_callback(IORegisters reg, WriteCallback callback) {

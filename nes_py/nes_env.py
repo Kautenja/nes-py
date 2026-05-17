@@ -131,6 +131,20 @@ _LIB.CartridgeIsPAL.argtypes = [ctypes.c_wchar_p]
 _LIB.CartridgeIsPAL.restype = ctypes.c_uint
 _LIB.CartridgeIsNES2.argtypes = [ctypes.c_wchar_p]
 _LIB.CartridgeIsNES2.restype = ctypes.c_uint
+_LIB.IsMapperSupported.argtypes = [ctypes.c_uint]
+_LIB.IsMapperSupported.restype = ctypes.c_uint
+_LIB.MapperIRQSmokeTest.argtypes = None
+_LIB.MapperIRQSmokeTest.restype = ctypes.c_uint
+_LIB.MapperCPUCycleHookSmokeTest.argtypes = None
+_LIB.MapperCPUCycleHookSmokeTest.restype = ctypes.c_uint
+_LIB.MapperPPUHookSmokeTest.argtypes = None
+_LIB.MapperPPUHookSmokeTest.restype = ctypes.c_uint
+_LIB.MapperExpansionSmokeTest.argtypes = None
+_LIB.MapperExpansionSmokeTest.restype = ctypes.c_uint
+_LIB.MapperPRGRAMSmokeTest.argtypes = None
+_LIB.MapperPRGRAMSmokeTest.restype = ctypes.c_uint
+_LIB.MapperNameTableSmokeTest.argtypes = None
+_LIB.MapperNameTableSmokeTest.restype = ctypes.c_uint
 
 
 def _native_cartridge_error(rom_path):
@@ -169,6 +183,23 @@ def _native_cartridge_metadata(rom_path):
         'has_play_choice_10': bool(_LIB.CartridgeHasPlayChoice10(rom_path)),
         'is_pal': bool(_LIB.CartridgeIsPAL(rom_path)),
         'is_nes2': bool(_LIB.CartridgeIsNES2(rom_path)),
+    }
+
+
+def _is_mapper_supported(mapper):
+    """Return whether a mapper ID has a native implementation."""
+    return bool(_LIB.IsMapperSupported(mapper))
+
+
+def _native_mapper_hook_smoke_results():
+    """Run focused native mapper hook smoke checks."""
+    return {
+        'irq': bool(_LIB.MapperIRQSmokeTest()),
+        'cpu_cycle': bool(_LIB.MapperCPUCycleHookSmokeTest()),
+        'ppu': bool(_LIB.MapperPPUHookSmokeTest()),
+        'expansion': bool(_LIB.MapperExpansionSmokeTest()),
+        'prg_ram': bool(_LIB.MapperPRGRAMSmokeTest()),
+        'nametable': bool(_LIB.MapperNameTableSmokeTest()),
     }
 
 
@@ -242,7 +273,7 @@ class NESEnv(gym.Env):
         if rom.is_pal:
             raise ValueError('ROM is PAL. PAL is not supported.')
         # check that the mapper is implemented
-        elif rom.mapper not in {0, 1, 2, 3}:
+        elif not _is_mapper_supported(rom.mapper):
             msg = 'ROM has an unsupported mapper number {}. please see https://github.com/Kautenja/nes-py/issues/28 for more information.'
             raise ValueError(msg.format(rom.mapper))
         # create a dedicated random number generator for the environment

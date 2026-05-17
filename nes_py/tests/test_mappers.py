@@ -7,6 +7,8 @@ import numpy as np
 from nes_py._rom import ROM
 from nes_py.nes_env import NESEnv
 from nes_py.nes_env import SCREEN_SHAPE_24_BIT
+from nes_py.nes_env import _is_mapper_supported
+from nes_py.nes_env import _native_mapper_hook_smoke_results
 from .mapper_fixtures import chr_bank_marker
 from .mapper_fixtures import prg_bank_marker
 from .mapper_fixtures import synthetic_rom_path
@@ -89,6 +91,30 @@ class ShouldIdentifySupportedMapperFixtures(MapperTestCase):
                 self.assertEqual(has_chr_ram, env._has_chr_ram())
                 self.assertEqual(native_mirroring, env._name_table_mirroring())
 
+    def test_mapper_factory_supports_registered_mapper_ids(self):
+        for mapper in (0, 1, 2, 3):
+            with self.subTest(mapper=mapper):
+                self.assertTrue(_is_mapper_supported(mapper))
+
+        self.assertFalse(_is_mapper_supported(4))
+
+
+class ShouldExposeMapperLifecycleAndTimingHooks(MapperTestCase):
+    """Exercise native fake mappers that use the new extension points."""
+
+    def test_native_mapper_hook_smoke_tests(self):
+        results = _native_mapper_hook_smoke_results()
+
+        self.assertEqual({
+            'irq',
+            'cpu_cycle',
+            'ppu',
+            'expansion',
+            'prg_ram',
+            'nametable',
+        }, set(results))
+        self.assertTrue(all(results.values()), results)
+
 
 class ShouldCharacterizeMapper000NROM(MapperTestCase):
     """Characterize NROM fixed PRG mapping and CHR ROM behavior."""
@@ -136,6 +162,23 @@ class ShouldCharacterizeMapper000NROM(MapperTestCase):
         self.assertIsInstance(done, bool)
         self.assertIsInstance(info, dict)
         self.assertEqual(SCREEN_SHAPE_24_BIT, env.render('rgb_array').shape)
+
+    def test_prg_ram_is_mapper_state_across_backup_restore(self):
+        path = self.synthetic_rom(
+            'nrom-prg-ram.nes',
+            mapper=0,
+            prg_banks=1,
+            chr_banks=1,
+        )
+        env = self.env(path)
+
+        env._write_prg(0x6000, 0x2a)
+        env._backup()
+        env._write_prg(0x6000, 0x7f)
+
+        self.assertEqual(0x7f, env._read_prg(0x6000))
+        env._restore()
+        self.assertEqual(0x2a, env._read_prg(0x6000))
 
 
 class ShouldCharacterizeMapper001SxROM(MapperTestCase):

@@ -5,6 +5,7 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <algorithm>
 #include <cstring>
 #include "ppu.hpp"
 #include "palette.hpp"
@@ -32,6 +33,71 @@ void PPU::reset() {
     pipeline_state = PRE_RENDER;
     scanline_sprites.reserve(8);
     scanline_sprites.resize(0);
+}
+
+PPU::Snapshot PPU::save_state() const {
+    Snapshot snapshot;
+    snapshot.sprite_memory = sprite_memory;
+    snapshot.scanline_sprites = scanline_sprites;
+    snapshot.pipeline_state = pipeline_state;
+    snapshot.cycles = cycles;
+    snapshot.scanline = scanline;
+    snapshot.is_even_frame = is_even_frame;
+    snapshot.is_vblank = is_vblank;
+    snapshot.is_sprite_zero_hit = is_sprite_zero_hit;
+    snapshot.data_address = data_address;
+    snapshot.temp_address = temp_address;
+    snapshot.fine_x_scroll = fine_x_scroll;
+    snapshot.is_first_write = is_first_write;
+    snapshot.data_buffer = data_buffer;
+    snapshot.sprite_data_address = sprite_data_address;
+    snapshot.is_showing_sprites = is_showing_sprites;
+    snapshot.is_showing_background = is_showing_background;
+    snapshot.is_hiding_edge_sprites = is_hiding_edge_sprites;
+    snapshot.is_hiding_edge_background = is_hiding_edge_background;
+    snapshot.is_long_sprites = is_long_sprites;
+    snapshot.is_interrupting = is_interrupting;
+    snapshot.background_page = background_page;
+    snapshot.sprite_page = sprite_page;
+    snapshot.data_address_increment = data_address_increment;
+    snapshot.screen.assign(
+        &screen[0][0],
+        &screen[0][0] + VISIBLE_SCANLINES * SCANLINE_VISIBLE_DOTS
+    );
+    return snapshot;
+}
+
+void PPU::load_state(const Snapshot& snapshot) {
+    sprite_memory = snapshot.sprite_memory;
+    scanline_sprites = snapshot.scanline_sprites;
+    pipeline_state = static_cast<PipelineState>(snapshot.pipeline_state);
+    cycles = snapshot.cycles;
+    scanline = snapshot.scanline;
+    is_even_frame = snapshot.is_even_frame;
+    is_vblank = snapshot.is_vblank;
+    is_sprite_zero_hit = snapshot.is_sprite_zero_hit;
+    data_address = snapshot.data_address;
+    temp_address = snapshot.temp_address;
+    fine_x_scroll = snapshot.fine_x_scroll;
+    is_first_write = snapshot.is_first_write;
+    data_buffer = snapshot.data_buffer;
+    sprite_data_address = snapshot.sprite_data_address;
+    is_showing_sprites = snapshot.is_showing_sprites;
+    is_showing_background = snapshot.is_showing_background;
+    is_hiding_edge_sprites = snapshot.is_hiding_edge_sprites;
+    is_hiding_edge_background = snapshot.is_hiding_edge_background;
+    is_long_sprites = snapshot.is_long_sprites;
+    is_interrupting = snapshot.is_interrupting;
+    background_page = static_cast<CharacterPage>(snapshot.background_page);
+    sprite_page = static_cast<CharacterPage>(snapshot.sprite_page);
+    data_address_increment = snapshot.data_address_increment;
+    if (snapshot.screen.size() == VISIBLE_SCANLINES * SCANLINE_VISIBLE_DOTS) {
+        std::copy(
+            snapshot.screen.begin(),
+            snapshot.screen.end(),
+            &screen[0][0]
+        );
+    }
 }
 
 void PPU::cycle(PictureBus& bus) {

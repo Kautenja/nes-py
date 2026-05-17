@@ -16,10 +16,6 @@ namespace NES {
 
 class MapperSxROM : public Mapper {
  private:
-    /// The mirroring callback on the PPU
-    std::function<void(void)> mirroring_callback;
-    /// the mirroring mode on the device
-    NameTableMirroring mirroring;
     /// whether the cartridge uses character RAM
     bool has_character_ram;
     /// the mode for CHR ROM
@@ -54,13 +50,12 @@ class MapperSxROM : public Mapper {
     /// Create a new mapper with a cartridge.
     ///
     /// @param cart a reference to a cartridge for the mapper to access
-    /// @param mirroring_cb the callback to change mirroring modes on the PPU
     ///
-    MapperSxROM(Cartridge* cart, std::function<void(void)> mirroring_cb);
+    explicit MapperSxROM(Cartridge* cart);
 
     /// Return a copy of this mapper and its current state.
-    inline Mapper* clone() const {
-        return new MapperSxROM(*this);
+    inline std::unique_ptr<Mapper> clone() const {
+        return std::unique_ptr<Mapper>(new MapperSxROM(*this));
     }
 
     /// Read a byte from the PRG RAM.
@@ -103,8 +98,6 @@ class MapperSxROM : public Mapper {
     ///
     void writeCHR(NES_Address address, NES_Byte value);
 
-    /// Return the name table mirroring mode of this mapper.
-    inline NameTableMirroring getNameTableMirroring() { return mirroring; }
 };
 
 }  // namespace NES

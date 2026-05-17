@@ -53,6 +53,7 @@ Repository = "https://github.com/Kautenja/nes-py"
 
 [tool.scikit-build]
 minimum-version = "build-system.requires"
+sdist.include = ["nes_emu/**"]
 sdist.exclude = [
     ".clang_complete",
     ".github/**",

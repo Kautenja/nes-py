@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(NES_PY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/nes_py")
-set(NES_NATIVE_ROOT "${NES_PY_ROOT}/nes")
+set(NES_NATIVE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/nes_emu")
 set(NES_CYTHON_SOURCE "${NES_PY_ROOT}/_native.pyx")
 set(NES_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
 set(NES_GENERATED_SOURCE "${NES_GENERATED_DIR}/_native.cpp")
@@ -24,7 +24,7 @@ add_custom_command(
 )
 
 file(GLOB_RECURSE NES_NATIVE_SOURCES CONFIGURE_DEPENDS
-    "${NES_NATIVE_ROOT}/src/*.cpp"
+    "${NES_NATIVE_ROOT}/src/nes_emu/*.cpp"
 )
 
 Python_add_library(_native MODULE WITH_SOABI

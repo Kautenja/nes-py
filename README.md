@@ -181,12 +181,14 @@ There you will find instructions for:
 -   documentation for the `nes_py.wrappers` module
 
 Project metadata, runtime dependencies, release extras, console scripts, and
-package discovery are configured in `pyproject.toml`. `setup.py` is kept only
-for the Cython native emulator extension and its platform-specific compiler
-flags. The runtime binding imports `nes_py._native` directly; the old `ctypes`
-shared-library discovery path is no longer used. For local development, install
-the package in editable mode and build distributions through the standard PEP
-517 frontend:
+package discovery are configured in `pyproject.toml`. The native emulator
+source tree lives under `nes_emu`, with public and internal headers below
+`nes_emu/include/nes_emu` and C++ sources below `nes_emu/src/nes_emu`. CMake
+builds those sources into the `nes_py._native` extension through
+scikit-build-core. The runtime binding imports `nes_py._native` directly; the
+old `ctypes` shared-library discovery path is no longer used. For local
+development, install the package in editable mode and build distributions
+through the standard PEP 517 frontend:
 
 ```shell
 python -m pip install --upgrade pip build

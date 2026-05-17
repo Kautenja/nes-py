@@ -21,13 +21,13 @@ SCREEN_HEIGHT = 240
 RAM_SIZE = 0x800
 
 
-cdef extern from "common.hpp" namespace "NES":
+cdef extern from "nes_emu/common.hpp" namespace "NES":
     ctypedef uint8_t NES_Byte
     ctypedef uint16_t NES_Address
     ctypedef uint32_t NES_Pixel
 
 
-cdef extern from "cartridge.hpp" namespace "NES":
+cdef extern from "nes_emu/cartridge.hpp" namespace "NES":
     cdef cppclass CartridgeMetadata:
         uint16_t mapper_number
         NES_Byte submapper
@@ -55,7 +55,7 @@ cdef extern from "cartridge.hpp" namespace "NES":
         const CartridgeMetadata& getMetadata() const
 
 
-cdef extern from "emulator.hpp" namespace "NES":
+cdef extern from "nes_emu/emulator.hpp" namespace "NES":
     cdef cppclass Emulator:
         Emulator(string rom_path) except +
         NES_Pixel* get_screen_buffer()
@@ -76,7 +76,7 @@ cdef extern from "emulator.hpp" namespace "NES":
         void write_chr(NES_Address address, NES_Byte value)
 
 
-cdef extern from "mapper_factory.hpp" namespace "NES":
+cdef extern from "nes_emu/mapper_factory.hpp" namespace "NES":
     cpp_bool IsMapperSupported(uint16_t mapper_id)
 
 

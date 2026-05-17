@@ -8,9 +8,9 @@
 #ifndef PICTURE_BUS_HPP
 #define PICTURE_BUS_HPP
 
-#include <algorithm>
-#include <vector>
-#include <cstdlib>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include "common.hpp"
 #include "mapper.hpp"
 
@@ -19,12 +19,16 @@ namespace NES {
 /// The bus for graphical data to travel along
 class PictureBus {
  private:
+    /// Number of bytes in local nametable RAM, including four-screen RAM.
+    static const std::size_t NAME_TABLE_RAM_SIZE = 0x1000;
+    /// Number of bytes in local palette RAM.
+    static const std::size_t PALETTE_RAM_SIZE = 0x20;
     /// the VRAM on the picture bus
-    std::vector<NES_Byte> ram;
+    std::array<NES_Byte, NAME_TABLE_RAM_SIZE> ram;
     /// indexes where they start in RAM vector
-    std::size_t name_tables[4] = {0, 0, 0, 0};
+    std::array<std::size_t, 4> name_tables;
     /// the palette for decoding RGB tuples
-    std::vector<NES_Byte> palette;
+    std::array<NES_Byte, PALETTE_RAM_SIZE> palette;
     /// a pointer to the mapper on the cartridge
     Mapper* mapper;
     /// cached mapper capability flags for hot-path PPU dispatch
@@ -32,23 +36,35 @@ class PictureBus {
     bool mapper_observes_ppu_reads;
     bool mapper_observes_ppu_writes;
     bool mapper_has_name_table_mapping;
+    /// Incremented whenever CPU/PPU writes can invalidate cached render data.
+    std::uint64_t write_generation;
+
+    /// Normalize palette addresses, including universal background mirrors.
+    static inline NES_Byte normalize_palette_address(NES_Address address) {
+        NES_Byte palette_address = static_cast<NES_Byte>(address & 0x1f);
+        if ((palette_address & 0x10) && ((palette_address & 0x03) == 0))
+            palette_address &= 0x0f;
+        return palette_address;
+    }
 
  public:
     /// Mutable picture-bus state captured by backup/restore.
     struct State {
-        std::vector<NES_Byte> ram;
-        std::vector<NES_Byte> palette;
+        std::array<NES_Byte, NAME_TABLE_RAM_SIZE> ram;
+        std::array<NES_Byte, PALETTE_RAM_SIZE> palette;
     };
 
     /// Initialize a new picture bus.
     PictureBus() :
-        ram(0x800),
-        palette(0x20),
+        ram(),
+        name_tables{{0, 0, 0, 0}},
+        palette(),
         mapper(nullptr),
         mapper_observes_ppu_addresses(false),
         mapper_observes_ppu_reads(false),
         mapper_observes_ppu_writes(false),
-        mapper_has_name_table_mapping(false) { }
+        mapper_has_name_table_mapping(false),
+        write_generation(0) { }
 
     /// Read a byte from an address on the VRAM.
     ///
@@ -91,10 +107,23 @@ class PictureBus {
 
     /// Restore mutable picture-bus state without changing mapper wiring.
     inline void load_state(const State& state) {
-        ram.resize(state.ram.size());
-        palette.resize(state.palette.size());
-        std::copy(state.ram.begin(), state.ram.end(), ram.begin());
-        std::copy(state.palette.begin(), state.palette.end(), palette.begin());
+        ram = state.ram;
+        palette = state.palette;
+        ++write_generation;
+    }
+
+    /// Return true when mapper-visible PPU hooks require uncached bus reads.
+    inline bool has_mapper_ppu_observers() const {
+        return (
+            mapper_observes_ppu_addresses ||
+            mapper_observes_ppu_reads ||
+            mapper_observes_ppu_writes
+        );
+    }
+
+    /// Return the current write generation for render-cache invalidation.
+    inline std::uint64_t get_write_generation() const {
+        return write_generation;
     }
 
     /// Read a color index from the palette.
@@ -103,8 +132,8 @@ class PictureBus {
     ///
     /// @return the index of the RGB tuple in the color array
     ///
-    inline NES_Byte read_palette(NES_Byte address) {
-        return palette[address];
+    inline NES_Byte read_palette(NES_Byte address) const {
+        return palette[normalize_palette_address(address)];
     }
 
     /// Update the mirroring and name table from the mapper.

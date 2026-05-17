@@ -17,8 +17,11 @@ void PPU::reset() {
     is_long_sprites = false;
     is_interrupting = false;
     is_vblank = false;
+    is_sprite_zero_hit = false;
     is_showing_background = true;
     is_showing_sprites = true;
+    is_hiding_edge_background = false;
+    is_hiding_edge_sprites = false;
     is_even_frame = true;
     is_first_write = true;
     background_page = LOW;
@@ -29,16 +32,27 @@ void PPU::reset() {
     sprite_data_address = 0;
     fine_x_scroll = 0;
     temp_address = 0;
+    data_buffer = 0;
     data_address_increment = 1;
     pipeline_state = PRE_RENDER;
-    scanline_sprites.reserve(8);
-    scanline_sprites.resize(0);
+    scanline_sprite_count = 0;
+    background_tile_cache_valid = false;
+    background_tile_cache_address = 0;
+    background_tile_cache_page = LOW;
+    background_tile_cache_generation = 0;
+    background_tile_cache_low = 0;
+    background_tile_cache_high = 0;
+    background_tile_cache_attribute = 0;
+    std::fill(sprite_memory.begin(), sprite_memory.end(), 0);
+    std::fill(scanline_sprites.begin(), scanline_sprites.end(), 0);
+    std::fill(&screen[0][0], &screen[0][0] + SCREEN_PIXEL_COUNT, 0);
 }
 
 PPU::Snapshot PPU::save_state() const {
     Snapshot snapshot;
     snapshot.sprite_memory = sprite_memory;
     snapshot.scanline_sprites = scanline_sprites;
+    snapshot.scanline_sprite_count = scanline_sprite_count;
     snapshot.pipeline_state = pipeline_state;
     snapshot.cycles = cycles;
     snapshot.scanline = scanline;
@@ -60,9 +74,17 @@ PPU::Snapshot PPU::save_state() const {
     snapshot.background_page = background_page;
     snapshot.sprite_page = sprite_page;
     snapshot.data_address_increment = data_address_increment;
-    snapshot.screen.assign(
+    snapshot.background_tile_cache_valid = background_tile_cache_valid;
+    snapshot.background_tile_cache_address = background_tile_cache_address;
+    snapshot.background_tile_cache_page = background_tile_cache_page;
+    snapshot.background_tile_cache_generation = background_tile_cache_generation;
+    snapshot.background_tile_cache_low = background_tile_cache_low;
+    snapshot.background_tile_cache_high = background_tile_cache_high;
+    snapshot.background_tile_cache_attribute = background_tile_cache_attribute;
+    std::copy(
         &screen[0][0],
-        &screen[0][0] + VISIBLE_SCANLINES * SCANLINE_VISIBLE_DOTS
+        &screen[0][0] + SCREEN_PIXEL_COUNT,
+        snapshot.screen.begin()
     );
     return snapshot;
 }
@@ -70,6 +92,7 @@ PPU::Snapshot PPU::save_state() const {
 void PPU::load_state(const Snapshot& snapshot) {
     sprite_memory = snapshot.sprite_memory;
     scanline_sprites = snapshot.scanline_sprites;
+    scanline_sprite_count = snapshot.scanline_sprite_count;
     pipeline_state = static_cast<PipelineState>(snapshot.pipeline_state);
     cycles = snapshot.cycles;
     scanline = snapshot.scanline;
@@ -91,13 +114,17 @@ void PPU::load_state(const Snapshot& snapshot) {
     background_page = static_cast<CharacterPage>(snapshot.background_page);
     sprite_page = static_cast<CharacterPage>(snapshot.sprite_page);
     data_address_increment = snapshot.data_address_increment;
-    if (snapshot.screen.size() == VISIBLE_SCANLINES * SCANLINE_VISIBLE_DOTS) {
-        std::copy(
-            snapshot.screen.begin(),
-            snapshot.screen.end(),
-            &screen[0][0]
-        );
-    }
+    background_tile_cache_valid = snapshot.background_tile_cache_valid;
+    background_tile_cache_address = snapshot.background_tile_cache_address;
+    background_tile_cache_page = static_cast<CharacterPage>(
+        snapshot.background_tile_cache_page
+    );
+    background_tile_cache_generation =
+        snapshot.background_tile_cache_generation;
+    background_tile_cache_low = snapshot.background_tile_cache_low;
+    background_tile_cache_high = snapshot.background_tile_cache_high;
+    background_tile_cache_attribute = snapshot.background_tile_cache_attribute;
+    std::copy(snapshot.screen.begin(), snapshot.screen.end(), &screen[0][0]);
 }
 
 void PPU::cycle(PictureBus& bus) {
@@ -109,11 +136,13 @@ void PPU::cycle(PictureBus& bus) {
                 // Set bits related to horizontal position
                 data_address &= ~0x41f; //Unset horizontal bits
                 data_address |= temp_address & 0x41f; //Copy
+                background_tile_cache_valid = false;
             }
             else if (cycles > 280 && cycles <= 304 && is_showing_background && is_showing_sprites) {
                 // Set vertical bits
                 data_address &= ~0x7be0; //Unset bits related to horizontal
                 data_address |= temp_address & 0x7be0; //Copy
+                background_tile_cache_valid = false;
             }
             // if (cycles > 257 && cycles < 320)
             //     sprite_data_address = 0;
@@ -136,31 +165,64 @@ void PPU::cycle(PictureBus& bus) {
                 if (is_showing_background) {
                     auto x_fine = (fine_x_scroll + x) % 8;
                     if (!is_hiding_edge_background || x >= 8) {
-                        // fetch tile
-                        // mask off fine y
-                        auto address = 0x2000 | (data_address & 0x0FFF);
-                        //auto address = 0x2000 + x / 8 + (y / 8) * (SCANLINE_VISIBLE_DOTS / 8);
-                        NES_Byte tile = bus.read(address);
+                        NES_Byte pattern_low = 0;
+                        NES_Byte pattern_high = 0;
+                        NES_Byte attribute = 0;
+                        bool can_cache = !bus.has_mapper_ppu_observers();
+                        auto generation = bus.get_write_generation();
 
-                        //fetch pattern
-                        //Each pattern occupies 16 bytes, so multiply by 16
-                        //Add fine y
-                        address = (tile * 16) + ((data_address >> 12/*y % 8*/) & 0x7);
-                        //set whether the pattern is in the high or low page
-                        address |= background_page << 12;
+                        if (
+                            can_cache &&
+                            background_tile_cache_valid &&
+                            background_tile_cache_address == data_address &&
+                            background_tile_cache_page == background_page &&
+                            background_tile_cache_generation == generation
+                        ) {
+                            pattern_low = background_tile_cache_low;
+                            pattern_high = background_tile_cache_high;
+                            attribute = background_tile_cache_attribute;
+                        } else {
+                            // fetch tile
+                            // mask off fine y
+                            auto address = 0x2000 | (data_address & 0x0FFF);
+                            NES_Byte tile = bus.read(address);
+
+                            //fetch pattern
+                            //Each pattern occupies 16 bytes, so multiply by 16
+                            //Add fine y
+                            address = (tile * 16) + ((data_address >> 12/*y % 8*/) & 0x7);
+                            //set whether the pattern is in the high or low page
+                            address |= background_page << 12;
+                            pattern_low = bus.read(address);
+                            pattern_high = bus.read(address + 8);
+
+                            //fetch attribute and calculate higher two bits of palette
+                            address = 0x23C0 | (data_address & 0x0C00) | ((data_address >> 4) & 0x38)
+                                        | ((data_address >> 2) & 0x07);
+                            attribute = bus.read(address);
+
+                            if (can_cache) {
+                                background_tile_cache_valid = true;
+                                background_tile_cache_address = data_address;
+                                background_tile_cache_page = background_page;
+                                background_tile_cache_generation = generation;
+                                background_tile_cache_low = pattern_low;
+                                background_tile_cache_high = pattern_high;
+                                background_tile_cache_attribute = attribute;
+                            } else {
+                                background_tile_cache_valid = false;
+                            }
+                        }
+
                         //Get the corresponding bit determined by (8 - x_fine) from the right
                         //bit 0 of palette entry
-                        bgColor = (bus.read(address) >> (7 ^ x_fine)) & 1;
+                        bgColor = (pattern_low >> (7 ^ x_fine)) & 1;
                         //bit 1
-                        bgColor |= ((bus.read(address + 8) >> (7 ^ x_fine)) & 1) << 1;
+                        bgColor |= ((pattern_high >> (7 ^ x_fine)) & 1) << 1;
 
                         //flag used to calculate final pixel with the sprite pixel
                         bgOpaque = bgColor;
 
-                        //fetch attribute and calculate higher two bits of palette
-                        address = 0x23C0 | (data_address & 0x0C00) | ((data_address >> 4) & 0x38)
-                                    | ((data_address >> 2) & 0x07);
-                        auto attribute = bus.read(address);
                         int shift = ((data_address >> 4) & 4) | (data_address & 2);
                         //Extract and set the upper two bits for the color
                         bgColor |= ((attribute >> shift) & 0x3) << 2;
@@ -177,11 +239,13 @@ void PPU::cycle(PictureBus& bus) {
                         else
                             // increment coarse X
                             data_address += 1;
+                        background_tile_cache_valid = false;
                     }
                 }
 
                 if (is_showing_sprites && (!is_hiding_edge_sprites || x >= 8)) {
-                    for (auto i : scanline_sprites) {
+                    for (std::size_t sprite_index = 0; sprite_index < scanline_sprite_count; ++sprite_index) {
+                        NES_Byte i = scanline_sprites[sprite_index];
                         NES_Byte spr_x =     sprite_memory[i * 4 + 3];
 
                         if (0 > x - spr_x || x - spr_x >= 8)
@@ -273,6 +337,7 @@ void PPU::cycle(PictureBus& bus) {
                 // Copy bits related to horizontal position
                 data_address &= ~0x41f;
                 data_address |= temp_address & 0x41f;
+                background_tile_cache_valid = false;
             }
 
 //                 if (cycles > 257 && cycles < 320)
@@ -283,21 +348,22 @@ void PPU::cycle(PictureBus& bus) {
                 //This isn't where/when this indexing, actually copying in 2C02 is done
                 //but (I think) it shouldn't hurt any games if this is done here
 
-                scanline_sprites.resize(0);
+                scanline_sprite_count = 0;
+                std::fill(scanline_sprites.begin(), scanline_sprites.end(), 0);
 
                 int range = 8;
                 if (is_long_sprites)
                     range = 16;
 
-                NES_Byte j = 0;
                 for (NES_Byte i = sprite_data_address / 4; i < 64; ++i) {
                     auto diff = (scanline - sprite_memory[i * 4]);
                     if (0 <= diff && diff < range) {
-                        scanline_sprites.push_back(i);
-                        if (++j >= 8)
+                        scanline_sprites[scanline_sprite_count++] = i;
+                        if (scanline_sprite_count >= MAX_SCANLINE_SPRITES)
                             break;
                     }
                 }
+                background_tile_cache_valid = false;
 
                 ++scanline;
                 cycles = 0;
@@ -361,6 +427,7 @@ void PPU::control(NES_Byte ctrl) {
     is_long_sprites = ctrl & 0x20;
     background_page = static_cast<CharacterPage>(!!(ctrl & 0x10));
     sprite_page = static_cast<CharacterPage>(!!(ctrl & 0x8));
+    background_tile_cache_valid = false;
     if (ctrl & 0x4)
         data_address_increment = 0x20;
     else
@@ -379,6 +446,7 @@ void PPU::set_mask(NES_Byte mask) {
     is_hiding_edge_sprites = !(mask & 0x4);
     is_showing_background = mask & 0x8;
     is_showing_sprites = mask & 0x10;
+    background_tile_cache_valid = false;
 }
 
 NES_Byte PPU::get_status() {
@@ -402,14 +470,16 @@ void PPU::set_data_address(NES_Byte address) {
         temp_address |= address;
         data_address = temp_address;
         is_first_write = true;
+        background_tile_cache_valid = false;
     }
 }
 
 NES_Byte PPU::get_data(PictureBus& bus) {
-    auto data = bus.read(data_address);
+    NES_Address read_address = data_address & 0x3fff;
+    auto data = bus.read(read_address);
     data_address += data_address_increment;
     // Reads are delayed by one byte/read when address is in this range
-    if (data_address < 0x3f00)
+    if (read_address < 0x3f00)
         // Return from the data buffer and store the current value in the buffer
         std::swap(data, data_buffer);
     return data;
@@ -417,6 +487,7 @@ NES_Byte PPU::get_data(PictureBus& bus) {
 
 void PPU::set_data(PictureBus& bus, NES_Byte data) {
     bus.write(data_address, data);
+    background_tile_cache_valid = false;
     data_address += data_address_increment;
 }
 
@@ -426,10 +497,12 @@ void PPU::set_scroll(NES_Byte scroll) {
         temp_address |= (scroll >> 3) & 0x1f;
         fine_x_scroll = scroll & 0x7;
         is_first_write = false;
+        background_tile_cache_valid = false;
     } else {
         temp_address &= ~0x73e0;
         temp_address |= ((scroll & 0x7) << 12) | ((scroll & 0xf8) << 2);
         is_first_write = true;
+        background_tile_cache_valid = false;
     }
 }
 

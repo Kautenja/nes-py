@@ -20,28 +20,27 @@ NES_Byte PictureBus::read(NES_Address address) {
             mapper->onPPURead(address, value);
         return value;
     } else if (address < 0x3f00) {  // Name tables, mirrored through 0x3eff
+        NES_Address name_table_address = 0x2000 | (address & 0x0fff);
         if (mapper_observes_ppu_addresses)
-            mapper->onPPUAddress(address);
-        if (mapper_has_name_table_mapping && mapper->mapsNameTable(address)) {
-            NES_Byte value = mapper->readNameTable(address);
+            mapper->onPPUAddress(name_table_address);
+        if (
+            mapper_has_name_table_mapping &&
+            mapper->mapsNameTable(name_table_address)
+        ) {
+            NES_Byte value = mapper->readNameTable(name_table_address);
             if (mapper_observes_ppu_reads)
-                mapper->onPPURead(address, value);
+                mapper->onPPURead(name_table_address, value);
             return value;
         }
-        NES_Byte value;
-        if (address < 0x2400)  // NT0
-            value = ram[name_tables[0] + (address & 0x3ff)];
-        else if (address < 0x2800)  // NT1
-            value = ram[name_tables[1] + (address & 0x3ff)];
-        else if (address < 0x2c00)  // NT2
-            value = ram[name_tables[2] + (address & 0x3ff)];
-        else  // NT3
-            value = ram[name_tables[3] + (address & 0x3ff)];
+        std::size_t table = (name_table_address >> 10) & 0x03;
+        NES_Byte value = ram[
+            name_tables[table] + (name_table_address & 0x03ff)
+        ];
         if (mapper_observes_ppu_reads)
-            mapper->onPPURead(address, value);
+            mapper->onPPURead(name_table_address, value);
         return value;
     } else if (address < 0x4000) {
-        return palette[address & 0x1f];
+        return palette[normalize_palette_address(address)];
     }
     return 0;
 }
@@ -54,30 +53,28 @@ void PictureBus::write(NES_Address address, NES_Byte value) {
         mapper->writeCHR(address, value);
         if (mapper_observes_ppu_writes)
             mapper->onPPUWrite(address, value);
+        ++write_generation;
     } else if (address < 0x3f00) {  // Name tables, mirrored through 0x3eff
+        NES_Address name_table_address = 0x2000 | (address & 0x0fff);
         if (mapper_observes_ppu_addresses)
-            mapper->onPPUAddress(address);
-        if (mapper_has_name_table_mapping && mapper->mapsNameTable(address)) {
-            mapper->writeNameTable(address, value);
+            mapper->onPPUAddress(name_table_address);
+        if (
+            mapper_has_name_table_mapping &&
+            mapper->mapsNameTable(name_table_address)
+        ) {
+            mapper->writeNameTable(name_table_address, value);
             if (mapper_observes_ppu_writes)
-                mapper->onPPUWrite(address, value);
+                mapper->onPPUWrite(name_table_address, value);
+            ++write_generation;
             return;
         }
-        if (address < 0x2400)  // NT0
-            ram[name_tables[0] + (address & 0x3ff)] = value;
-        else if (address < 0x2800)  // NT1
-            ram[name_tables[1] + (address & 0x3ff)] = value;
-        else if (address < 0x2c00)  // NT2
-            ram[name_tables[2] + (address & 0x3ff)] = value;
-        else  // NT3
-            ram[name_tables[3] + (address & 0x3ff)] = value;
+        std::size_t table = (name_table_address >> 10) & 0x03;
+        ram[name_tables[table] + (name_table_address & 0x03ff)] = value;
         if (mapper_observes_ppu_writes)
-            mapper->onPPUWrite(address, value);
+            mapper->onPPUWrite(name_table_address, value);
+        ++write_generation;
     } else if (address < 0x4000) {
-        if (address == 0x3f10)
-            palette[0] = value;
-        else
-            palette[address & 0x1f] = value;
+        palette[normalize_palette_address(address)] = value;
     }
 }
 
@@ -101,8 +98,6 @@ void PictureBus::update_mirroring() {
                 std::endl;
             break;
         case FOUR_SCREEN:
-            if (ram.size() < 0x1000)
-                ram.resize(0x1000);
             name_tables[0] = 0;
             name_tables[1] = 0x400;
             name_tables[2] = 0x800;

@@ -8,7 +8,9 @@
 #ifndef PPU_HPP
 #define PPU_HPP
 
-#include <vector>
+#include <array>
+#include <cstddef>
+#include <cstdint>
 #include "common.hpp"
 #include "picture_bus.hpp"
 
@@ -28,12 +30,21 @@ const int FRAME_END_SCANLINE = 261;
 /// The Picture Processing Unit (PPU) for the NES
 class PPU {
  private:
+    /// Number of bytes in object attribute memory.
+    static const std::size_t OAM_SIZE = 64 * 4;
+    /// Maximum sprites considered on one scanline by NES sprite evaluation.
+    static const std::size_t MAX_SCANLINE_SPRITES = 8;
+    /// Number of pixels in the visible screen buffer.
+    static const std::size_t SCREEN_PIXEL_COUNT =
+        VISIBLE_SCANLINES * SCANLINE_VISIBLE_DOTS;
     /// The callback to fire when entering vertical blanking mode
     std::function<void(void)> vblank_callback;
     /// The OAM memory (sprites)
-    std::vector<NES_Byte> sprite_memory;
-    /// OAM memory (sprites) for the next scanline
-    std::vector<NES_Byte> scanline_sprites;
+    std::array<NES_Byte, OAM_SIZE> sprite_memory;
+    /// Sprite indexes selected for the next scanline.
+    std::array<NES_Byte, MAX_SCANLINE_SPRITES> scanline_sprites;
+    /// Number of valid entries in scanline_sprites.
+    std::size_t scanline_sprite_count;
 
     /// The current pipeline state of the PPU
     enum PipelineState {
@@ -98,17 +109,31 @@ class PPU {
 
     /// The value to increment the data address by
     NES_Address data_address_increment;
+    /// Whether background tile-row cache contains valid fetched data.
+    bool background_tile_cache_valid;
+    /// PPU address used for the cached background tile-row.
+    NES_Address background_tile_cache_address;
+    /// Pattern table page used for the cached background tile-row.
+    CharacterPage background_tile_cache_page;
+    /// Picture-bus write generation used for the cached background tile-row.
+    std::uint64_t background_tile_cache_generation;
+    /// Cached low pattern byte for the current background tile row.
+    NES_Byte background_tile_cache_low;
+    /// Cached high pattern byte for the current background tile row.
+    NES_Byte background_tile_cache_high;
+    /// Cached attribute byte for the current background tile row.
+    NES_Byte background_tile_cache_attribute;
 
-    /// The internal screen data structure as a vector representation of a
-    /// matrix of height matching the visible scans lines and width matching
-    /// the number of visible scan line dots
+    /// The internal screen data structure with height matching the visible
+    /// scan lines and width matching the number of visible scan line dots.
     NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
 
  public:
     /// Mutable PPU state captured by backup/restore.
     struct Snapshot {
-        std::vector<NES_Byte> sprite_memory;
-        std::vector<NES_Byte> scanline_sprites;
+        std::array<NES_Byte, OAM_SIZE> sprite_memory;
+        std::array<NES_Byte, MAX_SCANLINE_SPRITES> scanline_sprites;
+        std::size_t scanline_sprite_count;
         int pipeline_state;
         int cycles;
         int scanline;
@@ -130,11 +155,22 @@ class PPU {
         int background_page;
         int sprite_page;
         NES_Address data_address_increment;
-        std::vector<NES_Pixel> screen;
+        bool background_tile_cache_valid;
+        NES_Address background_tile_cache_address;
+        int background_tile_cache_page;
+        std::uint64_t background_tile_cache_generation;
+        NES_Byte background_tile_cache_low;
+        NES_Byte background_tile_cache_high;
+        NES_Byte background_tile_cache_attribute;
+        std::array<NES_Pixel, SCREEN_PIXEL_COUNT> screen;
     };
 
     /// Initialize a new PPU.
-    PPU() : sprite_memory(64 * 4) { }
+    PPU() :
+        sprite_memory(),
+        scanline_sprites(),
+        scanline_sprite_count(0),
+        screen() { }
 
     /// Perform a single cycle on the PPU.
     void cycle(PictureBus& bus);

@@ -91,6 +91,7 @@ cdef extern from *:
     extern "C" unsigned int MapperBankHelperSmokeResults();
     extern "C" unsigned int CPUCharacterizationSmokeResults();
     extern "C" unsigned int MainBusCharacterizationSmokeResults();
+    extern "C" unsigned int PPUCharacterizationSmokeResults();
     extern "C" double NativeCPUDispatchBenchmark(int iterations);
     extern "C" double NativeMainBusIODispatchBenchmark(int iterations);
     extern "C" double NativeMapperUnhookedCycleBenchmark(int iterations);
@@ -105,6 +106,7 @@ cdef extern from *:
     unsigned int MapperBankHelperSmokeResults()
     unsigned int CPUCharacterizationSmokeResults()
     unsigned int MainBusCharacterizationSmokeResults()
+    unsigned int PPUCharacterizationSmokeResults()
     double NativeCPUDispatchBenchmark(int iterations)
     double NativeMainBusIODispatchBenchmark(int iterations)
     double NativeMapperUnhookedCycleBenchmark(int iterations)
@@ -389,6 +391,22 @@ def main_bus_characterization_smoke_results():
         'expansion_area': bool(results & (1 << 4)),
         'prg_ram_access': bool(results & (1 << 5)),
         'mapper_prg_access': bool(results & (1 << 6)),
+    }
+
+
+def ppu_characterization_smoke_results():
+    """Run focused native PPU and picture-bus characterization checks."""
+    cdef unsigned int results = PPUCharacterizationSmokeResults()
+    return {
+        'pattern_table_reads_writes': bool(results & (1 << 0)),
+        'nametable_mirroring': bool(results & (1 << 1)),
+        'four_screen_mirroring': bool(results & (1 << 2)),
+        'one_screen_mirroring': bool(results & (1 << 3)),
+        'palette_mirroring': bool(results & (1 << 4)),
+        'address_3fff': bool(results & (1 << 5)),
+        'ppudata_buffer_original_address': bool(results & (1 << 6)),
+        'ppu_reset_latches': bool(results & (1 << 7)),
+        'render_hook_sequence': bool(results & (1 << 8)),
     }
 
 

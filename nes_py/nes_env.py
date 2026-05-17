@@ -44,6 +44,11 @@ def _native_main_bus_characterization_smoke_results():
     return _native.main_bus_characterization_smoke_results()
 
 
+def _native_ppu_characterization_smoke_results():
+    """Run focused native PPU and picture-bus characterization checks."""
+    return _native.ppu_characterization_smoke_results()
+
+
 # height in pixels of the NES screen
 SCREEN_HEIGHT = _native.SCREEN_HEIGHT
 # width in pixels of the NES screen

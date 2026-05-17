@@ -75,6 +75,16 @@ const unsigned int BUS_CHAR_EXPANSION = 1u << 4;
 const unsigned int BUS_CHAR_PRG_RAM = 1u << 5;
 const unsigned int BUS_CHAR_MAPPER_PRG = 1u << 6;
 
+const unsigned int PPU_CHAR_PATTERN_TABLE = 1u << 0;
+const unsigned int PPU_CHAR_NAMETABLE_MIRRORING = 1u << 1;
+const unsigned int PPU_CHAR_FOUR_SCREEN = 1u << 2;
+const unsigned int PPU_CHAR_ONE_SCREEN = 1u << 3;
+const unsigned int PPU_CHAR_PALETTE_MIRRORING = 1u << 4;
+const unsigned int PPU_CHAR_ADDRESS_3FFF = 1u << 5;
+const unsigned int PPU_CHAR_PPUDATA_BUFFER = 1u << 6;
+const unsigned int PPU_CHAR_RESET_LATCHES = 1u << 7;
+const unsigned int PPU_CHAR_RENDER_HOOK_SEQUENCE = 1u << 8;
+
 volatile NES::NES_Byte native_benchmark_sink = 0;
 
 void FillBankMarkers(
@@ -253,6 +263,7 @@ class PPUHookMapper : public NES::Mapper {
     int write_observations;
     NES::NES_Address last_address;
     NES::NES_Byte last_value;
+    std::vector<NES::NES_Address> address_sequence;
 
     PPUHookMapper() :
         NES::Mapper(nullptr),
@@ -260,7 +271,8 @@ class PPUHookMapper : public NES::Mapper {
         read_observations(0),
         write_observations(0),
         last_address(0),
-        last_value(0) { }
+        last_value(0),
+        address_sequence() { }
 
     inline std::unique_ptr<NES::Mapper> clone() const {
         return std::unique_ptr<NES::Mapper>(new PPUHookMapper(*this));
@@ -289,6 +301,7 @@ class PPUHookMapper : public NES::Mapper {
     inline void onPPUAddress(NES::NES_Address address) {
         ++address_observations;
         last_address = address;
+        address_sequence.push_back(address);
     }
 
     inline bool observesPPUAddresses() const { return true; }
@@ -455,6 +468,42 @@ class NameTableTestMapper : public NES::Mapper {
         NES::NES_Byte value
     ) {
         name_table[address & 0x0fff] = value;
+    }
+};
+
+class PictureBusTestMapper : public NES::Mapper {
+ private:
+    std::vector<NES::NES_Byte> chr;
+
+ public:
+    explicit PictureBusTestMapper(
+        NES::NameTableMirroring mirroring = NES::HORIZONTAL
+    ) :
+        NES::Mapper(nullptr),
+        chr(0x2000, 0) {
+        setNameTableMirroring(mirroring);
+    }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new PictureBusTestMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return 0;
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        return chr[address & 0x1fff];
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        chr[address & 0x1fff] = value;
     }
 };
 
@@ -833,6 +882,189 @@ unsigned int RunMainBusCharacterizationSmokeTests() {
     return results;
 }
 
+bool RunPictureBusPatternTableCharacterization() {
+    PictureBusTestMapper mapper;
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x0010, 0x42);
+    bus.write(0x1f23, 0x99);
+    return (
+        bus.read(0x0010) == 0x42 &&
+        bus.read(0x4010) == 0x42 &&
+        bus.read(0x5f23) == 0x99
+    );
+}
+
+bool RunPictureBusNameTableMirroringCharacterization() {
+    PictureBusTestMapper mapper(NES::VERTICAL);
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x2002, 0x11);
+    bus.write(0x2403, 0x22);
+    bus.write(0x3004, 0x33);
+    bus.write(0x3eff, 0x44);
+    return (
+        bus.read(0x2802) == 0x11 &&
+        bus.read(0x2c03) == 0x22 &&
+        bus.read(0x2004) == 0x33 &&
+        bus.read(0x2eff) == 0x44
+    );
+}
+
+bool RunPictureBusFourScreenCharacterization() {
+    PictureBusTestMapper mapper(NES::FOUR_SCREEN);
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    bus.write(0x2001, 0x10);
+    bus.write(0x2401, 0x20);
+    bus.write(0x2801, 0x30);
+    bus.write(0x2c01, 0x40);
+    return (
+        bus.read(0x2001) == 0x10 &&
+        bus.read(0x2401) == 0x20 &&
+        bus.read(0x2801) == 0x30 &&
+        bus.read(0x2c01) == 0x40
+    );
+}
+
+bool RunPictureBusOneScreenCharacterization() {
+    PictureBusTestMapper lower_mapper(NES::ONE_SCREEN_LOWER);
+    NES::PictureBus lower_bus;
+    lower_bus.set_mapper(&lower_mapper);
+    lower_bus.write(0x2006, 0x55);
+
+    PictureBusTestMapper higher_mapper(NES::ONE_SCREEN_HIGHER);
+    NES::PictureBus higher_bus;
+    higher_bus.set_mapper(&higher_mapper);
+    higher_bus.write(0x2407, 0x66);
+    return (
+        lower_bus.read(0x2406) == 0x55 &&
+        lower_bus.read(0x2c06) == 0x55 &&
+        higher_bus.read(0x2007) == 0x66 &&
+        higher_bus.read(0x2c07) == 0x66
+    );
+}
+
+bool RunPictureBusPaletteMirroringCharacterization() {
+    NES::PictureBus bus;
+    bus.write(0x3f00, 0x01);
+    bus.write(0x3f04, 0x04);
+    bus.write(0x3f08, 0x08);
+    bus.write(0x3f0c, 0x0c);
+    bool mirrored = (
+        bus.read(0x3f10) == 0x01 &&
+        bus.read(0x3f14) == 0x04 &&
+        bus.read(0x3f18) == 0x08 &&
+        bus.read(0x3f1c) == 0x0c
+    );
+    bus.write(0x3f14, 0x24);
+    bus.write(0x3f20, 0x30);
+    return (
+        mirrored &&
+        bus.read(0x3f04) == 0x24 &&
+        bus.read(0x3f00) == 0x30
+    );
+}
+
+bool RunPictureBusAddress3FFFCharacterization() {
+    NES::PictureBus bus;
+    bus.write(0x3f1f, 0x5f);
+    return bus.read(0x3fff) == 0x5f;
+}
+
+bool RunPPUDataBufferCharacterization() {
+    PictureBusTestMapper mapper;
+    NES::PictureBus bus;
+    NES::PPU ppu;
+    bus.set_mapper(&mapper);
+    ppu.reset();
+
+    bus.write(0x2eff, 0x77);
+    ppu.set_data_address(0x3e);
+    ppu.set_data_address(0xff);
+    bool delayed_at_boundary = ppu.get_data(bus) == 0x00;
+
+    bus.write(0x3f00, 0x56);
+    ppu.set_data_address(0x3f);
+    ppu.set_data_address(0x00);
+    bool palette_immediate = ppu.get_data(bus) == 0x56;
+
+    return delayed_at_boundary && palette_immediate;
+}
+
+bool RunPPUResetLatchCharacterization() {
+    PictureBusTestMapper mapper;
+    NES::PictureBus bus;
+    NES::PPU ppu;
+    bus.set_mapper(&mapper);
+    ppu.reset();
+
+    bus.write(0x2000, 0x55);
+    ppu.set_data_address(0x20);
+    ppu.set_data_address(0x00);
+    ppu.get_data(bus);
+    ppu.set_OAM_address(0x00);
+    ppu.set_OAM_data(0x88);
+    ppu.get_screen_buffer()[0] = 0x00ffffff;
+
+    ppu.reset();
+    bus.write(0x2000, 0x66);
+    ppu.set_data_address(0x20);
+    ppu.set_data_address(0x00);
+    NES::NES_Byte first_buffered_read = ppu.get_data(bus);
+    ppu.set_OAM_address(0x00);
+    return (
+        first_buffered_read == 0x00 &&
+        ppu.get_OAM_data() == 0x00 &&
+        ppu.get_screen_buffer()[0] == 0x00000000
+    );
+}
+
+bool RunPPURenderHookSequenceCharacterization() {
+    PPUHookMapper mapper;
+    NES::PictureBus bus;
+    NES::PPU ppu;
+    std::vector<NES::NES_Address> expected = {
+        0x2000, 0x0000, 0x0008, 0x23c0,
+        0x2000, 0x0000, 0x0008, 0x23c0,
+    };
+    bus.set_mapper(&mapper);
+    ppu.reset();
+    for (int cycle = 0; cycle < 342; ++cycle)
+        ppu.cycle(bus);
+    ppu.cycle(bus);
+    ppu.cycle(bus);
+    return (
+        mapper.address_observations == 8 &&
+        mapper.read_observations == 8 &&
+        mapper.last_address == 0x23c0 &&
+        mapper.address_sequence == expected
+    );
+}
+
+unsigned int RunPPUCharacterizationSmokeTests() {
+    unsigned int results = 0;
+    if (RunPictureBusPatternTableCharacterization())
+        results |= PPU_CHAR_PATTERN_TABLE;
+    if (RunPictureBusNameTableMirroringCharacterization())
+        results |= PPU_CHAR_NAMETABLE_MIRRORING;
+    if (RunPictureBusFourScreenCharacterization())
+        results |= PPU_CHAR_FOUR_SCREEN;
+    if (RunPictureBusOneScreenCharacterization())
+        results |= PPU_CHAR_ONE_SCREEN;
+    if (RunPictureBusPaletteMirroringCharacterization())
+        results |= PPU_CHAR_PALETTE_MIRRORING;
+    if (RunPictureBusAddress3FFFCharacterization())
+        results |= PPU_CHAR_ADDRESS_3FFF;
+    if (RunPPUDataBufferCharacterization())
+        results |= PPU_CHAR_PPUDATA_BUFFER;
+    if (RunPPUResetLatchCharacterization())
+        results |= PPU_CHAR_RESET_LATCHES;
+    if (RunPPURenderHookSequenceCharacterization())
+        results |= PPU_CHAR_RENDER_HOOK_SEQUENCE;
+    return results;
+}
+
 double ElapsedSecondsSince(std::chrono::steady_clock::time_point started_at) {
     std::chrono::duration<double> elapsed =
         std::chrono::steady_clock::now() - started_at;
@@ -1176,6 +1408,11 @@ extern "C" {
     /// Return a pass bitmask for focused native main-bus behavior checks.
     EXP unsigned int MainBusCharacterizationSmokeResults() {
         return RunMainBusCharacterizationSmokeTests();
+    }
+
+    /// Return a pass bitmask for focused native PPU/picture-bus checks.
+    EXP unsigned int PPUCharacterizationSmokeResults() {
+        return RunPPUCharacterizationSmokeTests();
     }
 
     /// Return elapsed seconds for the native CPU dispatch benchmark.

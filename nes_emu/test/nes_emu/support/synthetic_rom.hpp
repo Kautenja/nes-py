@@ -29,6 +29,10 @@ inline NES::NES_Byte prg_bank_marker(std::size_t bank) {
     return static_cast<NES::NES_Byte>(((bank + 1) * 0x11) & 0xff);
 }
 
+inline NES::NES_Byte prg_page_marker(std::size_t page) {
+    return static_cast<NES::NES_Byte>((0x30 + page) & 0xff);
+}
+
 inline NES::NES_Byte chr_bank_marker(std::size_t bank) {
     return static_cast<NES::NES_Byte>((0x80 + bank) & 0xff);
 }
@@ -88,7 +92,8 @@ class TemporaryROM {
         std::size_t prg_banks,
         std::size_t chr_banks,
         const std::string& mirroring = "horizontal",
-        bool chr_4k_markers = false
+        bool chr_4k_markers = false,
+        bool prg_8k_markers = false
     ) : path(temporary_path(name)) {
         std::vector<NES::NES_Byte> bytes = ines_header(
             mapper,
@@ -98,12 +103,22 @@ class TemporaryROM {
         );
 
         std::vector<NES::NES_Byte> prg;
-        for (std::size_t bank = 0; bank < prg_banks; ++bank) {
-            prg.insert(
-                prg.end(),
-                PRG_BANK_SIZE,
-                prg_bank_marker(bank)
-            );
+        if (prg_8k_markers) {
+            for (std::size_t page = 0; page < prg_banks * 2; ++page) {
+                prg.insert(
+                    prg.end(),
+                    PRG_BANK_SIZE / 2,
+                    prg_page_marker(page)
+                );
+            }
+        } else {
+            for (std::size_t bank = 0; bank < prg_banks; ++bank) {
+                prg.insert(
+                    prg.end(),
+                    PRG_BANK_SIZE,
+                    prg_bank_marker(bank)
+                );
+            }
         }
         if (!prg.empty()) {
             prg[0] = 0xea;

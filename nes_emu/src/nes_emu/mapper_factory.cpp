@@ -10,6 +10,7 @@
 #include "nes_emu/mappers/mapper_SxROM.hpp"
 #include "nes_emu/mappers/mapper_UxROM.hpp"
 #include "nes_emu/mappers/mapper_CNROM.hpp"
+#include "nes_emu/mappers/mapper_MMC2.hpp"
 
 namespace NES {
 
@@ -33,6 +34,7 @@ const MapperRegistration MAPPER_REGISTRY[] = {
     {1, "SxROM", CreateMapper<MapperSxROM>},
     {2, "UxROM", CreateMapper<MapperUxROM>},
     {3, "CNROM", CreateMapper<MapperCNROM>},
+    {9, "MMC2",  CreateMapper<MapperMMC2>},
 };
 
 }  // namespace

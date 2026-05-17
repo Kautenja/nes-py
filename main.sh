@@ -93,20 +93,26 @@ run_install() {
   if [[ -f requirements.txt ]]; then
     "${venv_python}" -m pip install -r requirements.txt
   fi
-  "${venv_python}" -m pip install -e .
+  "${venv_python}" -m pip install --editable . --config-settings=editable.mode=inplace
 }
 
 run_clean() {
-  rm -rf build/ dist/ .eggs/ *.egg-info/
+  rm -rf build/ dist/ .eggs/ *.egg-info/ .cmake/ CMakeFiles/ generated/
+  rm -f .ninja_deps .ninja_log .skbuild-info.json CMakeCache.txt CMakeInit.txt build.ninja cmake_install.cmake
   find nes_py -type f -name "*.pyc" -exec rm -f {} +
   find nes_py -type d -name "__pycache__" -prune -exec rm -rf {} +
   find nes_py -type d -name "build" -prune -exec rm -rf {} +
+  find . -maxdepth 1 -type f -name "_native*.so" -exec rm -f {} +
+  find . -maxdepth 1 -type f -name "_native*.pyd" -exec rm -f {} +
+  find . -maxdepth 1 -type f -name "_native*.dylib" -exec rm -f {} +
   find nes_py -maxdepth 1 -type f -name "_native*.so" -exec rm -f {} +
+  find nes_py -maxdepth 1 -type f -name "_native*.pyd" -exec rm -f {} +
+  find nes_py -maxdepth 1 -type f -name "_native*.dylib" -exec rm -f {} +
   find nes_py -maxdepth 1 -type f -name "lib_nes_env*" -exec rm -f {} +
 }
 
 run_unittest() {
-  "${PYTHON}" -m pip install .
+  "${PYTHON}" -m pip install --editable . --config-settings=editable.mode=inplace
   "${PYTHON}" -m unittest discover . "$@"
 }
 

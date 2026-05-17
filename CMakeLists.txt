@@ -65,6 +65,14 @@ if(NES_EMU_BUILD_PYTHON_EXTENSION)
         ${NES_NATIVE_SOURCES}
     )
 
+    if(DEFINED SKBUILD AND SKBUILD_STATE STREQUAL "editable" AND
+            CMAKE_CURRENT_BINARY_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+        set_target_properties(_native PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY "${NES_PY_ROOT}$<0:>"
+            RUNTIME_OUTPUT_DIRECTORY "${NES_PY_ROOT}$<0:>"
+        )
+    endif()
+
     target_include_directories(_native PRIVATE
         "${NES_NATIVE_ROOT}/include"
         "${Python_NumPy_INCLUDE_DIRS}"

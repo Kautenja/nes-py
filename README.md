@@ -192,8 +192,9 @@ through the standard PEP 517 frontend:
 
 ```shell
 python -m pip install --upgrade pip build
-python -m pip install -e .
+python -m pip install --editable . --config-settings=editable.mode=inplace
 python -m unittest discover .
+./main.sh clean
 python -m build
 ```
 

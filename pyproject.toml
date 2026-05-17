@@ -2,10 +2,9 @@
 requires = [
     "Cython>=3.0",
     "numpy>=2.1",
-    "setuptools>=77",
-    "wheel>=0.43",
+    "scikit-build-core>=0.12",
 ]
-build-backend = "setuptools.build_meta"
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "nes_py"
@@ -52,19 +51,17 @@ nes_py = "nes_py.app.cli:main"
 Homepage = "https://github.com/Kautenja/nes-py"
 Repository = "https://github.com/Kautenja/nes-py"
 
-[tool.setuptools]
-include-package-data = true
-zip-safe = false
-
-[tool.setuptools.packages.find]
-include = ["nes_py", "nes_py.*"]
-exclude = ["nes_py.tests", "nes_py.tests.*"]
-
-[tool.setuptools.package-data]
-nes_py = [
-    "_native.pyx",
-    "nes/include/*.hpp",
-    "nes/include/mappers/*.hpp",
-    "nes/src/*.cpp",
-    "nes/src/mappers/*.cpp",
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+sdist.exclude = [
+    ".clang_complete",
+    ".github/**",
+    ".gitignore",
+    "__main__.py",
+    "docs/**",
+    "makefile",
+    "nes_py/tests/**",
+    "requirements.txt",
+    "scripts/**",
 ]
+wheel.exclude = ["nes_py/tests/**"]

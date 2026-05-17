@@ -207,8 +207,8 @@ on.
 2.  UxROM
 3.  CNROM
 
-You can check the compatibility for each ROM in the following
-[list](https://github.com/Kautenja/nes-py/blob/master/nesmapper.txt)
+Planned mapper expansion is tracked in the umbrella repository's
+[mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/mappers).
 
 # Disclaimer
 

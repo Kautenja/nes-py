@@ -1,10 +1,49 @@
-"""Test cases for the NESEnv class."""
+"""Application-level test cases for the NESEnv class."""
 from unittest import TestCase
 import gym
 import numpy as np
+
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
 from nes_py.nes_env import SCREEN_SHAPE_24_BIT
+
+
+USABLE_ON_DISK_ROM_NAMES = (
+    'super-mario-bros-1.nes',
+    'super-mario-bros-lost-levels.nes',
+    'the-legend-of-zelda.nes',
+    'excitebike.nes',
+)
+
+UNSUPPORTED_ON_DISK_ROM_NAMES = (
+    'super-mario-bros-2.nes',
+    'super-mario-bros-3.nes',
+)
+
+DETERMINISTIC_ACTIONS = (0, 1, 2, 4, 8, 16, 32, 64)
+
+
+def create_smb1_instance():
+    """Return a new SMB1 instance."""
+    return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
+
+
+class NESEnvApplicationAssertions(TestCase):
+    """Shared assertions for public NESEnv workflows."""
+
+    def assert_valid_frame(self, state):
+        """Assert an observation has the public NES RGB frame contract."""
+        self.assertIsInstance(state, np.ndarray)
+        self.assertEqual(SCREEN_SHAPE_24_BIT, state.shape)
+        self.assertEqual(np.uint8, state.dtype)
+
+    def advance(self, env, actions):
+        """Advance an environment and capture public step outputs."""
+        outputs = []
+        for action in actions:
+            state, reward, done, info = env.step(action)
+            outputs.append((state.copy(), reward, done, info.copy()))
+        return outputs
 
 
 class ShouldRaiseTypeErrorOnInvalidROMPathType(TestCase):
@@ -35,24 +74,64 @@ class ShouldRaiseValueErrorOnInvalidiNES_ROMPath(TestCase):
 
 class ShouldRaiseErrorOnStepBeforeReset(TestCase):
     def test(self):
-        env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
-        self.assertRaises(ValueError, env.step, 0)
+        env = create_smb1_instance()
+        try:
+            self.assertRaises(ValueError, env.step, 0)
+        finally:
+            env.close()
 
 
 class ShouldCreateInstanceOfNESEnv(TestCase):
     def test(self):
-        env = NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
-        self.assertIsInstance(env, gym.Env)
-        env.close()
+        env = create_smb1_instance()
+        try:
+            self.assertIsInstance(env, gym.Env)
+        finally:
+            env.close()
 
 
-def create_smb1_instance():
-    """Return a new SMB1 instance."""
-    return NESEnv(rom_file_abs_path('super-mario-bros-1.nes'))
+class ShouldExerciseOnDiskUsableROMs(NESEnvApplicationAssertions):
+    """Exercise every on-disk ROM supported by the current native mappers."""
+
+    def test_construct_reset_step_render_and_close(self):
+        for name in USABLE_ON_DISK_ROM_NAMES:
+            with self.subTest(name=name):
+                env = NESEnv(rom_file_abs_path(name))
+                try:
+                    self.assertIsInstance(env, gym.Env)
+                    self.assertIn('rgb_array', env.metadata['render.modes'])
+                    self.assertEqual(256, env.action_space.n)
+                    self.assertEqual(SCREEN_SHAPE_24_BIT,
+                                     env.observation_space.shape)
+                    self.assertEqual(np.uint8, env.observation_space.dtype)
+
+                    state = env.reset(seed=17)
+                    self.assert_valid_frame(state)
+                    for action in DETERMINISTIC_ACTIONS:
+                        state, reward, done, info = env.step(action)
+                        self.assert_valid_frame(state)
+                        self.assertIsInstance(reward, float)
+                        self.assertIsInstance(done, bool)
+                        self.assertIsInstance(info, dict)
+
+                    render = env.render('rgb_array')
+                    self.assertIs(render, env.screen)
+                    self.assert_valid_frame(render)
+                finally:
+                    env.close()
+
+    def test_unsupported_on_disk_mapper_roms_reject_through_constructor(self):
+        for name in UNSUPPORTED_ON_DISK_ROM_NAMES:
+            with self.subTest(name=name):
+                with self.assertRaises(ValueError) as error:
+                    NESEnv(rom_file_abs_path(name))
+                self.assertIn('unsupported mapper number 4',
+                              str(error.exception))
 
 
-class ShouldExposeNativeBuffersWithoutCopies(TestCase):
-    def _assert_native_view(self, array, shape):
+class ShouldExposeMutableApplicationBuffers(NESEnvApplicationAssertions):
+    def assert_native_view(self, array, shape):
+        """Assert a public buffer view has the expected NumPy contract."""
         self.assertIsInstance(array, np.ndarray)
         self.assertEqual(shape, array.shape)
         self.assertEqual(np.uint8, array.dtype)
@@ -64,13 +143,11 @@ class ShouldExposeNativeBuffersWithoutCopies(TestCase):
         ram = env.ram
         controller = env.controllers[0]
 
-        self._assert_native_view(screen, SCREEN_SHAPE_24_BIT)
-        self._assert_native_view(ram, (0x800,))
-        self._assert_native_view(controller, (1,))
-        self.assertIs(screen.base, env._env)
-        self.assertIs(ram.base, env._env)
-        self.assertIs(controller.base, env._env)
-        self.assertEqual((SCREEN_SHAPE_24_BIT[1] * 4, 4, -1), screen.strides)
+        self.assert_native_view(screen, SCREEN_SHAPE_24_BIT)
+        self.assert_native_view(ram, (0x800,))
+        self.assert_native_view(controller, (1,))
+        self.assertEqual((SCREEN_SHAPE_24_BIT[1] * 4, 4, -1),
+                         screen.strides)
 
         ram[0x0776] = 0x2a
         controller[0] = 0x81
@@ -78,33 +155,34 @@ class ShouldExposeNativeBuffersWithoutCopies(TestCase):
         self.assertEqual(0x81, controller[0])
 
         env.reset()
-        env._backup()
         env.step(1)
-        env._restore()
 
         self.assertIs(screen, env.screen)
         self.assertIs(ram, env.ram)
         self.assertIs(controller, env.controllers[0])
-        self._assert_native_view(env.screen, SCREEN_SHAPE_24_BIT)
-        self._assert_native_view(env.ram, (0x800,))
-        self._assert_native_view(env.controllers[0], (1,))
+        self.assert_native_view(env.screen, SCREEN_SHAPE_24_BIT)
+        self.assert_native_view(env.ram, (0x800,))
+        self.assert_native_view(env.controllers[0], (1,))
         env.close()
-        self._assert_native_view(screen, SCREEN_SHAPE_24_BIT)
-        self._assert_native_view(ram, (0x800,))
-        self._assert_native_view(controller, (1,))
+        self.assert_native_view(screen, SCREEN_SHAPE_24_BIT)
+        self.assert_native_view(ram, (0x800,))
+        self.assert_native_view(controller, (1,))
         self.assertEqual(1, controller[0])
+
 
 class ShouldReadAndWriteMemory(TestCase):
     def test(self):
         env = create_smb1_instance()
-        env.reset()
-        for _ in range(90):
-            env.step(8)
-            env.step(0)
-        self.assertEqual(129, env.ram[0x0776])
-        env.ram[0x0776] = 0
-        self.assertEqual(0, env.ram[0x0776])
-        env.close()
+        try:
+            env.reset()
+            for _ in range(90):
+                env.step(8)
+                env.step(0)
+            self.assertEqual(129, env.ram[0x0776])
+            env.ram[0x0776] = 0
+            self.assertEqual(0, env.ram[0x0776])
+        finally:
+            env.close()
 
 
 class ShouldResetAndCloseEnv(TestCase):
@@ -112,149 +190,138 @@ class ShouldResetAndCloseEnv(TestCase):
         env = create_smb1_instance()
         env.reset()
         env.close()
-        # trying to close again should raise an error
         self.assertRaises(ValueError, env.close)
 
 
-class ShouldStepEnv(TestCase):
+class ShouldStepEnv(NESEnvApplicationAssertions):
     def test(self):
         env = create_smb1_instance()
-        done = True
-        for _ in range(500):
-            if done:
-                # reset the environment and check the output value
-                state = env.reset()
-                self.assertIsInstance(state, np.ndarray)
-            # sample a random action and check it
-            action = env.action_space.sample()
-            self.assertIsInstance(action, int)
-            # take a step and check the outputs
-            output = env.step(action)
-            self.assertIsInstance(output, tuple)
-            self.assertEqual(4, len(output))
-            # check each output
-            state, reward, done, info = output
-            self.assertIsInstance(state, np.ndarray)
-            self.assertIsInstance(reward, float)
-            self.assertIsInstance(done, bool)
-            self.assertIsInstance(info, dict)
-            # check the render output
-            render = env.render('rgb_array')
-            self.assertIsInstance(render, np.ndarray)
-        env.reset()
-        env.close()
+        try:
+            state = env.reset(seed=23)
+            self.assert_valid_frame(state)
+            for action in DETERMINISTIC_ACTIONS * 8:
+                output = env.step(action)
+                self.assertIsInstance(output, tuple)
+                self.assertEqual(4, len(output))
+                state, reward, done, info = output
+                self.assert_valid_frame(state)
+                self.assertIsInstance(reward, float)
+                self.assertIsInstance(done, bool)
+                self.assertIsInstance(info, dict)
+                self.assert_valid_frame(env.render('rgb_array'))
+            self.assert_valid_frame(env.reset())
+        finally:
+            env.close()
 
 
-class ShouldStepEnvBackupRestore(TestCase):
-    def _assert_valid_frame(self, state):
-        self.assertIsInstance(state, np.ndarray)
-        self.assertEqual(SCREEN_SHAPE_24_BIT, state.shape)
-        self.assertEqual(np.uint8, state.dtype)
+class ShouldPreservePackageBackupRestoreWorkflow(NESEnvApplicationAssertions):
+    """
+    Cover private backup/restore because speedtest and legacy wrappers still
+    rely on this package-level workflow until a public replacement exists.
+    """
 
-    def _advance(self, env, actions):
-        outputs = []
-        for action in actions:
-            state, reward, done, info = env.step(action)
-            outputs.append((state.copy(), reward, done, info.copy()))
-        return outputs
-
-    def test(self):
+    def test_backup_restore_returns_screen_to_backup_state(self):
         done = True
         env = create_smb1_instance()
+        try:
+            for _ in range(250):
+                if done:
+                    state = env.reset()
+                    done = False
+                state, _, done, _ = env.step(0)
 
-        for _ in range(250):
-            if done:
-                state = env.reset()
-                done = False
-            state, _, done, _ = env.step(0)
+            backup = state.copy()
+            env._backup()
 
-        backup = state.copy()
+            for _ in range(250):
+                if done:
+                    state = env.reset()
+                    done = False
+                state, _, done, _ = env.step(0)
 
-        env._backup()
-
-        for _ in range(250):
-            if done:
-                state = env.reset()
-                done = False
-            state, _, done, _ = env.step(0)
-
-        self.assertFalse(np.array_equal(backup, state))
-        env._restore()
-        self.assertTrue(np.array_equal(backup, env.screen))
-        env.close()
+            self.assertFalse(np.array_equal(backup, state))
+            env._restore()
+            self.assertTrue(np.array_equal(backup, env.screen))
+        finally:
+            env.close()
 
     def test_restore_returns_screen_and_ram_to_backup_state(self):
         env = create_smb1_instance()
-        env.reset(seed=7)
-        self._advance(env, [0, 8, 0, 8, 1, 2, 0, 4] * 6)
+        try:
+            env.reset(seed=7)
+            self.advance(env, [0, 8, 0, 8, 1, 2, 0, 4] * 6)
 
-        backup_screen = env.screen.copy()
-        backup_ram = env.ram.copy()
-        env._backup()
+            backup_screen = env.screen.copy()
+            backup_ram = env.ram.copy()
+            env._backup()
 
-        self._advance(env, [255, 0, 64, 128, 32, 16, 8, 4] * 6)
-        screen_changed = not np.array_equal(backup_screen, env.screen)
-        ram_changed = not np.array_equal(backup_ram, env.ram)
-        self.assertTrue(screen_changed or ram_changed)
+            self.advance(env, [255, 0, 64, 128, 32, 16, 8, 4] * 6)
+            screen_changed = not np.array_equal(backup_screen, env.screen)
+            ram_changed = not np.array_equal(backup_ram, env.ram)
+            self.assertTrue(screen_changed or ram_changed)
 
-        env._restore()
-        self.assertTrue(np.array_equal(backup_screen, env.screen))
-        self.assertTrue(np.array_equal(backup_ram, env.ram))
-        self._assert_valid_frame(env.screen)
-        env.close()
+            env._restore()
+            self.assertTrue(np.array_equal(backup_screen, env.screen))
+            self.assertTrue(np.array_equal(backup_ram, env.ram))
+            self.assert_valid_frame(env.screen)
+        finally:
+            env.close()
 
     def test_restored_continuation_matches_original_continuation(self):
         env = create_smb1_instance()
-        env.reset(seed=11)
-        self._advance(env, [0, 8, 0, 8, 1, 2, 0, 4] * 5)
-        env._backup()
+        try:
+            env.reset(seed=11)
+            self.advance(env, [0, 8, 0, 8, 1, 2, 0, 4] * 5)
+            env._backup()
 
-        actions = [0, 1, 2, 4, 8, 16, 32, 64, 128, 255] * 3
-        expected = self._advance(env, actions)
-        env._restore()
-        actual = self._advance(env, actions)
+            actions = [0, 1, 2, 4, 8, 16, 32, 64, 128, 255] * 3
+            expected = self.advance(env, actions)
+            env._restore()
+            actual = self.advance(env, actions)
 
-        for expected_output, actual_output in zip(expected, actual):
-            expected_state, expected_reward, expected_done, expected_info = (
-                expected_output
-            )
-            actual_state, actual_reward, actual_done, actual_info = (
-                actual_output
-            )
-            self.assertTrue(np.array_equal(expected_state, actual_state))
-            self.assertEqual(expected_reward, actual_reward)
-            self.assertEqual(expected_done, actual_done)
-            self.assertEqual(expected_info, actual_info)
-        env.close()
+            for expected_output, actual_output in zip(expected, actual):
+                expected_state, expected_reward, expected_done, expected_info = (
+                    expected_output
+                )
+                actual_state, actual_reward, actual_done, actual_info = (
+                    actual_output
+                )
+                self.assertTrue(np.array_equal(expected_state, actual_state))
+                self.assertEqual(expected_reward, actual_reward)
+                self.assertEqual(expected_done, actual_done)
+                self.assertEqual(expected_info, actual_info)
+        finally:
+            env.close()
 
     def test_repeated_backup_restore_reset_cycles_keep_frames_valid(self):
         env = create_smb1_instance()
-        state = env.reset(seed=13)
-        self._assert_valid_frame(state)
-        env._backup()
-        backup_screen = env.screen.copy()
-        backup_ram = env.ram.copy()
+        try:
+            state = env.reset(seed=13)
+            self.assert_valid_frame(state)
+            env._backup()
+            backup_screen = env.screen.copy()
+            backup_ram = env.ram.copy()
 
-        for step in range(1, 91):
-            state, _, done, _ = env.step((step * 17) % env.action_space.n)
-            self._assert_valid_frame(state)
+            for step in range(1, 91):
+                state, _, done, _ = env.step((step * 17) % env.action_space.n)
+                self.assert_valid_frame(state)
 
-            if step % 7 == 0:
-                env._backup()
-                backup_screen = env.screen.copy()
-                backup_ram = env.ram.copy()
+                if step % 7 == 0:
+                    env._backup()
+                    backup_screen = env.screen.copy()
+                    backup_ram = env.ram.copy()
 
-            if step % 11 == 0:
-                env._restore()
-                self.assertTrue(np.array_equal(backup_screen, env.screen))
-                self.assertTrue(np.array_equal(backup_ram, env.ram))
-                self._assert_valid_frame(env.screen)
+                if step % 11 == 0:
+                    env._restore()
+                    self.assertTrue(np.array_equal(backup_screen, env.screen))
+                    self.assertTrue(np.array_equal(backup_ram, env.ram))
+                    self.assert_valid_frame(env.screen)
 
-            if step % 13 == 0:
-                state = env.reset()
-                self.assertFalse(done)
-                self.assertTrue(np.array_equal(backup_screen, state))
-                self.assertTrue(np.array_equal(backup_ram, env.ram))
-                self._assert_valid_frame(state)
-
-        env.close()
+                if step % 13 == 0:
+                    state = env.reset()
+                    self.assertFalse(done)
+                    self.assertTrue(np.array_equal(backup_screen, state))
+                    self.assertTrue(np.array_equal(backup_ram, env.ram))
+                    self.assert_valid_frame(state)
+        finally:
+            env.close()

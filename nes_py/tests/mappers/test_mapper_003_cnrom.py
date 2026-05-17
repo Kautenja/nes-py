@@ -20,4 +20,4 @@ class ShouldLoadMapper003CNROM(MapperTestCase):
         self.assertEqual(3, rom.mapper)
         self.assertEqual(32, rom.prg_rom_size)
         self.assertEqual(32, rom.chr_rom_size)
-        self.assert_env_smoke(path)
+        self.assert_public_env_workflow(path)

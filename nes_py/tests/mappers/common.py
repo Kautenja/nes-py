@@ -1,4 +1,4 @@
-"""Shared helpers for mapper package tests."""
+"""Shared helpers for synthetic mapper application tests."""
 import tempfile
 from unittest import TestCase
 
@@ -31,15 +31,10 @@ class MapperTestCase(TestCase):
     def env(self, path):
         """Create an environment and close it during test cleanup."""
         env = NESEnv(path)
-        self.addCleanup(self._close_env, env)
+        self.addCleanup(env.close)
         return env
 
-    def _close_env(self, env):
-        """Close an environment if it is still open."""
-        if env._env is not None:
-            env.close()
-
-    def assert_env_smoke(self, path):
+    def assert_public_env_workflow(self, path):
         """Assert public NESEnv workflows operate for a ROM path."""
         env = self.env(path)
 
@@ -51,10 +46,3 @@ class MapperTestCase(TestCase):
         self.assertIsInstance(done, bool)
         self.assertIsInstance(info, dict)
         self.assertEqual((240, 256, 3), env.render('rgb_array').shape)
-
-        env._backup()
-        env.step(0)
-        env._restore()
-        env.done = False
-        state, _, _, _ = env.step(0)
-        self.assertEqual((240, 256, 3), state.shape)

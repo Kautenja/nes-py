@@ -1,23 +1,16 @@
-"""Parser alignment tests for Python ROM and native Cartridge metadata."""
+"""Application-level ROM metadata and cartridge rejection tests."""
 import tempfile
 from pathlib import Path
 from unittest import TestCase
 
 from nes_py._rom import ROM
 from nes_py.nes_env import NESEnv
-from nes_py.nes_env import _native_cartridge_error
-from nes_py.nes_env import _native_cartridge_metadata
 
 from nes_py.tests.mapper_fixtures import CHR_BANK_SIZE
 from nes_py.tests.mapper_fixtures import PRG_BANK_SIZE
 from nes_py.tests.mapper_fixtures import ines_header
 from nes_py.tests.mapper_fixtures import synthetic_rom_path
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
-
-
-HORIZONTAL = 0
-VERTICAL = 1
-FOUR_SCREEN = 8
 
 
 class CartridgeMetadataTestCase(TestCase):
@@ -41,71 +34,38 @@ class CartridgeMetadataTestCase(TestCase):
         """Create a synthetic ROM in this test's temporary directory."""
         return synthetic_rom_path(self.tmpdir.name, *args, **kwargs)
 
-    def assert_metadata_agrees(self, path):
-        """Assert Python ROM metadata matches native Cartridge metadata."""
-        rom = ROM(path)
-        native = _native_cartridge_metadata(path)
-        mirroring = {
-            'horizontal': HORIZONTAL,
-            'vertical': VERTICAL,
-            'four-screen': FOUR_SCREEN,
-        }[rom.mirroring]
-
-        self.assertEqual(rom.mapper, native['mapper'])
-        self.assertEqual(rom.submapper, native['submapper'])
-        self.assertEqual(rom.prg_rom_byte_size, native['prg_rom_byte_size'])
-        self.assertEqual(rom.prg_rom_banks, native['prg_rom_banks'])
-        self.assertEqual(rom.chr_rom_byte_size, native['chr_rom_byte_size'])
-        self.assertEqual(rom.chr_rom_banks, native['chr_rom_banks'])
-        self.assertEqual(rom.prg_ram_byte_size, native['prg_ram_byte_size'])
-        self.assertEqual(
-            rom.prg_battery_ram_byte_size,
-            native['prg_battery_ram_byte_size']
-        )
-        self.assertEqual(rom.chr_ram_byte_size, native['chr_ram_byte_size'])
-        self.assertEqual(
-            rom.chr_battery_ram_byte_size,
-            native['chr_battery_ram_byte_size']
-        )
-        self.assertEqual(rom.has_trainer, native['has_trainer'])
-        self.assertEqual(rom.trainer_rom_start, native['trainer_rom_start'])
-        self.assertEqual(rom.trainer_rom_stop, native['trainer_rom_stop'])
-        self.assertEqual(
-            rom.has_battery_backed_ram,
-            native['has_battery_backed_ram']
-        )
-        self.assertEqual(mirroring, native['name_table_mirroring'])
-        self.assertEqual(rom.has_vs_unisystem, native['has_vs_unisystem'])
-        self.assertEqual(rom.has_play_choice_10, native['has_play_choice_10'])
-        self.assertEqual(rom.is_pal, native['is_pal'])
-        self.assertEqual(rom.is_nes2, native['is_nes2'])
-
-    def assert_python_and_native_reject(self, data, fragment):
-        """Assert Python and native parsers reject ROM data consistently."""
+    def assert_rom_rejects(self, data, fragment):
+        """Assert public ROM construction rejects malformed bytes."""
         path = self.write_rom('invalid.nes', data)
 
         with self.assertRaises(ValueError) as error:
             ROM(path)
         self.assertIn(fragment, str(error.exception))
 
-        native_error = _native_cartridge_error(path)
-        self.assertIsNotNone(native_error)
-        self.assertIn(fragment, native_error)
 
+class ShouldParseApplicationROMMetadata(CartridgeMetadataTestCase):
+    """Check Python ROM metadata for disk and synthetic fixtures."""
 
-class ShouldAlignCartridgeMetadata(CartridgeMetadataTestCase):
-    """Check Python ROM and native Cartridge metadata agreement."""
-
-    def test_existing_fixture_metadata_agrees(self):
+    def test_existing_fixture_metadata_is_available_without_env_construction(self):
         cases = (
-            'super-mario-bros-1.nes',
-            'the-legend-of-zelda.nes',
+            ('super-mario-bros-1.nes', 0, 32, 8, 'vertical'),
+            ('super-mario-bros-2.nes', 4, 128, 128, 'horizontal'),
+            ('super-mario-bros-3.nes', 4, 256, 128, 'horizontal'),
+            ('super-mario-bros-lost-levels.nes', 0, 32, 8, 'vertical'),
+            ('the-legend-of-zelda.nes', 1, 128, 0, 'horizontal'),
+            ('excitebike.nes', 0, 16, 8, 'vertical'),
         )
-        for name in cases:
-            with self.subTest(name=name):
-                self.assert_metadata_agrees(rom_file_abs_path(name))
 
-    def test_ines_synthetic_metadata_agrees(self):
+        for name, mapper, prg_size, chr_size, mirroring in cases:
+            with self.subTest(name=name):
+                rom = ROM(rom_file_abs_path(name))
+
+                self.assertEqual(mapper, rom.mapper)
+                self.assertEqual(prg_size, rom.prg_rom_size)
+                self.assertEqual(chr_size, rom.chr_rom_size)
+                self.assertEqual(mirroring, rom.mirroring)
+
+    def test_ines_synthetic_metadata_is_available_to_public_rom_parser(self):
         path = self.synthetic_rom(
             'battery-chr-ram.nes',
             mapper=2,
@@ -118,13 +78,19 @@ class ShouldAlignCartridgeMetadata(CartridgeMetadataTestCase):
             play_choice_10=True,
         )
 
-        self.assert_metadata_agrees(path)
         rom = ROM(path)
+        self.assertEqual(2, rom.mapper)
+        self.assertEqual(2, rom.prg_rom_banks)
+        self.assertEqual(0, rom.chr_rom_banks)
         self.assertEqual(16 * 2**10, rom.prg_ram_byte_size)
         self.assertEqual(16 * 2**10, rom.prg_battery_ram_byte_size)
         self.assertEqual(CHR_BANK_SIZE, rom.chr_ram_byte_size)
+        self.assertTrue(rom.has_battery_backed_ram)
+        self.assertTrue(rom.has_vs_unisystem)
+        self.assertTrue(rom.has_play_choice_10)
+        self.assertEqual('vertical', rom.mirroring)
 
-    def test_nes2_synthetic_metadata_agrees(self):
+    def test_nes2_synthetic_metadata_is_available_to_public_rom_parser(self):
         path = self.synthetic_rom(
             'nes2-mapper.nes',
             mapper=0x123,
@@ -138,10 +104,11 @@ class ShouldAlignCartridgeMetadata(CartridgeMetadataTestCase):
             chr_battery_ram_shift=6,
         )
 
-        self.assert_metadata_agrees(path)
         rom = ROM(path)
+        self.assertTrue(rom.is_nes2)
         self.assertEqual(0x123, rom.mapper)
         self.assertEqual(0x07, rom.submapper)
+        self.assertEqual(PRG_BANK_SIZE, rom.prg_rom_byte_size)
         self.assertEqual(8 * 2**10, rom.prg_ram_byte_size)
         self.assertEqual(16 * 2**10, rom.prg_battery_ram_byte_size)
         self.assertEqual(8 * 2**10, rom.chr_ram_byte_size)
@@ -149,31 +116,47 @@ class ShouldAlignCartridgeMetadata(CartridgeMetadataTestCase):
 
 
 class ShouldRejectMalformedCartridges(CartridgeMetadataTestCase):
-    """Check deterministic Python and native rejection paths."""
+    """Check deterministic public rejection paths for malformed ROMs."""
 
     def test_invalid_magic_and_truncated_header_are_rejected(self):
-        self.assert_python_and_native_reject(
+        self.assert_rom_rejects(
             b'NOPE' + bytes(12),
             'ROM missing magic number in header.'
         )
-        self.assert_python_and_native_reject(
+        self.assert_rom_rejects(
             b'NES\x1a',
             'ROM header is truncated.'
         )
 
+    def test_nonzero_ines_header_padding_is_rejected(self):
+        header = bytearray(ines_header(0, 1, 0))
+        header[12] = 0x01
+
+        self.assert_rom_rejects(
+            bytes(header) + bytes(PRG_BANK_SIZE),
+            'ROM header zero fill bytes are not zero.'
+        )
+
     def test_truncated_prg_and_chr_payloads_are_rejected(self):
-        self.assert_python_and_native_reject(
+        self.assert_rom_rejects(
             ines_header(0, 1, 0),
             'failed to read PRG-ROM on ROM.'
         )
-        self.assert_python_and_native_reject(
+        self.assert_rom_rejects(
             ines_header(0, 1, 1) + bytes(PRG_BANK_SIZE),
             'failed to read CHR-ROM on ROM.'
         )
 
+    def test_rom_without_prg_banks_is_rejected_by_environment(self):
+        path = self.write_rom('no-prg.nes', ines_header(0, 0, 0))
+
+        with self.assertRaises(ValueError) as error:
+            NESEnv(path)
+        self.assertIn('ROM has no PRG-ROM banks', str(error.exception))
+
 
 class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
-    """Check trainer, PAL, and four-screen edge metadata."""
+    """Check public construction behavior for unsupported cartridge features."""
 
     def test_trainer_offsets_are_parsed_and_nes_env_names_the_rejection(self):
         path = self.synthetic_rom(
@@ -184,13 +167,11 @@ class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
             trainer=True,
         )
 
-        self.assert_metadata_agrees(path)
         rom = ROM(path)
+        self.assertTrue(rom.has_trainer)
         self.assertEqual(16, rom.trainer_rom_start)
         self.assertEqual(16 + 512, rom.trainer_rom_stop)
 
-        native_error = _native_cartridge_error(path)
-        self.assertIn('trainer is not supported', native_error)
         with self.assertRaises(ValueError) as error:
             NESEnv(path)
         self.assertIn('trainer is not supported', str(error.exception))
@@ -204,32 +185,42 @@ class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
             pal=True,
         )
 
-        self.assert_metadata_agrees(path)
         self.assertTrue(ROM(path).is_pal)
-        native_error = _native_cartridge_error(path)
-        self.assertIn('PAL is not supported', native_error)
         with self.assertRaises(ValueError) as error:
             NESEnv(path)
         self.assertIn('PAL is not supported', str(error.exception))
 
-    def test_four_screen_mirroring_does_not_become_one_screen_lower(self):
+    def test_unsupported_mapper_rejection_names_the_mapper(self):
+        path = self.synthetic_rom(
+            'unsupported.nes',
+            mapper=0x123,
+            prg_banks=1,
+            chr_banks=1,
+            nes2=True,
+        )
+
+        self.assertEqual(0x123, ROM(path).mapper)
+        with self.assertRaises(ValueError) as error:
+            NESEnv(path)
+        self.assertIn('unsupported mapper number 291', str(error.exception))
+
+    def test_four_screen_mirroring_prefers_ignore_bit(self):
         header = bytearray(ines_header(0, 1, 0, mirroring='four-screen'))
         header[6] |= 0x01
         data = bytes(header) + bytes(PRG_BANK_SIZE)
         path = self.write_rom('four-screen-vertical-bit.nes', data)
 
-        self.assert_metadata_agrees(path)
-        self.assertEqual('four-screen', ROM(path).mirroring)
-        self.assertEqual(
-            FOUR_SCREEN,
-            _native_cartridge_metadata(path)['name_table_mirroring']
-        )
+        rom = ROM(path)
+        self.assertEqual('four-screen', rom.mirroring)
 
         env = NESEnv(path)
-        self.addCleanup(env.close)
-        self.assertEqual(FOUR_SCREEN, env._name_table_mirroring())
+        try:
+            self.assertEqual((240, 256, 3), env.reset().shape)
+            self.assertEqual((240, 256, 3), env.step(0)[0].shape)
+        finally:
+            env.close()
 
-    def test_default_ines_chr_ram_is_visible_to_native_mapper(self):
+    def test_default_ines_chr_ram_rom_constructs_and_steps(self):
         path = self.synthetic_rom(
             'nrom-chr-ram.nes',
             mapper=0,
@@ -237,11 +228,12 @@ class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
             chr_banks=0,
         )
 
-        native = _native_cartridge_metadata(path)
-        self.assertEqual(CHR_BANK_SIZE, native['chr_ram_byte_size'])
+        rom = ROM(path)
+        self.assertEqual(CHR_BANK_SIZE, rom.chr_ram_byte_size)
 
         env = NESEnv(path)
-        self.addCleanup(env.close)
-        self.assertTrue(env._has_chr_ram())
-        self.assertEqual((240, 256, 3), env.reset().shape)
-        self.assertEqual((240, 256, 3), env.step(0)[0].shape)
+        try:
+            self.assertEqual((240, 256, 3), env.reset().shape)
+            self.assertEqual((240, 256, 3), env.step(0)[0].shape)
+        finally:
+            env.close()

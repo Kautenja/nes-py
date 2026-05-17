@@ -39,6 +39,29 @@ class ShouldRunBenchmark(TestCase):
         self.assertEqual(3, result.backup_interval)
         self.assertEqual(4, result.restore_interval)
 
+    def test_runs_against_synthetic_rom(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = synthetic_rom_path(
+                tmpdir,
+                'nrom.nes',
+                mapper=0,
+                prg_banks=1,
+                chr_banks=1,
+            )
+
+            result = run_benchmark(BenchmarkConfig(
+                rom=path,
+                steps=2,
+                warmup_steps=1,
+                action_policy='noop',
+                progress=False,
+            ))
+
+        self.assertEqual(3, result.total_steps)
+        self.assertEqual(2, result.measured_steps)
+        self.assertEqual('noop', result.action_policy)
+        self.assertGreater(result.steps_per_second, 0)
+
 
 class ShouldRunBenchmarkCLI(TestCase):
     def test_json_output(self):

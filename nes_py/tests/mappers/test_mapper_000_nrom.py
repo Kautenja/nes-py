@@ -22,7 +22,7 @@ class ShouldLoadMapper000NROM(MapperTestCase):
         self.assertEqual(32, rom.prg_rom_size)
         self.assertEqual(8, rom.chr_rom_size)
         self.assertEqual('vertical', rom.mirroring)
-        self.assert_env_smoke(path)
+        self.assert_public_env_workflow(path)
 
     def test_16k_prg_rom_fixture_constructs_and_steps(self):
         path = self.synthetic_rom(
@@ -35,4 +35,4 @@ class ShouldLoadMapper000NROM(MapperTestCase):
         rom = ROM(path)
         self.assertEqual(0, rom.mapper)
         self.assertEqual(16, rom.prg_rom_size)
-        self.assert_env_smoke(path)
+        self.assert_public_env_workflow(path)

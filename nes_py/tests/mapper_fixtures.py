@@ -1,4 +1,4 @@
-"""Synthetic iNES ROM helpers for native mapper characterization tests."""
+"""Synthetic iNES ROM helpers for application-level package tests."""
 from pathlib import Path
 
 

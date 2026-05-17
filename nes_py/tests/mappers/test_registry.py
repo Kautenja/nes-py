@@ -1,22 +1,20 @@
-"""Mapper support registry and synthetic header metadata tests."""
+"""Synthetic mapper construction and rejection tests."""
 
 from nes_py._rom import ROM
-from nes_py.nes_env import _is_mapper_supported
+from nes_py.nes_env import NESEnv
 
-from nes_py.tests.mappers.common import HORIZONTAL
 from nes_py.tests.mappers.common import MapperTestCase
-from nes_py.tests.mappers.common import VERTICAL
 
 
-class ShouldIdentifySupportedMapperFixtures(MapperTestCase):
-    """Identify the currently supported native mapper families."""
+class ShouldLoadSupportedMapperFixtures(MapperTestCase):
+    """Exercise currently supported mapper fixtures through NESEnv."""
 
-    def test_mapper_headers_and_native_metadata(self):
+    def test_mapper_headers_construct_and_step(self):
         cases = (
-            ('nrom.nes', 0, 2, 1, 'vertical', False, VERTICAL),
-            ('sxrom.nes', 1, 4, 0, 'horizontal', True, HORIZONTAL),
-            ('uxrom.nes', 2, 4, 0, 'vertical', True, VERTICAL),
-            ('cnrom.nes', 3, 2, 4, 'horizontal', False, HORIZONTAL),
+            ('nrom.nes', 0, 2, 1, 'vertical'),
+            ('sxrom.nes', 1, 4, 0, 'horizontal'),
+            ('uxrom.nes', 2, 4, 0, 'vertical'),
+            ('cnrom.nes', 3, 2, 4, 'horizontal'),
         )
 
         for (
@@ -25,8 +23,6 @@ class ShouldIdentifySupportedMapperFixtures(MapperTestCase):
             prg_banks,
             chr_banks,
             mirroring,
-            has_chr_ram,
-            native_mirroring,
         ) in cases:
             with self.subTest(mapper=mapper):
                 path = self.synthetic_rom(
@@ -40,17 +36,25 @@ class ShouldIdentifySupportedMapperFixtures(MapperTestCase):
                 env = self.env(path)
 
                 self.assertEqual(mapper, rom.mapper)
-                self.assertEqual(mapper, env._mapper_number())
                 self.assertEqual(prg_banks * 16, rom.prg_rom_size)
                 self.assertEqual(chr_banks * 8, rom.chr_rom_size)
-                self.assertEqual(prg_banks * 0x4000, env._prg_rom_size())
-                self.assertEqual(chr_banks * 0x2000, env._chr_rom_size())
-                self.assertEqual(has_chr_ram, env._has_chr_ram())
-                self.assertEqual(native_mirroring, env._name_table_mirroring())
+                self.assertEqual(mirroring, rom.mirroring)
+                self.assertEqual((240, 256, 3), env.reset().shape)
+                state, reward, done, info = env.step(0)
+                self.assertEqual((240, 256, 3), state.shape)
+                self.assertIsInstance(reward, float)
+                self.assertIsInstance(done, bool)
+                self.assertIsInstance(info, dict)
+                self.assertEqual((240, 256, 3), env.render('rgb_array').shape)
 
-    def test_mapper_factory_supports_registered_mapper_ids(self):
-        for mapper in (0, 1, 2, 3):
-            with self.subTest(mapper=mapper):
-                self.assertTrue(_is_mapper_supported(mapper))
+    def test_public_constructor_rejects_unsupported_mapper(self):
+        path = self.synthetic_rom(
+            'unsupported.nes',
+            mapper=4,
+            prg_banks=2,
+            chr_banks=1,
+        )
 
-        self.assertFalse(_is_mapper_supported(4))
+        with self.assertRaises(ValueError) as error:
+            NESEnv(path)
+        self.assertIn('unsupported mapper number 4', str(error.exception))

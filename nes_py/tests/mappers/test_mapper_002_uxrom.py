@@ -8,7 +8,7 @@ from nes_py.tests.mappers.common import MapperTestCase
 class ShouldLoadMapper002UxROM(MapperTestCase):
     """Exercise UxROM through the package API."""
 
-    def test_chr_ram_fixture_constructs_steps_and_backup_restores(self):
+    def test_chr_ram_fixture_constructs_and_steps(self):
         path = self.synthetic_rom(
             'uxrom.nes',
             mapper=2,
@@ -22,4 +22,4 @@ class ShouldLoadMapper002UxROM(MapperTestCase):
         self.assertEqual(64, rom.prg_rom_size)
         self.assertEqual(0, rom.chr_rom_size)
         self.assertEqual('vertical', rom.mirroring)
-        self.assert_env_smoke(path)
+        self.assert_public_env_workflow(path)

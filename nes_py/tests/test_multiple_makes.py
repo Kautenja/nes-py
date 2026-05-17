@@ -1,34 +1,24 @@
-"""Test that the multiprocessing package works with the env."""
+"""Test multiple NESEnv instances in one process and across workers."""
 from multiprocessing import Process
 from threading import Thread
 from unittest import TestCase
+
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
 
 
 def play(steps):
-    """
-    Play the environment making uniformly random decisions.
-
-    Args:
-        steps (int): the number of steps to take
-
-    Returns:
-        None
-
-    """
-    # create an NES environment with Super Mario Bros.
+    """Play the environment with deterministic actions for a few steps."""
     path = rom_file_abs_path('super-mario-bros-1.nes')
     env = NESEnv(path)
-    # step the environment for some arbitrary number of steps
-    done = True
-    for _ in range(steps):
-        if done:
-            _ = env.reset()
-        action = env.action_space.sample()
-        _, _, done, _ = env.step(action)
-    # close the environment
-    env.close()
+    try:
+        done = True
+        for step in range(steps):
+            if done:
+                _ = env.reset(seed=step)
+            _, _, done, _ = env.step(step % env.action_space.n)
+    finally:
+        env.close()
 
 
 class ShouldMakeMultipleEnvironmentsParallel(object):
@@ -53,6 +43,9 @@ class ShouldMakeMultipleEnvironmentsParallel(object):
         # join the parallel instances
         for proc in procs:
             proc.join()
+            self.assertFalse(proc.is_alive())
+            exitcode = getattr(proc, 'exitcode', 0)
+            self.assertEqual(0, exitcode)
 
 
 class ProcessTest(ShouldMakeMultipleEnvironmentsParallel, TestCase):
@@ -66,7 +59,7 @@ class ThreadTest(ShouldMakeMultipleEnvironmentsParallel, TestCase):
 
 
 class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
-    """Test making 4 environments in a single code stream."""
+    """Test multiple environments in one process keep public state separate."""
 
     # the number of environments to spawn
     num_envs = 4
@@ -77,11 +70,30 @@ class ShouldMakeMultipleEnvironmentsSingleThread(TestCase):
     def test(self):
         path = rom_file_abs_path('super-mario-bros-1.nes')
         envs = [NESEnv(path) for _ in range(self.num_envs)]
-        dones = [True] * self.num_envs
+        try:
+            dones = [True] * self.num_envs
 
-        for _ in range(self.steps):
-            for idx in range(self.num_envs):
-                if dones[idx]:
-                    _ = envs[idx].reset()
-                action = envs[idx].action_space.sample()
-                _, _, dones[idx], _ = envs[idx].step(action)
+            for step in range(self.steps):
+                for idx, env in enumerate(envs):
+                    if dones[idx]:
+                        _ = env.reset(seed=idx)
+                    action = (step + idx) % env.action_space.n
+                    _, _, dones[idx], _ = env.step(action)
+
+            envs[0].ram[0] = 0x2a
+            envs[1].ram[0] = 0x11
+            envs[0].controllers[0][0] = 0x80
+            envs[1].controllers[0][0] = 0x01
+            self.assertEqual(0x2a, envs[0].ram[0])
+            self.assertEqual(0x11, envs[1].ram[0])
+            self.assertEqual(0x80, envs[0].controllers[0][0])
+            self.assertEqual(0x01, envs[1].controllers[0][0])
+
+            envs[0].close()
+            _, _, _, _ = envs[1].step(0)
+        finally:
+            for env in envs:
+                try:
+                    env.close()
+                except ValueError:
+                    pass

@@ -12,8 +12,8 @@
 [![Format][pypi-format]][pypi-home]
 [![License][pypi-license]](LICENSE)
 
-[build-status]: https://app.travis-ci.com/Kautenja/nes-py.svg?branch=master
-[ci-server]: https://app.travis-ci.com/Kautenja/nes-py
+[build-status]: https://github.com/Kautenja/nes-py/actions/workflows/ci.yml/badge.svg?branch=master
+[ci-server]: https://github.com/Kautenja/nes-py/actions/workflows/ci.yml
 [pypi-version]: https://badge.fury.io/py/nes-py.svg
 [pypi-license]: https://img.shields.io/pypi/l/nes-py.svg
 [pypi-status]: https://img.shields.io/pypi/status/nes-py.svg
@@ -24,6 +24,7 @@
 
 nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
+The supported CI target is Python 3.13.
 
 <table align="center">
     <tr>

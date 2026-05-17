@@ -1,1 +1,6 @@
 graft nes_py/nes
+global-exclude .DS_Store
+global-exclude *.py[cod]
+global-exclude __pycache__
+global-exclude *.o
+global-exclude *.obj

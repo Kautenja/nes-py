@@ -1,12 +1,7 @@
 """The setup script for installing and distributing the nes-py package."""
-import os
 from glob import glob
 from setuptools import setup, find_packages, Extension
-
-
-# set the compiler for the C++ framework
-os.environ['CC'] = 'g++'
-os.environ['CCX'] = 'g++'
+from setuptools.command.build_ext import build_ext
 
 
 # read the contents from the README file
@@ -25,14 +20,27 @@ SOURCES = glob('nes_py/nes/src/*.cpp') + glob('nes_py/nes/src/mappers/*.cpp')
 # This directory has to be included using MANIFEST.in too to include the
 # headers with sdist
 INCLUDE_DIRS = ['nes_py/nes/include']
-# Build arguments to pass to the compiler
-EXTRA_COMPILE_ARGS = ['-std=c++1y', '-pipe', '-O3']
 # The official extension using the name, source, headers, and build args
 LIB_NES_ENV = Extension(LIB_NAME,
     sources=SOURCES,
     include_dirs=INCLUDE_DIRS,
-    extra_compile_args=EXTRA_COMPILE_ARGS,
+    language='c++',
 )
+
+
+class BuildExt(build_ext):
+    """Select compiler flags that match the active platform toolchain."""
+
+    C_OPTS = {
+        'msvc': ['/std:c++14', '/O2'],
+        'unix': ['-std=c++14', '-O3', '-pipe'],
+    }
+
+    def build_extensions(self):
+        compile_args = self.C_OPTS.get(self.compiler.compiler_type, [])
+        for extension in self.extensions:
+            extension.extra_compile_args = compile_args
+        super().build_extensions()
 
 
 setup(
@@ -52,11 +60,7 @@ setup(
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: C++',
         'Programming Language :: Python :: 3 :: Only',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.13',
         'Topic :: Games/Entertainment',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: System :: Emulators',
@@ -65,8 +69,10 @@ setup(
     author='Christian Kauten',
     author_email='kautencreations@gmail.com',
     license='MIT',
+    python_requires='>=3.13',
     packages=find_packages(exclude=['tests', '*.tests', '*.tests.*']),
     ext_modules=[LIB_NES_ENV],
+    cmdclass={'build_ext': BuildExt},
     zip_safe=False,
     install_requires=[
         'gym>=0.17.2',
@@ -74,6 +80,11 @@ setup(
         'pyglet<=1.5.21,>=1.4.0',
         'tqdm>=4.48.2',
     ],
+    extras_require={
+        'release': [
+            'twine>=6.1.0',
+        ],
+    },
     entry_points={
         'console_scripts': [
             'nes_py = nes_py.app.cli:main',

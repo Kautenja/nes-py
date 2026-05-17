@@ -258,9 +258,16 @@ on.
 1.  MMC1 / SxROM
 2.  UxROM
 3.  CNROM
+4.  MMC3 / TxROM
+5.  MMC5 / ExROM
+7.  AxROM / AOROM
+9.  MMC2 / PxROM
+69. Sunsoft FME-7 / Sunsoft 5B
 
-Planned mapper expansion is tracked in the umbrella repository's
-[mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/mappers).
+MMC5 vertical split rendering and MMC5 pulse/PCM audio are not implemented yet.
+Sunsoft 5B audio register state is preserved, but expansion-audio mixing is not
+implemented yet. Planned mapper expansion is tracked in the umbrella
+repository's [mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/mappers).
 
 # Disclaimer
 

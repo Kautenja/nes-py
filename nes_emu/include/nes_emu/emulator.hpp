@@ -22,7 +22,7 @@
 
 namespace NES {
 
-/// An NES Emulator and OpenAI Gym interface
+/// An NES Emulator and Gymnasium interface
 class Emulator {
  private:
     /// The number of cycles in 1 frame

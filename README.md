@@ -22,7 +22,7 @@
 [python-version]: https://img.shields.io/pypi/pyversions/nes-py.svg
 [python-home]: https://python.org
 
-nes-py is an NES emulator and OpenAI Gym interface for MacOS, Linux, and
+nes-py is an NES emulator and Gymnasium interface for MacOS, Linux, and
 Windows based on the [SimpleNES](https://github.com/amhndu/SimpleNES) emulator.
 The supported CI target is Python 3.13.
 
@@ -140,6 +140,26 @@ run with or without a graphical window:
 ```shell
 python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500
 python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500 --no-render
+```
+
+To use the Python API directly, construct the environment with the desired
+Gymnasium render mode, seed through `reset`, and handle the separated
+termination and truncation flags:
+
+```python
+from nes_py.nes_env import NESEnv
+
+env = NESEnv("<path_to_rom>", render_mode="rgb_array")
+observation, info = env.reset(seed=123)
+terminated = False
+truncated = False
+
+while not (terminated or truncated):
+    action = env.action_space.sample()
+    observation, reward, terminated, truncated, info = env.step(action)
+    frame = env.render()
+
+env.close()
 ```
 
 ## Controls

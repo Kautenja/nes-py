@@ -215,7 +215,9 @@ class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
 
         env = NESEnv(path)
         try:
-            self.assertEqual((240, 256, 3), env.reset().shape)
+            state, info = env.reset()
+            self.assertEqual((240, 256, 3), state.shape)
+            self.assertIsInstance(info, dict)
             self.assertEqual((240, 256, 3), env.step(0)[0].shape)
         finally:
             env.close()
@@ -233,7 +235,9 @@ class ShouldHandleUnsupportedHeaderFeatures(CartridgeMetadataTestCase):
 
         env = NESEnv(path)
         try:
-            self.assertEqual((240, 256, 3), env.reset().shape)
+            state, info = env.reset()
+            self.assertEqual((240, 256, 3), state.shape)
+            self.assertIsInstance(info, dict)
             self.assertEqual((240, 256, 3), env.step(0)[0].shape)
         finally:
             env.close()

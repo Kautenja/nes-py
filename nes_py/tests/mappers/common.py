@@ -28,21 +28,24 @@ class MapperTestCase(TestCase):
         """Create a synthetic ROM in this test's temporary directory."""
         return synthetic_rom_path(self.tmpdir.name, *args, **kwargs)
 
-    def env(self, path):
+    def env(self, path, render_mode=None):
         """Create an environment and close it during test cleanup."""
-        env = NESEnv(path)
+        env = NESEnv(path, render_mode=render_mode)
         self.addCleanup(env.close)
         return env
 
     def assert_public_env_workflow(self, path):
         """Assert public NESEnv workflows operate for a ROM path."""
-        env = self.env(path)
+        env = self.env(path, render_mode='rgb_array')
 
-        state = env.reset()
+        state, info = env.reset()
         self.assertEqual((240, 256, 3), state.shape)
-        state, reward, done, info = env.step(0)
+        self.assertIsInstance(info, dict)
+        state, reward, terminated, truncated, info = env.step(0)
         self.assertEqual((240, 256, 3), state.shape)
         self.assertIsInstance(reward, float)
-        self.assertIsInstance(done, bool)
+        self.assertIsInstance(terminated, bool)
+        self.assertIsInstance(truncated, bool)
+        self.assertFalse(truncated)
         self.assertIsInstance(info, dict)
-        self.assertEqual((240, 256, 3), env.render('rgb_array').shape)
+        self.assertEqual((240, 256, 3), env.render().shape)

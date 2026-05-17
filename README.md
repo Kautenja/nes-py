@@ -149,13 +149,17 @@ nes_py -h
 
 ## Parallelism Caveats
 
-both the `threading` and `multiprocessing` packages are supported by
-`nes-py` with some caveats related to rendering:
+Both the `threading` and `multiprocessing` packages are supported by
+`nes-py`. The rendering caveats only apply to windowed `human` rendering:
 
-1.  rendering **is not** supported from instances of `threading.Thread`
-2.  rendering **is** supported from instances of `multiprocessing.Process`,
-    but `nes-py` must be imported within the process that executes the render
-    call
+1.  `rgb_array` rendering is supported from `threading.Thread` and
+    `multiprocessing.Process` instances.
+2.  `human` rendering **is not** supported from instances of
+    `threading.Thread`; it must run on the process's main Python thread.
+3.  `human` rendering **is** supported from instances of
+    `multiprocessing.Process`, but the viewer must be created in the process
+    that owns the render call. Importing `nes-py` or its CLI module in a parent
+    process does not initialize the windowing backend.
 
 # Development
 

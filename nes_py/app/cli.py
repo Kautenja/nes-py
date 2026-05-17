@@ -1,7 +1,5 @@
 """Command line interface to nes-py NES emulator."""
 import argparse
-from .play_human import play_human
-from .play_random import play_random
 from ..nes_env import NESEnv
 
 
@@ -38,8 +36,10 @@ def main():
     env = NESEnv(args.rom)
     # play the environment with the given mode
     if args.mode == 'human':
+        from .play_human import play_human
         play_human(env)
     else:
+        from .play_random import play_random
         play_random(env, args.steps)
 
 

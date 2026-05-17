@@ -1,7 +1,6 @@
 """A method to play gym environments using human IO inputs."""
 import gym
 import time
-from pyglet import clock
 from .._image_viewer import ImageViewer
 
 
@@ -43,6 +42,9 @@ def play_human(env: gym.Env, callback=None):
         monitor_keyboard=True,
         relevant_keys=set(sum(map(list, keys_to_action.keys()), []))
     )
+    # Import pyglet after ImageViewer validates main-thread usage so parent
+    # processes can import nes_py before spawning render-capable children.
+    from pyglet import clock
     # create a done flag for the environment
     done = True
     # prepare frame rate limiting

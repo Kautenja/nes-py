@@ -208,7 +208,13 @@ cmake -S . -B build/nes-emu-release -DCMAKE_BUILD_TYPE=Release -DNES_EMU_BUILD_B
 cmake --build build/nes-emu-release --target nes_emu_benchmarks
 ```
 
-Release upload tooling is available with `python -m pip install ".[release]"`.
+PyPI releases are published by the `Publish to PyPI` GitHub Actions workflow
+through PyPI trusted publishing, not by local `twine` credentials. Configure the
+PyPI project publisher with owner `Kautenja`, repository `nes-py`, workflow
+filename `publish.yml`, and environment `pypi`. Then create a GitHub release
+from a tag matching `pyproject.toml`'s version, with or without a leading `v`.
+The workflow builds the source distribution and CPython 3.13 wheels for Linux,
+Windows, and macOS before publishing.
 
 ## Benchmarking
 

@@ -39,11 +39,6 @@ dependencies = [
     "tqdm>=4.48.2",
 ]
 
-[project.optional-dependencies]
-release = [
-    "twine>=6.1.0",
-]
-
 [project.scripts]
 nes_py = "nes_py.play:main"
 
@@ -66,3 +61,9 @@ sdist.exclude = [
     "scripts/**",
 ]
 wheel.exclude = ["nes_py/tests/**"]
+
+[tool.cibuildwheel]
+build = "cp313-*"
+skip = "*-musllinux_*"
+test-command = 'python -c "import nes_py; import nes_py._native"'
+build-verbosity = 1

@@ -15,6 +15,7 @@ class ShouldLoadSupportedMapperFixtures(MapperTestCase):
             ('sxrom.nes', 1, 4, 0, 'horizontal'),
             ('uxrom.nes', 2, 4, 0, 'vertical'),
             ('cnrom.nes', 3, 2, 4, 'horizontal'),
+            ('mmc3.nes', 4, 4, 2, 'horizontal'),
         )
 
         for (
@@ -54,11 +55,11 @@ class ShouldLoadSupportedMapperFixtures(MapperTestCase):
     def test_public_constructor_rejects_unsupported_mapper(self):
         path = self.synthetic_rom(
             'unsupported.nes',
-            mapper=4,
+            mapper=255,
             prg_banks=2,
             chr_banks=1,
         )
 
         with self.assertRaises(ValueError) as error:
             NESEnv(path)
-        self.assertIn('unsupported mapper number 4', str(error.exception))
+        self.assertIn('unsupported mapper number 255', str(error.exception))

@@ -27,9 +27,68 @@ const int CHR_STRESS_READS = 8192;
 
 volatile std::uint64_t benchmark_ppu_sink = 0;
 
+typedef void (*MapperSetup)(NES::Mapper&);
+
 bool file_exists(const std::string& path) {
     std::ifstream stream(path.c_str(), std::ios::binary);
     return stream.good();
+}
+
+void write_mmc3_bank(
+    NES::Mapper& mapper,
+    NES::NES_Byte bank_register,
+    NES::NES_Byte value,
+    NES::NES_Byte mode_bits = 0
+) {
+    mapper.writePRG(0x8000, mode_bits | (bank_register & 0x07));
+    mapper.writePRG(0x8001, value);
+}
+
+void write_fme7_command(
+    NES::Mapper& mapper,
+    NES::NES_Byte command,
+    NES::NES_Byte value
+) {
+    mapper.writePRG(0x8000, command);
+    mapper.writePRG(0xa000, value);
+}
+
+void configure_mmc3_chr_profile(NES::Mapper& mapper) {
+    write_mmc3_bank(mapper, 0, 7);
+    write_mmc3_bank(mapper, 1, 8);
+    write_mmc3_bank(mapper, 2, 10);
+    write_mmc3_bank(mapper, 3, 11);
+    write_mmc3_bank(mapper, 4, 12);
+    write_mmc3_bank(mapper, 5, 13);
+    mapper.writePRG(0xc000, 0x02);
+    mapper.writePRG(0xc001, 0x00);
+    mapper.writePRG(0xe001, 0x00);
+}
+
+void configure_mmc5_chr_profile(NES::Mapper& mapper) {
+    mapper.writeExpansion(0x5101, 0x03);
+    for (NES::NES_Byte bank = 0; bank < 8; ++bank)
+        mapper.writeExpansion(
+            static_cast<NES::NES_Address>(0x5120 + bank),
+            static_cast<NES::NES_Byte>(bank + 1)
+        );
+}
+
+void configure_mmc2_chr_profile(NES::Mapper& mapper) {
+    mapper.writePRG(0xb000, 0x21);
+    mapper.writePRG(0xc000, 0x22);
+    mapper.writePRG(0xd000, 0x23);
+    mapper.writePRG(0xe000, 0x24);
+}
+
+void configure_fme7_chr_profile(NES::Mapper& mapper) {
+    for (NES::NES_Byte window = 0; window < 8; ++window) {
+        write_fme7_command(
+            mapper,
+            window,
+            static_cast<NES::NES_Byte>(15 - window)
+        );
+    }
 }
 
 void consume_screen(NES::NES_Pixel* screen) {
@@ -131,13 +190,28 @@ class MapperCHRReadHarness {
         const std::string& name,
         std::uint16_t mapper_id,
         std::size_t prg_banks,
-        std::size_t chr_banks
+        std::size_t chr_banks,
+        bool chr_4k_markers = false,
+        bool prg_8k_markers = false,
+        bool chr_1k_markers = false,
+        MapperSetup setup = nullptr
     ) :
-        rom(name, mapper_id, prg_banks, chr_banks),
+        rom(
+            name,
+            mapper_id,
+            prg_banks,
+            chr_banks,
+            "horizontal",
+            chr_4k_markers,
+            prg_8k_markers,
+            chr_1k_markers
+        ),
         cartridge(rom.load()),
         mapper(NES::MapperFactory(&cartridge)),
         bus() {
         REQUIRE(mapper != nullptr);
+        if (setup != nullptr)
+            setup(*mapper);
         bus.set_mapper(mapper.get());
         for (NES::NES_Address address = 0; address < 0x2000; ++address) {
             bus.write(
@@ -220,6 +294,67 @@ MapperCHRReadHarness& mapper_3_chr_harness() {
     return harness;
 }
 
+MapperCHRReadHarness& mapper_4_chr_harness() {
+    static MapperCHRReadHarness harness(
+        "benchmark_mapper_004_mmc3",
+        4,
+        4,
+        2,
+        false,
+        false,
+        true,
+        configure_mmc3_chr_profile
+    );
+    return harness;
+}
+
+MapperCHRReadHarness& mapper_5_chr_harness() {
+    static MapperCHRReadHarness harness(
+        "benchmark_mapper_005_mmc5",
+        5,
+        8,
+        4,
+        false,
+        false,
+        true,
+        configure_mmc5_chr_profile
+    );
+    return harness;
+}
+
+MapperCHRReadHarness& mapper_7_chr_harness() {
+    static MapperCHRReadHarness harness("benchmark_mapper_007_axrom", 7, 4, 0);
+    return harness;
+}
+
+MapperCHRReadHarness& mapper_9_chr_harness() {
+    static MapperCHRReadHarness harness(
+        "benchmark_mapper_009_mmc2",
+        9,
+        4,
+        8,
+        true,
+        false,
+        false,
+        configure_mmc2_chr_profile
+    );
+    return harness;
+}
+
+MapperCHRReadHarness& mapper_69_chr_harness() {
+    static MapperCHRReadHarness harness(
+        "benchmark_mapper_069_fme7",
+        69,
+        4,
+        2,
+        false,
+        true,
+        true,
+        configure_fme7_chr_profile
+    );
+    return harness;
+}
+
 ROMFrameHarness& mapper_0_rom_harness() {
     static ROMFrameHarness harness(
         "nes_py/tests/games/super-mario-bros-1.nes",
@@ -248,6 +383,46 @@ ROMFrameHarness& mapper_3_rom_harness() {
     static ROMFrameHarness harness(
         "nes_py/tests/games/adventure-island.nes",
         3
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_4_rom_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/super-mario-bros-3.nes",
+        4
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_5_rom_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/castlevania-iii-draculas-curse.nes",
+        5
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_7_rom_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/battletoads.nes",
+        7
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_9_rom_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/mike-tysons-punch-out.nes",
+        9
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_69_rom_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/batman-return-of-the-joker.nes",
+        69
     );
     return harness;
 }
@@ -305,6 +480,41 @@ TEST_CASE("native mapper CHR read benchmark profiles", "[benchmark][ppu]") {
     ) {
         mapper_3_chr_harness().run_reads();
     };
+
+    BENCHMARK(
+        "ppu mapper=4 rom=synthetic-mmc3 render-mode=chr-read-stress "
+        "operation=8192-picture-bus-reads"
+    ) {
+        mapper_4_chr_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "ppu mapper=5 rom=synthetic-mmc5 render-mode=chr-read-stress "
+        "operation=8192-picture-bus-reads"
+    ) {
+        mapper_5_chr_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "ppu mapper=7 rom=synthetic-axrom render-mode=chr-read-stress "
+        "operation=8192-picture-bus-reads"
+    ) {
+        mapper_7_chr_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "ppu mapper=9 rom=synthetic-mmc2 render-mode=chr-read-stress "
+        "operation=8192-picture-bus-reads"
+    ) {
+        mapper_9_chr_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "ppu mapper=69 rom=synthetic-fme7 render-mode=chr-read-stress "
+        "operation=8192-picture-bus-reads"
+    ) {
+        mapper_69_chr_harness().run_reads();
+    };
 }
 
 TEST_CASE("native representative ROM frame benchmark profiles", "[benchmark][ppu]") {
@@ -334,5 +544,40 @@ TEST_CASE("native representative ROM frame benchmark profiles", "[benchmark][ppu
         "operation=restore-and-step-one-frame"
     ) {
         mapper_3_rom_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "ppu mapper=4 rom=super-mario-bros-3 render-mode=full-frame "
+        "operation=restore-and-step-one-frame"
+    ) {
+        mapper_4_rom_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "ppu mapper=5 rom=castlevania-iii-draculas-curse "
+        "render-mode=full-frame operation=restore-and-step-one-frame"
+    ) {
+        mapper_5_rom_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "ppu mapper=7 rom=battletoads render-mode=full-frame "
+        "operation=restore-and-step-one-frame"
+    ) {
+        mapper_7_rom_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "ppu mapper=9 rom=mike-tysons-punch-out render-mode=full-frame "
+        "operation=restore-and-step-one-frame"
+    ) {
+        mapper_9_rom_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "ppu mapper=69 rom=batman-return-of-the-joker "
+        "render-mode=full-frame operation=restore-and-step-one-frame"
+    ) {
+        mapper_69_rom_harness().run_frame();
     };
 }

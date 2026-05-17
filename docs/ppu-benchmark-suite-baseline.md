@@ -21,23 +21,36 @@ palette data. The ROM frame profiles restore a captured emulator state before
 each measured frame, so a before/after comparison on the same machine starts
 from the same CPU, PPU, bus, and mapper state.
 
+Mapper CHR read and representative ROM profiles cover every mapper currently
+registered by the native mapper factory: 0, 1, 2, 3, 4, 5, 7, 9, and 69.
+
 The command above ran with one Catch2 sample and one resample to match the
 Ralph verification path. Use more samples for local profiling when comparing
 small changes.
 
 | Profile | Mapper | Render mode | Operation | Mean |
 | --- | ---: | --- | --- | ---: |
-| synthetic render-off | 0 | mask-off | one PPU frame | 284.151 us |
-| synthetic background-only | 0 | background | one PPU frame | 450.984 us |
-| synthetic sprite-heavy | 0 | background+sprites | one PPU frame | 577.359 us |
-| synthetic NROM CHR reads | 0 | CHR read stress | 8,192 picture-bus reads | 19.192 us |
-| synthetic SxROM CHR reads | 1 | CHR read stress | 8,192 picture-bus reads | 21.109 us |
-| synthetic UxROM CHR reads | 2 | CHR read stress | 8,192 picture-bus reads | 17.013 us |
-| synthetic CNROM CHR reads | 3 | CHR read stress | 8,192 picture-bus reads | 17.317 us |
-| `super-mario-bros-1.nes` | 0 | full-frame | restore and step one frame | 724.984 us |
-| `the-legend-of-zelda.nes` | 1 | full-frame | restore and step one frame | 767.609 us |
-| `mega-man.nes` | 2 | full-frame | restore and step one frame | 418.317 us |
-| `adventure-island.nes` | 3 | full-frame | restore and step one frame | 413.401 us |
+| synthetic render-off | 0 | mask-off | one PPU frame | 290.567 us |
+| synthetic background-only | 0 | background | one PPU frame | 450.318 us |
+| synthetic sprite-heavy | 0 | background+sprites | one PPU frame | 603.734 us |
+| synthetic NROM CHR reads | 0 | CHR read stress | 8,192 picture-bus reads | 20.109 us |
+| synthetic SxROM CHR reads | 1 | CHR read stress | 8,192 picture-bus reads | 22.276 us |
+| synthetic UxROM CHR reads | 2 | CHR read stress | 8,192 picture-bus reads | 16.784 us |
+| synthetic CNROM CHR reads | 3 | CHR read stress | 8,192 picture-bus reads | 18.026 us |
+| synthetic MMC3 CHR reads | 4 | CHR read stress | 8,192 picture-bus reads | 152.068 us |
+| synthetic MMC5 CHR reads | 5 | CHR read stress | 8,192 picture-bus reads | 29.650 us |
+| synthetic AxROM CHR reads | 7 | CHR read stress | 8,192 picture-bus reads | 17.013 us |
+| synthetic MMC2 CHR reads | 9 | CHR read stress | 8,192 picture-bus reads | 40.568 us |
+| synthetic FME-7 CHR reads | 69 | CHR read stress | 8,192 picture-bus reads | 21.775 us |
+| `super-mario-bros-1.nes` | 0 | full-frame | restore and step one frame | 732.568 us |
+| `the-legend-of-zelda.nes` | 1 | full-frame | restore and step one frame | 772.025 us |
+| `mega-man.nes` | 2 | full-frame | restore and step one frame | 412.026 us |
+| `adventure-island.nes` | 3 | full-frame | restore and step one frame | 417.609 us |
+| `super-mario-bros-3.nes` | 4 | full-frame | restore and step one frame | 430.525 us |
+| `castlevania-iii-draculas-curse.nes` | 5 | full-frame | restore and step one frame | 487.442 us |
+| `battletoads.nes` | 7 | full-frame | restore and step one frame | 409.067 us |
+| `mike-tysons-punch-out.nes` | 9 | full-frame | restore and step one frame | 494.568 us |
+| `batman-return-of-the-joker.nes` | 69 | full-frame | restore and step one frame | 770.734 us |
 
 ## Public Speedtest Comparison
 

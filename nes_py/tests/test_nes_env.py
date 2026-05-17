@@ -15,12 +15,11 @@ USABLE_ON_DISK_ROM_NAMES = (
     'super-mario-bros-lost-levels.nes',
     'the-legend-of-zelda.nes',
     'excitebike.nes',
-)
-
-UNSUPPORTED_ON_DISK_ROM_NAMES = (
     'super-mario-bros-2.nes',
     'super-mario-bros-3.nes',
 )
+
+UNSUPPORTED_ON_DISK_ROM_NAMES = ()
 
 DETERMINISTIC_ACTIONS = (0, 1, 2, 4, 8, 16, 32, 64)
 

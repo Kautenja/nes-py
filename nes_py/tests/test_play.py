@@ -3,7 +3,7 @@ import contextlib
 import io
 from unittest import TestCase
 
-from .rom_file_abs_path import rom_file_abs_path
+from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.play import main
 
 

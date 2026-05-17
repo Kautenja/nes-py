@@ -5,8 +5,8 @@ import json
 import tempfile
 from unittest import TestCase
 
-from .mapper_fixtures import synthetic_rom_path
-from .rom_file_abs_path import rom_file_abs_path
+from nes_py.tests.mapper_fixtures import synthetic_rom_path
+from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.speedtest import BenchmarkConfig
 from nes_py.speedtest import main
 from nes_py.speedtest import run_benchmark

@@ -3,7 +3,7 @@ from unittest import TestCase
 import gym
 import numpy as np
 from nes_py import _native
-from .rom_file_abs_path import rom_file_abs_path
+from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
 from nes_py.nes_env import SCREEN_SHAPE_24_BIT
 

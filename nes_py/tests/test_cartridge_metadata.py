@@ -8,11 +8,11 @@ from nes_py.nes_env import NESEnv
 from nes_py.nes_env import _native_cartridge_error
 from nes_py.nes_env import _native_cartridge_metadata
 
-from .mapper_fixtures import CHR_BANK_SIZE
-from .mapper_fixtures import PRG_BANK_SIZE
-from .mapper_fixtures import ines_header
-from .mapper_fixtures import synthetic_rom_path
-from .rom_file_abs_path import rom_file_abs_path
+from nes_py.tests.mapper_fixtures import CHR_BANK_SIZE
+from nes_py.tests.mapper_fixtures import PRG_BANK_SIZE
+from nes_py.tests.mapper_fixtures import ines_header
+from nes_py.tests.mapper_fixtures import synthetic_rom_path
+from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 
 
 HORIZONTAL = 0

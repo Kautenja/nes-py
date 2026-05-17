@@ -45,7 +45,7 @@ release = [
 ]
 
 [project.scripts]
-nes_py = "nes_py.app.cli:main"
+nes_py = "nes_py.play:main"
 
 [project.urls]
 Homepage = "https://github.com/Kautenja/nes-py"

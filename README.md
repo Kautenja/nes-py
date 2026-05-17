@@ -125,13 +125,21 @@ package provides these tools for free.
 To access the NES emulator from the command line use the following command.
 
 ```shell
-nes_py -r <path_to_rom>
+python3 -m nes_py.play --rom <path_to_rom>
 ```
 
 To print out documentation for the command line interface execute:
 
 ```shell
-nes_py -h
+python3 -m nes_py.play -h
+```
+
+The play command supports keyboard controls and random controls. Random play can
+run with or without a graphical window:
+
+```shell
+python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500
+python3 -m nes_py.play --rom <path_to_rom> --mode random --steps 500 --no-render
 ```
 
 ## Controls
@@ -158,7 +166,7 @@ Both the `threading` and `multiprocessing` packages are supported by
     `threading.Thread`; it must run on the process's main Python thread.
 3.  `human` rendering **is** supported from instances of
     `multiprocessing.Process`, but the viewer must be created in the process
-    that owns the render call. Importing `nes-py` or its CLI module in a parent
+    that owns the render call. Importing `nes-py` or `nes_py.play` in a parent
     process does not initialize the windowing backend.
 
 # Development

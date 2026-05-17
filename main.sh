@@ -20,12 +20,11 @@
 #     release             Alias for ship
 #     upload              Alias for ship
 #     all                 Run tests and build distributions
-#     cli                 Run the nes-py CLI; pass extra args after the command
+#     cli                 Run the nes-py play CLI; pass extra args after it
 #     play                Alias for cli
-#     random              Run the nes-py CLI in random mode
+#     random              Run the nes-py play CLI in random mode
 #     speedtest           Run the NES benchmark CLI
 #     benchmark           Alias for speedtest
-#     run                 Run the legacy smoke script in scripts/run.py
 #     *                   Execute the command directly from the project root
 #
 # Examples:
@@ -167,22 +166,17 @@ case "${COMMAND}" in
   ;;
 
 "cli" | "play")
-  "${PYTHON}" -m nes_py.app.cli "$@"
+  "${PYTHON}" -m nes_py.play "$@"
   exit 0
   ;;
 
 "random")
-  "${PYTHON}" -m nes_py.app.cli --mode random "$@"
+  "${PYTHON}" -m nes_py.play --mode random "$@"
   exit 0
   ;;
 
 "speedtest" | "benchmark")
   "${PYTHON}" -m nes_py.speedtest "$@"
-  exit 0
-  ;;
-
-"run")
-  "${PYTHON}" scripts/run.py "$@"
   exit 0
   ;;
 

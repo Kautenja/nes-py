@@ -1,13 +1,13 @@
-"""Test application imports avoid initializing optional render backends."""
+"""Test play imports avoid initializing optional render backends."""
 import subprocess
 import sys
 from unittest import TestCase
 
 
-class AppImportTest(TestCase):
-    """Test import-time behavior for application helpers."""
+class PlayImportTest(TestCase):
+    """Test import-time behavior for play helpers."""
 
-    def test_cli_import_does_not_initialize_pyglet(self):
+    def test_play_import_does_not_initialize_pyglet(self):
         code = """
 import sys
 import nes_py
@@ -15,15 +15,15 @@ import nes_py
 if 'pyglet' in sys.modules:
     raise SystemExit('import nes_py initialized pyglet')
 
-from nes_py.app import cli
+from nes_py import play
 
 if 'pyglet' in sys.modules:
-    raise SystemExit('import nes_py.app.cli initialized pyglet')
+    raise SystemExit('import nes_py.play initialized pyglet')
 
-from nes_py.app.play_human import play_human
+_ = play.play_human
 
 if 'pyglet' in sys.modules:
-    raise SystemExit('import play_human initialized pyglet')
+    raise SystemExit('accessing play_human initialized pyglet')
 """
         completed = subprocess.run(
             [sys.executable, '-c', code],

@@ -10,6 +10,7 @@ import numpy as np
 from ._rom import ROM
 from ._image_viewer import ImageViewer
 from . import _native
+from .ram import normalize_ram_read_specs
 
 
 def _native_cartridge_error(rom_path):
@@ -209,6 +210,31 @@ class NESEnv(gym.Env):
     def _restore(self):
         """Restore the backup state into the NES emulator."""
         self._env.restore()
+
+    def dump_state(self):
+        """Return an opaque snapshot of the native emulator state."""
+        if self._env is None:
+            raise ValueError('env has already been closed.')
+        return self._env.dump_state()
+
+    def load_state(self, snapshot):
+        """Restore the native emulator from an opaque state snapshot."""
+        if self._env is None:
+            raise ValueError('env has already been closed.')
+        self._env.load_state(snapshot)
+        self.done = False
+
+    def ram_values(self, specs, output=None):
+        """Read configured RAM values into a reusable uint32 array."""
+        if self._env is None:
+            raise ValueError('env has already been closed.')
+        addresses, sizes, encodings = normalize_ram_read_specs(specs)
+        return self._env.read_ram_values(
+            addresses,
+            sizes,
+            encodings,
+            output,
+        )
 
     def _will_reset(self):
         """Handle any RAM hacking after a reset occurs."""

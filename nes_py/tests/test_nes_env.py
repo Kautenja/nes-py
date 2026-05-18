@@ -26,6 +26,17 @@ USABLE_ON_DISK_ROM_NAMES = (
 UNSUPPORTED_ON_DISK_ROM_NAMES = ()
 
 DETERMINISTIC_ACTIONS = (0, 1, 2, 4, 8, 16, 32, 64)
+SNAPSHOT_MAPPER_ROM_NAMES = (
+    'super-mario-bros-1.nes',
+    'the-legend-of-zelda.nes',
+    'mega-man.nes',
+    'adventure-island.nes',
+    'super-mario-bros-3.nes',
+    'castlevania-iii-draculas-curse.nes',
+    'battletoads.nes',
+    'mike-tysons-punch-out.nes',
+    'batman-return-of-the-joker.nes',
+)
 
 
 def create_smb1_instance():
@@ -581,3 +592,58 @@ class ShouldPreservePackageBackupRestoreWorkflow(NESEnvApplicationAssertions):
                     self.assert_valid_frame(state)
         finally:
             env.close()
+
+
+class ShouldExposeOpaqueStateSnapshots(NESEnvApplicationAssertions):
+    """Exercise the public opaque snapshot API across mapper fixtures."""
+
+    def test_invalid_snapshot_input_raises_clear_error(self):
+        env = create_smb1_instance()
+        try:
+            self.reset_frame(env, seed=41)
+            with self.assertRaises(TypeError):
+                env.load_state(object())
+        finally:
+            env.close()
+
+    def test_snapshot_round_trip_restores_state_and_continuation(self):
+        setup_actions = [0, 8, 0, 8, 1, 2, 0, 4]
+        continuation_actions = [0, 1, 2, 4, 8, 16, 32, 64, 128, 255]
+        for name in SNAPSHOT_MAPPER_ROM_NAMES:
+            with self.subTest(name=name):
+                env = NESEnv(rom_file_abs_path(name))
+                try:
+                    self.reset_frame(env, seed=43)
+                    self.advance(env, setup_actions)
+                    snapshot = env.dump_state()
+                    snapshot_screen = env.screen.copy()
+                    snapshot_ram = env.ram.copy()
+
+                    expected = self.advance(env, continuation_actions)
+                    env.load_state(snapshot)
+                    self.assertTrue(np.array_equal(snapshot_screen,
+                                                   env.screen))
+                    self.assertTrue(np.array_equal(snapshot_ram, env.ram))
+
+                    actual = self.advance(env, continuation_actions)
+                    for expected_output, actual_output in zip(expected, actual):
+                        self.assertTrue(np.array_equal(
+                            expected_output[0],
+                            actual_output[0],
+                        ))
+                        self.assertEqual(expected_output[1:],
+                                         actual_output[1:])
+                finally:
+                    env.close()
+
+    def test_snapshot_after_close_raises_but_existing_snapshot_remains_opaque(self):
+        env = create_smb1_instance()
+        self.reset_frame(env, seed=47)
+        snapshot = env.dump_state()
+        env.close()
+
+        self.assertIsNotNone(snapshot)
+        with self.assertRaises(ValueError):
+            env.dump_state()
+        with self.assertRaises(ValueError):
+            env.load_state(snapshot)

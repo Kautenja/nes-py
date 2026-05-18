@@ -257,6 +257,39 @@ Gymnasium's default observation contract. Benchmark local workloads with:
 python3 -m nes_py.speedtest --rom <path_to_rom> --observation-profile --no-progress
 ```
 
+### Vector, RAM, and Snapshot Helpers
+
+Same-ROM training loops can opt into a native vector emulator that batches
+controller writes, frame stepping, observation copies, RAM readback, and
+per-slot resets without moving game-specific reward or info logic into
+`nes-py`:
+
+```python
+import numpy as np
+
+from nes_py.vector_env import VectorNESEmulator
+
+vector = VectorNESEmulator("<path_to_rom>", 4)
+vector.reset()
+screens = vector.step(np.array([0, 1, 2, 3], dtype=np.uint8))
+gray = vector.observation("grayscale")
+ram_values = vector.ram_values((0x0000, (0x0001, 2, "little")))
+snapshot = vector.dump_state(0)
+vector.load_state(0, snapshot)
+vector.close()
+```
+
+Scalar `NESEnv` also exposes `ram_values(specs, output=None)`,
+`dump_state()`, and `load_state(snapshot)`. Snapshots are opaque same-process
+checkpoint objects, not a stable cross-version save-state format.
+
+Design notes and benchmark decisions live in:
+
+- `docs/vector-native-emulator.md`
+- `docs/native-batch-ram-info-reads.md`
+- `docs/vector-throughput-instrumentation.md`
+- `docs/explicit-state-snapshot-api.md`
+
 ### Controls
 
 | Keyboard Key | NES Joypad    |
@@ -345,6 +378,14 @@ and vary by machine, compiler, runner load, and display settings; they are not
 correctness criteria. Backup and restore stress options use explicit interval
 semantics, so `--backup-interval 12` runs a backup at steps 12, 24, 36, and so
 on.
+
+Additional profiles are available for ML and vector workflows:
+
+```shell
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --observation-profile --json --no-progress
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --ram-profile --json --no-progress
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --vector-profile --runs 5 --env-counts 1,2,4,8,16 --instrumentation --json --no-progress
+```
 
 ## Cartridge Mapper Compatibility
 

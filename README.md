@@ -204,6 +204,37 @@ while not (terminated or truncated):
 env.close()
 ```
 
+### ML Observation Helpers
+
+`NESEnv.step` and `render` in `rgb_array` mode keep returning the default
+`(240, 256, 3)` `uint8` RGB screen view. That view is zero-copy, but it is
+strided over the native 32-bit screen buffer. Training loops that need a
+C-contiguous RGB frame or a grayscale frame can opt into explicit copy helpers
+and reuse output buffers:
+
+```python
+import numpy as np
+
+from nes_py.nes_env import NESEnv
+from nes_py.nes_env import SCREEN_SHAPE_24_BIT
+from nes_py.nes_env import SCREEN_SHAPE_GRAYSCALE
+
+env = NESEnv("<path_to_rom>")
+rgb = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
+gray = np.empty(SCREEN_SHAPE_GRAYSCALE, dtype=np.uint8)
+
+observation, info = env.reset()
+contiguous_rgb = env.observation("rgb_array_contiguous", output=rgb)
+grayscale = env.observation("grayscale", output=gray)
+```
+
+The helpers are intended for measured ML pipelines, not as a replacement for
+Gymnasium's default observation contract. Benchmark local workloads with:
+
+```shell
+python3 -m nes_py.speedtest --rom <path_to_rom> --observation-profile --no-progress
+```
+
 ### Controls
 
 | Keyboard Key | NES Joypad    |

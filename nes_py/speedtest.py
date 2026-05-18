@@ -14,9 +14,21 @@ from tqdm import tqdm
 
 from ._rom import ROM
 from .nes_env import NESEnv
+from .nes_env import OBSERVATION_MODE_GRAYSCALE
+from .nes_env import OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS
+from .nes_env import SCREEN_SHAPE_24_BIT
+from .nes_env import SCREEN_SHAPE_GRAYSCALE
 
 
 ActionPolicy = Callable[[NESEnv, int, np.random.RandomState], int] | str
+OBSERVATION_PROFILE_OPERATIONS = (
+    'step',
+    'step_copy',
+    'step_contiguous',
+    'step_python_grayscale',
+    'step_native_rgb_contiguous',
+    'step_native_grayscale',
+)
 
 
 @dataclass(frozen=True)
@@ -73,6 +85,27 @@ class MapperBenchmarkResult:
     warmup_steps: int
     elapsed_seconds: float
     steps_per_second: float
+
+    def to_dict(self):
+        """Return this result as a JSON-serializable dictionary."""
+        return asdict(self)
+
+
+@dataclass(frozen=True)
+class ObservationBenchmarkResult:
+    """Structured result from an observation-consumption benchmark."""
+
+    environment: str
+    compiler: str
+    platform: str
+    rom: str
+    operation: str
+    action_policy: str
+    total_steps: int
+    warmup_steps: int
+    elapsed_seconds: float
+    steps_per_second: float
+    checksum: int
 
     def to_dict(self):
         """Return this result as a JSON-serializable dictionary."""
@@ -177,6 +210,78 @@ def _measure_mapper_operation(env, operation, steps, warmup_steps):
     return elapsed, steps_per_second
 
 
+def _python_grayscale(frame):
+    """Return a NumPy-computed grayscale copy for baseline profiling."""
+    return ((
+        77 * frame[..., 0].astype(np.uint16) +
+        150 * frame[..., 1].astype(np.uint16) +
+        29 * frame[..., 2].astype(np.uint16)
+    ) >> 8).astype(np.uint8)
+
+
+def _consume_observation_output(output):
+    """Consume one byte from an observation output for benchmark accounting."""
+    return int(np.asarray(output).flat[0])
+
+
+def _measure_observation_operation(
+    env,
+    operation,
+    action,
+    rng,
+    steps,
+    warmup_steps,
+    seed,
+):
+    """Measure one step-plus-observation-consumption operation."""
+    rgb_output = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
+    gray_output = np.empty(SCREEN_SHAPE_GRAYSCALE, dtype=np.uint8)
+    total = steps + warmup_steps
+    done = True
+    checksum = 0
+    resets = 0
+    started_at = None
+
+    for step_number in range(1, total + 1):
+        if done:
+            _reset(env, seed if resets == 0 else None)
+            resets += 1
+            done = False
+        if step_number == warmup_steps + 1:
+            started_at = time.perf_counter()
+
+        observation, _, done, _ = _step(env, action(env, step_number, rng))
+        if operation == 'step':
+            output = observation
+        elif operation == 'step_copy':
+            output = observation.copy()
+        elif operation == 'step_contiguous':
+            output = np.ascontiguousarray(observation)
+        elif operation == 'step_python_grayscale':
+            output = _python_grayscale(observation)
+        elif operation == 'step_native_rgb_contiguous':
+            output = env.observation(
+                OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS,
+                output=rgb_output,
+            )
+        elif operation == 'step_native_grayscale':
+            output = env.observation(
+                OBSERVATION_MODE_GRAYSCALE,
+                output=gray_output,
+            )
+        else:
+            raise ValueError(
+                'unknown observation benchmark operation: {}'.format(
+                    operation
+                )
+            )
+        checksum ^= _consume_observation_output(output)
+
+    elapsed = time.perf_counter() - started_at
+    steps_per_second = steps / elapsed if elapsed > 0 else 0.0
+    return elapsed, steps_per_second, checksum
+
+
 def run_mapper_profile(
     roms,
     steps=50,
@@ -228,6 +333,62 @@ def run_mapper_profile(
                 elapsed_seconds=elapsed,
                 steps_per_second=steps_per_second,
             ))
+
+    return results
+
+
+def run_observation_profile(
+    rom,
+    steps=5000,
+    warmup_steps=0,
+    seed=None,
+    action_policy='random',
+    operations=None,
+):
+    """
+    Run step-plus-observation-consumption benchmarks for ML-style loops.
+
+    The default operation set compares the public zero-copy step output,
+    user-land copies, NumPy grayscale conversion, and native opt-in helpers.
+    """
+    if steps <= 0:
+        raise ValueError('steps must be positive')
+    _validate_non_negative('warmup_steps', warmup_steps)
+    if operations is None:
+        operations = OBSERVATION_PROFILE_OPERATIONS
+
+    action, action_name = _resolve_action(action_policy)
+    results = []
+    for operation in operations:
+        rng = np.random.RandomState(seed)
+        env = NESEnv(rom)
+        try:
+            elapsed, steps_per_second, checksum = (
+                _measure_observation_operation(
+                    env,
+                    operation,
+                    action,
+                    rng,
+                    steps,
+                    warmup_steps,
+                    seed,
+                )
+            )
+        finally:
+            env.close()
+        results.append(ObservationBenchmarkResult(
+            environment=_environment_name(),
+            compiler=_compiler_name(),
+            platform=platform_module.platform(),
+            rom=rom,
+            operation=operation,
+            action_policy=action_name,
+            total_steps=steps + warmup_steps,
+            warmup_steps=warmup_steps,
+            elapsed_seconds=elapsed,
+            steps_per_second=steps_per_second,
+            checksum=checksum,
+        ))
 
     return results
 
@@ -368,6 +529,19 @@ def format_mapper_profile(results):
     return '\n'.join(lines)
 
 
+def format_observation_profile(results):
+    """Return human-readable observation profile output."""
+    lines = ['NES observation benchmark profile']
+    for result in results:
+        lines.append(
+            '  {operation}: {steps_per_second:.2f} steps/s '
+            '({elapsed_seconds:.6f}s, checksum={checksum})'.format(
+                **result.to_dict()
+            )
+        )
+    return '\n'.join(lines)
+
+
 def _parser():
     """Build the command line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -387,6 +561,11 @@ def _parser():
         default='random',
     )
     parser.add_argument('--render-mode', choices=('rgb_array', 'human'))
+    parser.add_argument(
+        '--observation-profile',
+        action='store_true',
+        help='benchmark step plus ML-style observation consumption modes',
+    )
     parser.add_argument('--json', action='store_true', dest='json_output')
     parser.add_argument('--no-progress', action='store_false', dest='progress')
     parser.add_argument('--backup-interval', type=int)
@@ -399,6 +578,35 @@ def main(argv=None):
     """Run the benchmark command line interface."""
     parser = _parser()
     args = parser.parse_args(argv)
+
+    if args.observation_profile:
+        if args.profile_rom:
+            parser.error(
+                '--observation-profile cannot be combined with --profile-rom'
+            )
+        if args.rom is None:
+            parser.error(
+                '--rom is required when --observation-profile is provided'
+            )
+        try:
+            results = run_observation_profile(
+                args.rom,
+                steps=args.steps,
+                warmup_steps=args.warmup_steps,
+                seed=args.seed,
+                action_policy=args.action_policy,
+            )
+        except KeyboardInterrupt:
+            return 130
+
+        if args.json_output:
+            print(json.dumps(
+                [result.to_dict() for result in results],
+                sort_keys=True,
+            ))
+        else:
+            print(format_observation_profile(results))
+        return 0
 
     if args.profile_rom:
         try:

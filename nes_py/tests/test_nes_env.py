@@ -7,7 +7,11 @@ import numpy as np
 
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.nes_env import NESEnv
+from nes_py.nes_env import OBSERVATION_MODE_GRAYSCALE
+from nes_py.nes_env import OBSERVATION_MODE_RGB_ARRAY
+from nes_py.nes_env import OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS
 from nes_py.nes_env import SCREEN_SHAPE_24_BIT
+from nes_py.nes_env import SCREEN_SHAPE_GRAYSCALE
 
 
 USABLE_ON_DISK_ROM_NAMES = (
@@ -212,6 +216,127 @@ class ShouldExposeMutableApplicationBuffers(NESEnvApplicationAssertions):
         self.assert_native_view(ram, (0x800,))
         self.assert_native_view(controller, (1,))
         self.assertEqual(1, controller[0])
+
+
+class ShouldExposeObservationFastPaths(NESEnvApplicationAssertions):
+    """Exercise opt-in ML observation copy helpers."""
+
+    def assert_contiguous_uint8(self, array, shape):
+        """Assert an observation helper returned a C-contiguous uint8 array."""
+        self.assertIsInstance(array, np.ndarray)
+        self.assertEqual(shape, array.shape)
+        self.assertEqual(np.uint8, array.dtype)
+        self.assertTrue(array.flags.c_contiguous)
+        self.assertTrue(array.flags.writeable)
+
+    def expected_grayscale(self, frame):
+        """Return the integer luma conversion used by the native helper."""
+        return ((
+            77 * frame[..., 0].astype(np.uint16) +
+            150 * frame[..., 1].astype(np.uint16) +
+            29 * frame[..., 2].astype(np.uint16)
+        ) >> 8).astype(np.uint8)
+
+    def test_default_mode_returns_public_zero_copy_screen(self):
+        env = create_smb1_instance()
+        try:
+            self.reset_frame(env, seed=19)
+            self.assertIs(env.screen, env.observation())
+            self.assertIs(
+                env.screen,
+                env.observation(OBSERVATION_MODE_RGB_ARRAY),
+            )
+        finally:
+            env.close()
+
+    def test_copy_modes_match_current_screen_and_can_reuse_output(self):
+        env = create_smb1_instance()
+        try:
+            self.reset_frame(env, seed=19)
+            rgb_output = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
+            gray_output = np.empty(SCREEN_SHAPE_GRAYSCALE, dtype=np.uint8)
+
+            for action in (0, 8, 0):
+                env.step(action)
+                expected_rgb = np.ascontiguousarray(env.screen)
+                expected_gray = self.expected_grayscale(expected_rgb)
+
+                rgb = env.observation(
+                    OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS,
+                    output=rgb_output,
+                )
+                gray = env.observation(
+                    OBSERVATION_MODE_GRAYSCALE,
+                    output=gray_output,
+                )
+
+                self.assertIs(rgb_output, rgb)
+                self.assertIs(gray_output, gray)
+                self.assert_contiguous_uint8(rgb, SCREEN_SHAPE_24_BIT)
+                self.assert_contiguous_uint8(gray, SCREEN_SHAPE_GRAYSCALE)
+                self.assertTrue(np.array_equal(expected_rgb, rgb))
+                self.assertTrue(np.array_equal(expected_gray, gray))
+        finally:
+            env.close()
+
+    def test_copy_modes_reset_render_and_close_behavior(self):
+        env = NESEnv(
+            rom_file_abs_path('super-mario-bros-1.nes'),
+            render_mode='rgb_array',
+        )
+        self.reset_frame(env, seed=29)
+        rgb = env.observation(OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS)
+        gray = env.observation(OBSERVATION_MODE_GRAYSCALE)
+        self.assert_contiguous_uint8(rgb, SCREEN_SHAPE_24_BIT)
+        self.assert_contiguous_uint8(gray, SCREEN_SHAPE_GRAYSCALE)
+        self.assertIs(env.screen, env.render())
+
+        env.step(0)
+        stepped_rgb = env.observation(OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS)
+        self.assertTrue(np.array_equal(np.ascontiguousarray(env.screen),
+                                       stepped_rgb))
+
+        env.reset(seed=29)
+        reset_rgb = env.observation(OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS)
+        self.assertTrue(np.array_equal(np.ascontiguousarray(env.screen),
+                                       reset_rgb))
+
+        env.close()
+        self.assert_contiguous_uint8(rgb, SCREEN_SHAPE_24_BIT)
+        self.assert_contiguous_uint8(gray, SCREEN_SHAPE_GRAYSCALE)
+        self.assertIsInstance(int(rgb[0, 0, 0]), int)
+        self.assertIsInstance(int(gray[0, 0]), int)
+        self.assertIs(env.screen, env.observation())
+        with self.assertRaises(ValueError):
+            env.observation(OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS)
+        with self.assertRaises(ValueError):
+            env.observation(OBSERVATION_MODE_GRAYSCALE)
+
+    def test_copy_modes_validate_output_and_mode(self):
+        env = create_smb1_instance()
+        try:
+            self.reset_frame(env)
+            with self.assertRaises(ValueError):
+                env.observation(
+                    OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS,
+                    output=np.empty(SCREEN_SHAPE_GRAYSCALE, dtype=np.uint8),
+                )
+            with self.assertRaises(TypeError):
+                env.observation(
+                    OBSERVATION_MODE_GRAYSCALE,
+                    output=np.empty(SCREEN_SHAPE_GRAYSCALE, dtype=np.uint16),
+                )
+            with self.assertRaises(ValueError):
+                env.observation(
+                    OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS,
+                    output=np.empty(SCREEN_SHAPE_24_BIT,
+                                    dtype=np.uint8,
+                                    order='F'),
+                )
+            with self.assertRaises(NotImplementedError):
+                env.observation('nearest_neighbor')
+        finally:
+            env.close()
 
 
 class ShouldReadAndWriteMemory(TestCase):

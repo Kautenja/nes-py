@@ -35,6 +35,13 @@ SCREEN_WIDTH = _native.SCREEN_WIDTH
 SCREEN_SHAPE_24_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 3
 # shape of the screen as 32-bit RGB (C++ memory arrangement)
 SCREEN_SHAPE_32_BIT = SCREEN_HEIGHT, SCREEN_WIDTH, 4
+# shape of a grayscale screen observation
+SCREEN_SHAPE_GRAYSCALE = SCREEN_HEIGHT, SCREEN_WIDTH
+
+
+OBSERVATION_MODE_RGB_ARRAY = 'rgb_array'
+OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS = 'rgb_array_contiguous'
+OBSERVATION_MODE_GRAYSCALE = 'grayscale'
 
 
 class NESEnv(gym.Env):
@@ -117,6 +124,32 @@ class NESEnv(gym.Env):
     def _screen_buffer(self):
         """Setup the screen buffer from the C++ code."""
         return self._env.screen_buffer()
+
+    def observation(self, mode=OBSERVATION_MODE_RGB_ARRAY, output=None):
+        """
+        Return the current screen using an explicit observation mode.
+
+        The default mode returns the same zero-copy view as ``self.screen``.
+        Copy modes return C-contiguous ``uint8`` arrays and may write into the
+        optional ``output`` array to support allocation-free ML loops.
+        """
+        if mode == OBSERVATION_MODE_RGB_ARRAY:
+            return self.screen
+        if self._env is None:
+            raise ValueError('env has already been closed.')
+        if mode == OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS:
+            return self._env.copy_screen_rgb(output)
+        if mode == OBSERVATION_MODE_GRAYSCALE:
+            return self._env.copy_screen_grayscale(output)
+        modes = (
+            OBSERVATION_MODE_RGB_ARRAY,
+            OBSERVATION_MODE_RGB_ARRAY_CONTIGUOUS,
+            OBSERVATION_MODE_GRAYSCALE,
+        )
+        msg = 'valid observation modes are: {}'.format(
+            ', '.join(repr(mode) for mode in modes)
+        )
+        raise NotImplementedError(msg)
 
     def _ram_buffer(self):
         """Setup the RAM buffer from the C++ code."""

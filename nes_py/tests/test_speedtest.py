@@ -8,9 +8,11 @@ from unittest import TestCase
 from nes_py.tests.mapper_fixtures import synthetic_rom_path
 from nes_py.tests.rom_file_abs_path import rom_file_abs_path
 from nes_py.speedtest import BenchmarkConfig
+from nes_py.speedtest import OBSERVATION_PROFILE_OPERATIONS
 from nes_py.speedtest import main
 from nes_py.speedtest import run_benchmark
 from nes_py.speedtest import run_mapper_profile
+from nes_py.speedtest import run_observation_profile
 
 
 class ShouldRunBenchmark(TestCase):
@@ -178,5 +180,58 @@ class ShouldRunCurrentMapperBenchmarkProfile(TestCase):
         self.assertEqual(8, len(data))
         for result in data:
             self.assertIn(result['mapper'], {0, 1})
+            self.assertGreater(result['elapsed_seconds'], 0)
+            self.assertGreater(result['steps_per_second'], 0)
+
+
+class ShouldRunObservationBenchmarkProfile(TestCase):
+    def test_returns_all_observation_operations(self):
+        results = run_observation_profile(
+            rom_file_abs_path('super-mario-bros-1.nes'),
+            steps=2,
+            warmup_steps=1,
+            seed=3,
+            action_policy='noop',
+        )
+
+        self.assertEqual(len(OBSERVATION_PROFILE_OPERATIONS), len(results))
+        seen = {result.operation for result in results}
+        self.assertEqual(set(OBSERVATION_PROFILE_OPERATIONS), seen)
+        for result in results:
+            data = result.to_dict()
+            self.assertIn('environment', data)
+            self.assertIn('compiler', data)
+            self.assertIn('platform', data)
+            self.assertEqual('noop', data['action_policy'])
+            self.assertEqual(3, data['total_steps'])
+            self.assertEqual(1, data['warmup_steps'])
+            self.assertGreater(data['elapsed_seconds'], 0)
+            self.assertGreater(data['steps_per_second'], 0)
+            self.assertIsInstance(data['checksum'], int)
+
+    def test_cli_json_output(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            status = main([
+                '--rom',
+                rom_file_abs_path('super-mario-bros-1.nes'),
+                '--observation-profile',
+                '--steps',
+                '1',
+                '--warmup-steps',
+                '0',
+                '--action-policy',
+                'noop',
+                '--json',
+                '--no-progress',
+            ])
+
+        self.assertEqual(0, status)
+        data = json.loads(output.getvalue())
+        self.assertEqual(len(OBSERVATION_PROFILE_OPERATIONS), len(data))
+        seen = {result['operation'] for result in data}
+        self.assertEqual(set(OBSERVATION_PROFILE_OPERATIONS), seen)
+        for result in data:
+            self.assertEqual('noop', result['action_policy'])
             self.assertGreater(result['elapsed_seconds'], 0)
             self.assertGreater(result['steps_per_second'], 0)

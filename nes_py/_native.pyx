@@ -105,6 +105,29 @@ cdef object _uint8_array(
     return array
 
 
+cdef cnp.ndarray _validated_uint8_output(object output, tuple shape):
+    """Return a writable C-contiguous uint8 output array for native copies."""
+    cdef cnp.ndarray array
+    cdef object actual_shape
+    if output is None:
+        return np.empty(shape, dtype=np.uint8)
+    array = np.asarray(output)
+    actual_shape = np.shape(array)
+    if actual_shape != shape:
+        raise ValueError(
+            'output shape must be {}, got {}'.format(shape, actual_shape)
+        )
+    if array.dtype != np.uint8:
+        raise TypeError(
+            'output dtype must be uint8, got {}'.format(array.dtype)
+        )
+    if not array.flags.c_contiguous:
+        raise ValueError('output must be C-contiguous')
+    if not array.flags.writeable:
+        raise ValueError('output must be writable')
+    return array
+
+
 cdef class NativeEmulator:
     """Python-owned wrapper around ``NES::Emulator``."""
 
@@ -151,6 +174,52 @@ cdef class NativeEmulator:
             data += 1
             strides[2] = 1
         return _uint8_array(3, dims, strides, <void*> data, self)
+
+    def copy_screen_rgb(self, object output=None):
+        """Copy the current screen to a C-contiguous 24-bit RGB array."""
+        self._require_open()
+        cdef cnp.ndarray array = _validated_uint8_output(
+            output,
+            (SCREEN_HEIGHT, SCREEN_WIDTH, 3),
+        )
+        cdef uint8_t* out = <uint8_t*> cnp.PyArray_DATA(array)
+        cdef NES_Pixel* source = self._emu.get_screen_buffer()
+        cdef size_t index
+        cdef size_t out_index
+        cdef size_t pixel_count = SCREEN_WIDTH * SCREEN_HEIGHT
+        cdef NES_Pixel pixel
+        with nogil:
+            for index in range(pixel_count):
+                pixel = source[index]
+                out_index = index * 3
+                out[out_index] = <uint8_t>((pixel >> 16) & 0xff)
+                out[out_index + 1] = <uint8_t>((pixel >> 8) & 0xff)
+                out[out_index + 2] = <uint8_t>(pixel & 0xff)
+        return array
+
+    def copy_screen_grayscale(self, object output=None):
+        """Copy the current screen to a C-contiguous 8-bit luma array."""
+        self._require_open()
+        cdef cnp.ndarray array = _validated_uint8_output(
+            output,
+            (SCREEN_HEIGHT, SCREEN_WIDTH),
+        )
+        cdef uint8_t* out = <uint8_t*> cnp.PyArray_DATA(array)
+        cdef NES_Pixel* source = self._emu.get_screen_buffer()
+        cdef size_t index
+        cdef size_t pixel_count = SCREEN_WIDTH * SCREEN_HEIGHT
+        cdef NES_Pixel pixel
+        cdef uint32_t r
+        cdef uint32_t g
+        cdef uint32_t b
+        with nogil:
+            for index in range(pixel_count):
+                pixel = source[index]
+                r = (pixel >> 16) & 0xff
+                g = (pixel >> 8) & 0xff
+                b = pixel & 0xff
+                out[index] = <uint8_t>((77 * r + 150 * g + 29 * b) >> 8)
+        return array
 
     def ram_buffer(self):
         """Return a no-copy view over the native internal RAM buffer."""

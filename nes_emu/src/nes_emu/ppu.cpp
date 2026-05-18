@@ -11,6 +11,23 @@
 #include "nes_emu/palette.hpp"
 #include "nes_emu/log.hpp"
 
+namespace {
+
+inline NES::NES_Byte reverse_background_bits(NES::NES_Byte value) {
+    value = static_cast<NES::NES_Byte>(
+        ((value & 0xf0) >> 4) | ((value & 0x0f) << 4)
+    );
+    value = static_cast<NES::NES_Byte>(
+        ((value & 0xcc) >> 2) | ((value & 0x33) << 2)
+    );
+    value = static_cast<NES::NES_Byte>(
+        ((value & 0xaa) >> 1) | ((value & 0x55) << 1)
+    );
+    return value;
+}
+
+}  // namespace
+
 namespace NES {
 
 void PPU::reset() {
@@ -36,6 +53,8 @@ void PPU::reset() {
     data_address_increment = 1;
     pipeline_state = PRE_RENDER;
     scanline_sprite_count = 0;
+    scanline_sprite_rows_cached = false;
+    scanline_sprite_rows_generation = 0;
     background_tile_cache_valid = false;
     background_tile_cache_address = 0;
     background_tile_cache_page = LOW;
@@ -43,8 +62,17 @@ void PPU::reset() {
     background_tile_cache_low = 0;
     background_tile_cache_high = 0;
     background_tile_cache_attribute = 0;
+    background_tile_cache_low_bits = 0;
+    background_tile_cache_high_bits = 0;
+    background_tile_cache_palette_high = 0;
+    background_tile_cache_opaque_mask = 0;
     std::fill(sprite_memory.begin(), sprite_memory.end(), 0);
     std::fill(scanline_sprites.begin(), scanline_sprites.end(), 0);
+    std::fill(
+        scanline_sprite_rows.begin(),
+        scanline_sprite_rows.end(),
+        SpriteRow()
+    );
     std::fill(&screen[0][0], &screen[0][0] + SCREEN_PIXEL_COUNT, 0);
 }
 
@@ -53,6 +81,9 @@ PPU::Snapshot PPU::save_state() const {
     snapshot.sprite_memory = sprite_memory;
     snapshot.scanline_sprites = scanline_sprites;
     snapshot.scanline_sprite_count = scanline_sprite_count;
+    snapshot.scanline_sprite_rows = scanline_sprite_rows;
+    snapshot.scanline_sprite_rows_cached = scanline_sprite_rows_cached;
+    snapshot.scanline_sprite_rows_generation = scanline_sprite_rows_generation;
     snapshot.pipeline_state = pipeline_state;
     snapshot.cycles = cycles;
     snapshot.scanline = scanline;
@@ -81,6 +112,12 @@ PPU::Snapshot PPU::save_state() const {
     snapshot.background_tile_cache_low = background_tile_cache_low;
     snapshot.background_tile_cache_high = background_tile_cache_high;
     snapshot.background_tile_cache_attribute = background_tile_cache_attribute;
+    snapshot.background_tile_cache_low_bits = background_tile_cache_low_bits;
+    snapshot.background_tile_cache_high_bits = background_tile_cache_high_bits;
+    snapshot.background_tile_cache_palette_high =
+        background_tile_cache_palette_high;
+    snapshot.background_tile_cache_opaque_mask =
+        background_tile_cache_opaque_mask;
     std::copy(
         &screen[0][0],
         &screen[0][0] + SCREEN_PIXEL_COUNT,
@@ -93,6 +130,9 @@ void PPU::load_state(const Snapshot& snapshot) {
     sprite_memory = snapshot.sprite_memory;
     scanline_sprites = snapshot.scanline_sprites;
     scanline_sprite_count = snapshot.scanline_sprite_count;
+    scanline_sprite_rows = snapshot.scanline_sprite_rows;
+    scanline_sprite_rows_cached = snapshot.scanline_sprite_rows_cached;
+    scanline_sprite_rows_generation = snapshot.scanline_sprite_rows_generation;
     pipeline_state = static_cast<PipelineState>(snapshot.pipeline_state);
     cycles = snapshot.cycles;
     scanline = snapshot.scanline;
@@ -124,7 +164,135 @@ void PPU::load_state(const Snapshot& snapshot) {
     background_tile_cache_low = snapshot.background_tile_cache_low;
     background_tile_cache_high = snapshot.background_tile_cache_high;
     background_tile_cache_attribute = snapshot.background_tile_cache_attribute;
+    background_tile_cache_low_bits = snapshot.background_tile_cache_low_bits;
+    background_tile_cache_high_bits = snapshot.background_tile_cache_high_bits;
+    background_tile_cache_palette_high =
+        snapshot.background_tile_cache_palette_high;
+    background_tile_cache_opaque_mask =
+        snapshot.background_tile_cache_opaque_mask;
     std::copy(snapshot.screen.begin(), snapshot.screen.end(), &screen[0][0]);
+}
+
+void PPU::invalidate_sprite_rows() {
+    scanline_sprite_rows_cached = false;
+}
+
+NES_Address PPU::sprite_pattern_address(NES_Byte tile, int y_offset) const {
+    NES_Address address = 0;
+    if (!is_long_sprites) {
+        address = tile * 16 + y_offset;
+        if (sprite_page == HIGH)
+            address += 0x1000;
+    } else {
+        y_offset = (y_offset & 7) | ((y_offset & 8) << 1);
+        address = (tile >> 1) * 32 + y_offset;
+        address |= (tile & 1) << 12;
+    }
+    return address;
+}
+
+void PPU::prefetch_scanline_sprite_rows(PictureBus& bus) {
+    std::fill(
+        scanline_sprite_rows.begin(),
+        scanline_sprite_rows.end(),
+        SpriteRow()
+    );
+    scanline_sprite_rows_generation = bus.get_write_generation();
+
+    const int length = is_long_sprites ? 16 : 8;
+    for (std::size_t row_index = 0; row_index < scanline_sprite_count;
+            ++row_index) {
+        const NES_Byte sprite_index = scanline_sprites[row_index];
+        const std::size_t oam_index = sprite_index * 4;
+        NES_Byte tile = sprite_memory[oam_index + 1];
+        NES_Byte attribute = sprite_memory[oam_index + 2];
+        int y_offset = scanline - sprite_memory[oam_index];
+        if ((attribute & 0x80) != 0)
+            y_offset ^= (length - 1);
+
+        const NES_Address address = sprite_pattern_address(tile, y_offset);
+        SpriteRow& row = scanline_sprite_rows[row_index];
+        row.sprite_index = sprite_index;
+        row.x = sprite_memory[oam_index + 3];
+        row.attribute = attribute;
+        row.pattern_low = bus.read(address);
+        row.pattern_high = bus.read(address + 8);
+        row.palette_base = 0x10 | ((attribute & 0x3) << 2);
+        row.foreground = !(attribute & 0x20);
+        for (int pixel = 0; pixel < 8; ++pixel) {
+            int x_shift = pixel;
+            if ((attribute & 0x40) == 0)
+                x_shift ^= 7;
+            row.pixels[pixel] = (row.pattern_low >> x_shift) & 1;
+            row.pixels[pixel] |= (
+                (row.pattern_high >> x_shift) & 1
+            ) << 1;
+        }
+        row.valid = true;
+    }
+    scanline_sprite_rows_cached = true;
+}
+
+void PPU::evaluate_scanline_sprites(PictureBus& bus) {
+    scanline_sprite_count = 0;
+    std::fill(scanline_sprites.begin(), scanline_sprites.end(), 0);
+    invalidate_sprite_rows();
+
+    const int range = is_long_sprites ? 16 : 8;
+    for (NES_Byte i = sprite_data_address / 4; i < 64; ++i) {
+        auto diff = (scanline - sprite_memory[i * 4]);
+        if (0 <= diff && diff < range) {
+            scanline_sprites[scanline_sprite_count++] = i;
+            if (scanline_sprite_count >= MAX_SCANLINE_SPRITES)
+                break;
+        }
+    }
+
+    if (
+        is_showing_sprites &&
+        scanline_sprite_count >= SPRITE_PREFETCH_MIN_SPRITES &&
+        bus.can_prefetch_sprite_rows()
+    )
+        prefetch_scanline_sprite_rows(bus);
+}
+
+void PPU::invalidate_background_tile_cache() {
+    background_tile_cache_valid = false;
+}
+
+void PPU::fill_background_tile_cache(
+    PictureBus& bus,
+    std::uint64_t generation
+) {
+    NES_Address address = 0x2000 | (data_address & 0x0FFF);
+    NES_Byte tile = bus.read(address);
+
+    address = (tile * 16) + ((data_address >> 12) & 0x7);
+    address |= background_page << 12;
+    NES_Byte pattern_low = bus.read(address);
+    NES_Byte pattern_high = bus.read(address + 8);
+
+    address = 0x23C0 | (data_address & 0x0C00) |
+        ((data_address >> 4) & 0x38) |
+        ((data_address >> 2) & 0x07);
+    NES_Byte attribute = bus.read(address);
+
+    background_tile_cache_valid = true;
+    background_tile_cache_address = data_address;
+    background_tile_cache_page = background_page;
+    background_tile_cache_generation = generation;
+    background_tile_cache_low = pattern_low;
+    background_tile_cache_high = pattern_high;
+    background_tile_cache_attribute = attribute;
+    background_tile_cache_low_bits = reverse_background_bits(pattern_low);
+    background_tile_cache_high_bits = reverse_background_bits(pattern_high);
+
+    const int attribute_shift =
+        ((data_address >> 4) & 4) | (data_address & 2);
+    background_tile_cache_palette_high =
+        static_cast<NES_Byte>(((attribute >> attribute_shift) & 0x3) << 2);
+    background_tile_cache_opaque_mask =
+        background_tile_cache_low_bits | background_tile_cache_high_bits;
 }
 
 void PPU::cycle(PictureBus& bus) {
@@ -136,13 +304,13 @@ void PPU::cycle(PictureBus& bus) {
                 // Set bits related to horizontal position
                 data_address &= ~0x41f; //Unset horizontal bits
                 data_address |= temp_address & 0x41f; //Copy
-                background_tile_cache_valid = false;
+                invalidate_background_tile_cache();
             }
             else if (cycles > 280 && cycles <= 304 && is_showing_background && is_showing_sprites) {
                 // Set vertical bits
                 data_address &= ~0x7be0; //Unset bits related to horizontal
                 data_address |= temp_address & 0x7be0; //Copy
-                background_tile_cache_valid = false;
+                invalidate_background_tile_cache();
             }
             // if (cycles > 257 && cycles < 320)
             //     sprite_data_address = 0;
@@ -156,7 +324,7 @@ void PPU::cycle(PictureBus& bus) {
         case RENDER: {
             if (cycles > 0 && cycles <= SCANLINE_VISIBLE_DOTS) {
                 NES_Byte bgColor = 0, sprColor = 0;
-                bool bgOpaque = false, sprOpaque = true;
+                bool bgOpaque = false, sprOpaque = false;
                 bool spriteForeground = false;
 
                 int x = cycles - 1;
@@ -165,22 +333,27 @@ void PPU::cycle(PictureBus& bus) {
                 if (is_showing_background) {
                     auto x_fine = (fine_x_scroll + x) % 8;
                     if (!is_hiding_edge_background || x >= 8) {
-                        NES_Byte pattern_low = 0;
-                        NES_Byte pattern_high = 0;
-                        NES_Byte attribute = 0;
-                        bool can_cache = !bus.has_mapper_ppu_observers();
+                        bool can_cache = bus.can_cache_background_tile_rows();
                         auto generation = bus.get_write_generation();
 
-                        if (
-                            can_cache &&
-                            background_tile_cache_valid &&
-                            background_tile_cache_address == data_address &&
-                            background_tile_cache_page == background_page &&
-                            background_tile_cache_generation == generation
-                        ) {
-                            pattern_low = background_tile_cache_low;
-                            pattern_high = background_tile_cache_high;
-                            attribute = background_tile_cache_attribute;
+                        if (can_cache) {
+                            if (
+                                !background_tile_cache_valid ||
+                                background_tile_cache_address != data_address ||
+                                background_tile_cache_page != background_page ||
+                                background_tile_cache_generation != generation
+                            )
+                                fill_background_tile_cache(bus, generation);
+
+                            const NES_Byte fine_mask =
+                                static_cast<NES_Byte>(1 << x_fine);
+                            bgColor = background_tile_cache_palette_high;
+                            if (background_tile_cache_low_bits & fine_mask)
+                                bgColor |= 1;
+                            if (background_tile_cache_high_bits & fine_mask)
+                                bgColor |= 2;
+                            bgOpaque =
+                                background_tile_cache_opaque_mask & fine_mask;
                         } else {
                             // fetch tile
                             // mask off fine y
@@ -193,39 +366,28 @@ void PPU::cycle(PictureBus& bus) {
                             address = (tile * 16) + ((data_address >> 12/*y % 8*/) & 0x7);
                             //set whether the pattern is in the high or low page
                             address |= background_page << 12;
-                            pattern_low = bus.read(address);
-                            pattern_high = bus.read(address + 8);
+                            NES_Byte pattern_low = bus.read(address);
+                            NES_Byte pattern_high = bus.read(address + 8);
 
                             //fetch attribute and calculate higher two bits of palette
                             address = 0x23C0 | (data_address & 0x0C00) | ((data_address >> 4) & 0x38)
                                         | ((data_address >> 2) & 0x07);
-                            attribute = bus.read(address);
+                            NES_Byte attribute = bus.read(address);
 
-                            if (can_cache) {
-                                background_tile_cache_valid = true;
-                                background_tile_cache_address = data_address;
-                                background_tile_cache_page = background_page;
-                                background_tile_cache_generation = generation;
-                                background_tile_cache_low = pattern_low;
-                                background_tile_cache_high = pattern_high;
-                                background_tile_cache_attribute = attribute;
-                            } else {
-                                background_tile_cache_valid = false;
-                            }
+                            //Get the corresponding bit determined by (8 - x_fine) from the right
+                            //bit 0 of palette entry
+                            bgColor = (pattern_low >> (7 ^ x_fine)) & 1;
+                            //bit 1
+                            bgColor |= ((pattern_high >> (7 ^ x_fine)) & 1) << 1;
+
+                            //flag used to calculate final pixel with the sprite pixel
+                            bgOpaque = bgColor;
+
+                            int shift = ((data_address >> 4) & 4) | (data_address & 2);
+                            //Extract and set the upper two bits for the color
+                            bgColor |= ((attribute >> shift) & 0x3) << 2;
+                            invalidate_background_tile_cache();
                         }
-
-                        //Get the corresponding bit determined by (8 - x_fine) from the right
-                        //bit 0 of palette entry
-                        bgColor = (pattern_low >> (7 ^ x_fine)) & 1;
-                        //bit 1
-                        bgColor |= ((pattern_high >> (7 ^ x_fine)) & 1) << 1;
-
-                        //flag used to calculate final pixel with the sprite pixel
-                        bgOpaque = bgColor;
-
-                        int shift = ((data_address >> 4) & 4) | (data_address & 2);
-                        //Extract and set the upper two bits for the color
-                        bgColor |= ((attribute >> shift) & 0x3) << 2;
                     }
                     //Increment/wrap coarse X
                     if (x_fine == 7) {
@@ -239,63 +401,97 @@ void PPU::cycle(PictureBus& bus) {
                         else
                             // increment coarse X
                             data_address += 1;
-                        background_tile_cache_valid = false;
+                        invalidate_background_tile_cache();
                     }
                 }
 
                 if (is_showing_sprites && (!is_hiding_edge_sprites || x >= 8)) {
-                    for (std::size_t sprite_index = 0; sprite_index < scanline_sprite_count; ++sprite_index) {
-                        NES_Byte i = scanline_sprites[sprite_index];
-                        NES_Byte spr_x =     sprite_memory[i * 4 + 3];
+                    bool use_cached_rows = scanline_sprite_rows_cached;
+                    if (
+                        use_cached_rows &&
+                        scanline_sprite_rows_generation !=
+                            bus.get_write_generation()
+                    ) {
+                        invalidate_sprite_rows();
+                        use_cached_rows = false;
+                    }
 
-                        if (0 > x - spr_x || x - spr_x >= 8)
-                            continue;
+                    if (use_cached_rows) {
+                        for (std::size_t row_index = 0;
+                                row_index < scanline_sprite_count;
+                                ++row_index) {
+                            const SpriteRow& row =
+                                scanline_sprite_rows[row_index];
+                            if (!row.valid)
+                                continue;
 
-                        NES_Byte spr_y     = sprite_memory[i * 4 + 0] + 1,
-                             tile      = sprite_memory[i * 4 + 1],
-                             attribute = sprite_memory[i * 4 + 2];
+                            if (0 > x - row.x || x - row.x >= 8)
+                                continue;
 
-                        int length = (is_long_sprites) ? 16 : 8;
+                            NES_Byte candidate = row.pixels[x - row.x];
 
-                        int x_shift = (x - spr_x) % 8, y_offset = (y - spr_y) % length;
+                            if (!(sprOpaque = candidate)) {
+                                sprColor = 0;
+                                continue;
+                            }
 
-                        if ((attribute & 0x40) == 0) //If NOT flipping horizontally
-                            x_shift ^= 7;
-                        if ((attribute & 0x80) != 0) //IF flipping vertically
-                            y_offset ^= (length - 1);
+                            sprColor = row.palette_base | candidate;
+                            spriteForeground = row.foreground;
 
-                        NES_Address address = 0;
+                            if (
+                                !is_sprite_zero_hit &&
+                                is_showing_background &&
+                                row.sprite_index == 0 &&
+                                sprOpaque &&
+                                bgOpaque
+                            )
+                                is_sprite_zero_hit = true;
 
-                        if (!is_long_sprites) {
-                            address = tile * 16 + y_offset;
-                            if (sprite_page == HIGH) address += 0x1000;
+                            break;
                         }
-                        // 8 x 16 sprites
-                        else {
-                            //bit-3 is one if it is the bottom tile of the sprite, multiply by two to get the next pattern
-                            y_offset = (y_offset & 7) | ((y_offset & 8) << 1);
-                            address = (tile >> 1) * 32 + y_offset;
-                            address |= (tile & 1) << 12; //Bank 0x1000 if bit-0 is high
+                    } else {
+                        for (std::size_t sprite_index = 0; sprite_index < scanline_sprite_count; ++sprite_index) {
+                            NES_Byte i = scanline_sprites[sprite_index];
+                            NES_Byte spr_x =     sprite_memory[i * 4 + 3];
+
+                            if (0 > x - spr_x || x - spr_x >= 8)
+                                continue;
+
+                            NES_Byte spr_y     = sprite_memory[i * 4 + 0] + 1,
+                                 tile      = sprite_memory[i * 4 + 1],
+                                 attribute = sprite_memory[i * 4 + 2];
+
+                            int length = (is_long_sprites) ? 16 : 8;
+
+                            int x_shift = (x - spr_x) % 8, y_offset = (y - spr_y) % length;
+
+                            if ((attribute & 0x40) == 0) //If NOT flipping horizontally
+                                x_shift ^= 7;
+                            if ((attribute & 0x80) != 0) //IF flipping vertically
+                                y_offset ^= (length - 1);
+
+                            NES_Address address =
+                                sprite_pattern_address(tile, y_offset);
+
+                            sprColor = (bus.read(address) >> (x_shift)) & 1; //bit 0 of palette entry
+                            sprColor |= ((bus.read(address + 8) >> (x_shift)) & 1) << 1; //bit 1
+
+                            if (!(sprOpaque = sprColor)) {
+                                sprColor = 0;
+                                continue;
+                            }
+
+                            sprColor |= 0x10; //Select sprite palette
+                            sprColor |= (attribute & 0x3) << 2; //bits 2-3
+
+                            spriteForeground = !(attribute & 0x20);
+
+                            //Sprite-0 hit detection
+                            if (!is_sprite_zero_hit && is_showing_background && i == 0 && sprOpaque && bgOpaque)
+                                is_sprite_zero_hit = true;
+
+                            break; //Exit the loop now since we've found the highest priority sprite
                         }
-
-                        sprColor |= (bus.read(address) >> (x_shift)) & 1; //bit 0 of palette entry
-                        sprColor |= ((bus.read(address + 8) >> (x_shift)) & 1) << 1; //bit 1
-
-                        if (!(sprOpaque = sprColor)) {
-                            sprColor = 0;
-                            continue;
-                        }
-
-                        sprColor |= 0x10; //Select sprite palette
-                        sprColor |= (attribute & 0x3) << 2; //bits 2-3
-
-                        spriteForeground = !(attribute & 0x20);
-
-                        //Sprite-0 hit detection
-                        if (!is_sprite_zero_hit && is_showing_background && i == 0 && sprOpaque && bgOpaque)
-                            is_sprite_zero_hit = true;
-
-                        break; //Exit the loop now since we've found the highest priority sprite
                     }
                 }
                 // get the address of the color in the palette
@@ -337,33 +533,15 @@ void PPU::cycle(PictureBus& bus) {
                 // Copy bits related to horizontal position
                 data_address &= ~0x41f;
                 data_address |= temp_address & 0x41f;
-                background_tile_cache_valid = false;
+                invalidate_background_tile_cache();
             }
 
 //                 if (cycles > 257 && cycles < 320)
 //                     sprite_data_address = 0;
 
             if (cycles >= SCANLINE_END_CYCLE) {
-                //Find and index sprites that are on the next Scanline
-                //This isn't where/when this indexing, actually copying in 2C02 is done
-                //but (I think) it shouldn't hurt any games if this is done here
-
-                scanline_sprite_count = 0;
-                std::fill(scanline_sprites.begin(), scanline_sprites.end(), 0);
-
-                int range = 8;
-                if (is_long_sprites)
-                    range = 16;
-
-                for (NES_Byte i = sprite_data_address / 4; i < 64; ++i) {
-                    auto diff = (scanline - sprite_memory[i * 4]);
-                    if (0 <= diff && diff < range) {
-                        scanline_sprites[scanline_sprite_count++] = i;
-                        if (scanline_sprite_count >= MAX_SCANLINE_SPRITES)
-                            break;
-                    }
-                }
-                background_tile_cache_valid = false;
+                evaluate_scanline_sprites(bus);
+                invalidate_background_tile_cache();
 
                 ++scanline;
                 cycles = 0;
@@ -420,6 +598,7 @@ void PPU::do_DMA(const NES_Byte* page_ptr) {
             page_ptr + (256 - sprite_data_address),
             sprite_data_address
         );
+    invalidate_sprite_rows();
 }
 
 void PPU::control(NES_Byte ctrl) {
@@ -427,7 +606,8 @@ void PPU::control(NES_Byte ctrl) {
     is_long_sprites = ctrl & 0x20;
     background_page = static_cast<CharacterPage>(!!(ctrl & 0x10));
     sprite_page = static_cast<CharacterPage>(!!(ctrl & 0x8));
-    background_tile_cache_valid = false;
+    invalidate_background_tile_cache();
+    invalidate_sprite_rows();
     if (ctrl & 0x4)
         data_address_increment = 0x20;
     else
@@ -446,7 +626,8 @@ void PPU::set_mask(NES_Byte mask) {
     is_hiding_edge_sprites = !(mask & 0x4);
     is_showing_background = mask & 0x8;
     is_showing_sprites = mask & 0x10;
-    background_tile_cache_valid = false;
+    invalidate_background_tile_cache();
+    invalidate_sprite_rows();
 }
 
 NES_Byte PPU::get_status() {
@@ -470,7 +651,7 @@ void PPU::set_data_address(NES_Byte address) {
         temp_address |= address;
         data_address = temp_address;
         is_first_write = true;
-        background_tile_cache_valid = false;
+        invalidate_background_tile_cache();
     }
 }
 
@@ -487,7 +668,7 @@ NES_Byte PPU::get_data(PictureBus& bus) {
 
 void PPU::set_data(PictureBus& bus, NES_Byte data) {
     bus.write(data_address, data);
-    background_tile_cache_valid = false;
+    invalidate_background_tile_cache();
     data_address += data_address_increment;
 }
 
@@ -497,12 +678,12 @@ void PPU::set_scroll(NES_Byte scroll) {
         temp_address |= (scroll >> 3) & 0x1f;
         fine_x_scroll = scroll & 0x7;
         is_first_write = false;
-        background_tile_cache_valid = false;
+        invalidate_background_tile_cache();
     } else {
         temp_address &= ~0x73e0;
         temp_address |= ((scroll & 0x7) << 12) | ((scroll & 0xf8) << 2);
         is_first_write = true;
-        background_tile_cache_valid = false;
+        invalidate_background_tile_cache();
     }
 }
 

@@ -172,6 +172,26 @@ class BankWindow {
             return 0;
         return memory[offset(address, window_base) % memory.size()];
     }
+
+    /// Return a direct pointer into this window when a contiguous read fits.
+    inline const NES_Byte* readPointer(
+        const std::vector<NES_Byte>& memory,
+        NES_Address address,
+        NES_Address window_base,
+        std::size_t contiguous_size
+    ) const {
+        if (memory.empty())
+            return nullptr;
+        const std::size_t window_offset = (address - window_base) % mapped_size;
+        const std::size_t memory_offset = base_offset + window_offset;
+        if (
+            window_offset + contiguous_size > mapped_size ||
+            memory_offset + contiguous_size > memory.size()
+        ) {
+            return nullptr;
+        }
+        return &memory[memory_offset];
+    }
 };
 
 /// Mapper-owned CHR RAM with explicit ROM/RAM behavior.
@@ -210,6 +230,19 @@ class CHRMemory {
     inline void write(NES_Address address, NES_Byte value) {
         if (!ram.empty())
             ram[address % ram.size()] = value;
+    }
+
+    /// Return a direct pointer into CHR RAM when a contiguous read fits.
+    inline const NES_Byte* readPointer(
+        NES_Address address,
+        std::size_t contiguous_size
+    ) const {
+        if (ram.empty())
+            return nullptr;
+        const std::size_t offset = address % ram.size();
+        if (offset + contiguous_size > ram.size())
+            return nullptr;
+        return &ram[offset];
     }
 };
 

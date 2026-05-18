@@ -106,6 +106,8 @@ class ProgramTestMapper : public NES::Mapper {
     inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
         chr[address & 0x1fff] = value;
     }
+
+    inline bool allowsSpriteRowPrefetch() const { return true; }
 };
 
 inline void run_cpu_cycles(NES::CPU& cpu, NES::MainBus& bus, int cycles) {
@@ -191,6 +193,73 @@ class CPUCycleHookMapper : public NES::Mapper {
     inline bool observesCPUCycles() const { return true; }
 };
 
+class DirectReadTestMapper : public NES::Mapper {
+ private:
+    std::vector<NES::NES_Byte> prg;
+    std::vector<NES::NES_Byte> chr;
+    NES::NES_Byte prg_read_fallback;
+    NES::NES_Byte chr_read_fallback;
+    std::size_t active_prg_page;
+    std::size_t active_chr_page;
+
+ public:
+    DirectReadTestMapper() :
+        NES::Mapper(nullptr),
+        prg(0x10000, 0),
+        chr(0x4000, 0),
+        prg_read_fallback(0x11),
+        chr_read_fallback(0x22),
+        active_prg_page(0),
+        active_chr_page(0) {
+        fill_bank_markers(prg, 0x2000, 0x80);
+        fill_bank_markers(chr, 0x0400, 0x40);
+    }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(new DirectReadTestMapper(*this));
+    }
+
+    inline NES::NES_Byte readPRG(NES::NES_Address address) {
+        (void) address;
+        return prg_read_fallback;
+    }
+
+    inline const NES::NES_Byte* getDirectPRGReadPage(
+        NES::NES_Address page_base
+    ) {
+        const std::size_t page = (page_base - 0x8000) / 0x2000;
+        if (page == 0)
+            return &prg[active_prg_page * 0x2000];
+        return &prg[page * 0x2000];
+    }
+
+    inline void writePRG(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        active_prg_page = 4;
+        active_chr_page = 8;
+        prg[active_prg_page * 0x2000] = value;
+        chr[active_chr_page * 0x0400] = value;
+    }
+
+    inline NES::NES_Byte readCHR(NES::NES_Address address) {
+        (void) address;
+        return chr_read_fallback;
+    }
+
+    inline const NES::NES_Byte* getDirectCHRReadPage(
+        NES::NES_Address page_base
+    ) {
+        const std::size_t page = page_base / 0x0400;
+        if (page == 0)
+            return &chr[active_chr_page * 0x0400];
+        return &chr[page * 0x0400];
+    }
+
+    inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
+        chr[address & 0x1fff] = value;
+    }
+};
+
 class PPUHookMapper : public NES::Mapper {
  public:
     int address_observations;
@@ -256,6 +325,27 @@ class PPUHookMapper : public NES::Mapper {
     }
 
     inline bool observesPPUWrites() const { return true; }
+};
+
+class DirectReadPPUHookMapper : public DirectReadTestMapper {
+ public:
+    int read_observations;
+
+    DirectReadPPUHookMapper() : DirectReadTestMapper(), read_observations(0) { }
+
+    inline std::unique_ptr<NES::Mapper> clone() const {
+        return std::unique_ptr<NES::Mapper>(
+            new DirectReadPPUHookMapper(*this)
+        );
+    }
+
+    inline void onPPURead(NES::NES_Address address, NES::NES_Byte value) {
+        (void) address;
+        (void) value;
+        ++read_observations;
+    }
+
+    inline bool observesPPUReads() const { return true; }
 };
 
 class ExpansionTestMapper : public NES::Mapper {
@@ -440,6 +530,8 @@ class PictureBusTestMapper : public NES::Mapper {
     inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
         chr[address & 0x1fff] = value;
     }
+
+    inline bool allowsSpriteRowPrefetch() const { return true; }
 };
 
 }  // namespace NESTest

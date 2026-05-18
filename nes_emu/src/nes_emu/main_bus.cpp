@@ -14,6 +14,19 @@
 
 namespace NES {
 
+void MainBus::refresh_direct_prg_read_pages() {
+    direct_prg_read_pages.fill(nullptr);
+    if (mapper == nullptr)
+        return;
+
+    for (std::size_t page = 0; page < direct_prg_read_pages.size(); ++page) {
+        NES_Address page_base = static_cast<NES_Address>(
+            0x8000 + page * DIRECT_PRG_READ_PAGE_SIZE
+        );
+        direct_prg_read_pages[page] = mapper->getDirectPRGReadPage(page_base);
+    }
+}
+
 NES_Byte MainBus::read(NES_Address address) {
     if (address < 0x2000) {
         return ram[address & 0x7ff];
@@ -66,6 +79,11 @@ NES_Byte MainBus::read(NES_Address address) {
         if (mapper != nullptr)
             return mapper->readPRGRAM(address);
     } else {
+        const NES_Byte* direct_page = direct_prg_read_pages[
+            (address - 0x8000) / DIRECT_PRG_READ_PAGE_SIZE
+        ];
+        if (direct_page != nullptr)
+            return direct_page[address & (DIRECT_PRG_READ_PAGE_SIZE - 1)];
         return mapper->readPRG(address);
     }
     return 0;
@@ -140,7 +158,26 @@ void MainBus::write(NES_Address address, NES_Byte value) {
         if (mapper != nullptr)
             mapper->writePRGRAM(address, value);
     } else {
-        mapper->writePRG(address, mapper->resolveBusConflict(address, value));
+        const NES_Byte resolved_value =
+            mapper->resolveBusConflict(address, value);
+        mapper->writePRG(address, resolved_value);
+        if (
+            mapper->invalidatesDirectPRGReadPagesOnWrite(
+                address,
+                resolved_value
+            )
+        ) {
+            refresh_direct_prg_read_pages();
+        }
+        if (
+            picture_bus != nullptr &&
+            mapper->invalidatesDirectCHRReadPagesOnWrite(
+                address,
+                resolved_value
+            )
+        ) {
+            picture_bus->refresh_direct_chr_read_pages();
+        }
     }
 }
 

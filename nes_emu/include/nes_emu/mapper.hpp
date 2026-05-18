@@ -177,6 +177,42 @@ class Mapper {
         return nullptr;
     }
 
+    /// Return a direct PRG-ROM read page for CPU reads, or null if unsafe.
+    inline virtual const NES_Byte* getDirectPRGReadPage(
+        NES_Address page_base
+    ) {
+        (void) page_base;
+        return nullptr;
+    }
+
+    /// Return a direct CHR read page for PPU reads, or null if unsafe.
+    inline virtual const NES_Byte* getDirectCHRReadPage(
+        NES_Address page_base
+    ) {
+        (void) page_base;
+        return nullptr;
+    }
+
+    /// Return true when a PRG-space write invalidates direct PRG read pages.
+    inline virtual bool invalidatesDirectPRGReadPagesOnWrite(
+        NES_Address address,
+        NES_Byte value
+    ) const {
+        (void) address;
+        (void) value;
+        return true;
+    }
+
+    /// Return true when a PRG-space write invalidates direct CHR read pages.
+    inline virtual bool invalidatesDirectCHRReadPagesOnWrite(
+        NES_Address address,
+        NES_Byte value
+    ) const {
+        (void) address;
+        (void) value;
+        return true;
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read
@@ -219,6 +255,19 @@ class Mapper {
     /// Return true when this mapper needs PPU address callbacks.
     inline virtual bool observesPPUAddresses() const { return false; }
 
+    /// Return true when direct CHR page reads remain safe with PPU address
+    /// observations enabled.
+    inline virtual bool allowsDirectCHRReadWithPPUAddressObservations() const {
+        return false;
+    }
+
+    /// Return true when decoded background tile rows can be cached while
+    /// PPU address observations remain enabled.
+    inline virtual bool allowsBackgroundTileCacheWithPPUAddressObservations()
+        const {
+        return false;
+    }
+
     /// Observe a PPU read after data is resolved.
     inline virtual void onPPURead(NES_Address address, NES_Byte value) {
         (void) address;
@@ -236,6 +285,10 @@ class Mapper {
 
     /// Return true when this mapper needs PPU write callbacks.
     inline virtual bool observesPPUWrites() const { return false; }
+
+    /// Return true when sprite pattern rows may be prefetched one scanline
+    /// ahead without changing mapper-visible CHR behavior.
+    inline virtual bool allowsSpriteRowPrefetch() const { return false; }
 
     /// Return true when this mapper may own or remap nametable data.
     inline virtual bool hasNameTableMapping() const { return false; }

@@ -34,6 +34,8 @@ class PPU {
     static const std::size_t OAM_SIZE = 64 * 4;
     /// Maximum sprites considered on one scanline by NES sprite evaluation.
     static const std::size_t MAX_SCANLINE_SPRITES = 8;
+    /// Minimum sprite pressure needed before row prefetch amortizes its cost.
+    static const std::size_t SPRITE_PREFETCH_MIN_SPRITES = 2;
     /// Number of pixels in the visible screen buffer.
     static const std::size_t SCREEN_PIXEL_COUNT =
         VISIBLE_SCANLINES * SCANLINE_VISIBLE_DOTS;
@@ -45,6 +47,35 @@ class PPU {
     std::array<NES_Byte, MAX_SCANLINE_SPRITES> scanline_sprites;
     /// Number of valid entries in scanline_sprites.
     std::size_t scanline_sprite_count;
+    /// Cached sprite pattern row ready for the current scanline.
+    struct SpriteRow {
+        NES_Byte sprite_index;
+        NES_Byte x;
+        NES_Byte attribute;
+        NES_Byte pattern_low;
+        NES_Byte pattern_high;
+        NES_Byte palette_base;
+        std::array<NES_Byte, 8> pixels;
+        bool foreground;
+        bool valid;
+
+        SpriteRow() :
+            sprite_index(0),
+            x(0),
+            attribute(0),
+            pattern_low(0),
+            pattern_high(0),
+            palette_base(0),
+            pixels(),
+            foreground(false),
+            valid(false) { }
+    };
+    /// Decoded sprite rows selected for the current scanline.
+    std::array<SpriteRow, MAX_SCANLINE_SPRITES> scanline_sprite_rows;
+    /// Whether scanline_sprite_rows can be used for current composition.
+    bool scanline_sprite_rows_cached;
+    /// Picture-bus write generation captured when rows were prefetched.
+    std::uint64_t scanline_sprite_rows_generation;
 
     /// The current pipeline state of the PPU
     enum PipelineState {
@@ -123,10 +154,39 @@ class PPU {
     NES_Byte background_tile_cache_high;
     /// Cached attribute byte for the current background tile row.
     NES_Byte background_tile_cache_attribute;
+    /// Cached low bitplane with bits indexed by fine X.
+    NES_Byte background_tile_cache_low_bits;
+    /// Cached high bitplane with bits indexed by fine X.
+    NES_Byte background_tile_cache_high_bits;
+    /// Cached high palette bits for the current attribute quadrant.
+    NES_Byte background_tile_cache_palette_high;
+    /// Cached opacity mask indexed by fine X.
+    NES_Byte background_tile_cache_opaque_mask;
 
     /// The internal screen data structure with height matching the visible
     /// scan lines and width matching the number of visible scan line dots.
     NES_Pixel screen[VISIBLE_SCANLINES][SCANLINE_VISIBLE_DOTS];
+
+    /// Invalidate sprite row prefetch data.
+    void invalidate_sprite_rows();
+
+    /// Return the pattern address for a sprite row after vertical selection.
+    NES_Address sprite_pattern_address(NES_Byte tile, int y_offset) const;
+
+    /// Prefetch rows for sprites selected for the next scanline.
+    void prefetch_scanline_sprite_rows(PictureBus& bus);
+
+    /// Evaluate visible sprites for the next scanline.
+    void evaluate_scanline_sprites(PictureBus& bus);
+
+    /// Invalidate decoded background tile-row data.
+    void invalidate_background_tile_cache();
+
+    /// Decode and cache the current background tile row.
+    void fill_background_tile_cache(
+        PictureBus& bus,
+        std::uint64_t generation
+    );
 
  public:
     /// Mutable PPU state captured by backup/restore.
@@ -134,6 +194,9 @@ class PPU {
         std::array<NES_Byte, OAM_SIZE> sprite_memory;
         std::array<NES_Byte, MAX_SCANLINE_SPRITES> scanline_sprites;
         std::size_t scanline_sprite_count;
+        std::array<SpriteRow, MAX_SCANLINE_SPRITES> scanline_sprite_rows;
+        bool scanline_sprite_rows_cached;
+        std::uint64_t scanline_sprite_rows_generation;
         int pipeline_state;
         int cycles;
         int scanline;
@@ -162,6 +225,10 @@ class PPU {
         NES_Byte background_tile_cache_low;
         NES_Byte background_tile_cache_high;
         NES_Byte background_tile_cache_attribute;
+        NES_Byte background_tile_cache_low_bits;
+        NES_Byte background_tile_cache_high_bits;
+        NES_Byte background_tile_cache_palette_high;
+        NES_Byte background_tile_cache_opaque_mask;
         std::array<NES_Pixel, SCREEN_PIXEL_COUNT> screen;
     };
 
@@ -169,7 +236,14 @@ class PPU {
     PPU() :
         sprite_memory(),
         scanline_sprites(),
+        scanline_sprite_rows(),
         scanline_sprite_count(0),
+        scanline_sprite_rows_cached(false),
+        scanline_sprite_rows_generation(0),
+        background_tile_cache_low_bits(0),
+        background_tile_cache_high_bits(0),
+        background_tile_cache_palette_high(0),
+        background_tile_cache_opaque_mask(0),
         screen() { }
 
     /// Perform a single cycle on the PPU.
@@ -249,6 +323,7 @@ class PPU {
     ///
     inline void set_OAM_data(NES_Byte value) {
         sprite_memory[sprite_data_address++] = value;
+        invalidate_sprite_rows();
     }
 
     /// Return a pointer to the screen buffer.

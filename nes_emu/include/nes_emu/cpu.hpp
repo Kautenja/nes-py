@@ -143,6 +143,18 @@ class CPU {
     void reset(NES_Address start_address);
 
  public:
+    /// Snapshot of CPU state for native determinism tests.
+    struct Snapshot {
+        NES_Address register_PC;
+        NES_Byte register_SP;
+        NES_Byte register_A;
+        NES_Byte register_X;
+        NES_Byte register_Y;
+        NES_Byte flags;
+        int skip_cycles;
+        int cycles;
+    };
+
     /// The interrupt types available to this CPU
     enum InterruptType {
         IRQ_INTERRUPT,
@@ -174,6 +186,40 @@ class CPU {
     /// @param bus the bus to read and write data from / to
     ///
     void cycle(MainBus &bus);
+
+    /// Return true when the next CPU cycle can execute an opcode.
+    inline bool can_execute_instruction() const { return skip_cycles <= 1; }
+
+    /// Execute one instruction and return the CPU cycles it scheduled.
+    ///
+    /// The caller is responsible for advancing PPU and mapper timing for the
+    /// returned cycles. This method runs the opcode on the first cycle and
+    /// leaves skip_cycles ready for the caller to consume the remaining cycles.
+    ///
+    /// @param bus the bus to read and write data from / to
+    /// @return the number of CPU cycles consumed by the instruction
+    ///
+    int execute_instruction(MainBus &bus);
+
+    /// Consume pending instruction/stall cycles without executing an opcode.
+    ///
+    /// @param count the number of CPU cycles already timed externally
+    ///
+    void consume_pending_cycles(int count);
+
+    /// Return a copy of CPU state for native tests.
+    inline Snapshot save_state() const {
+        return {
+            register_PC,
+            register_SP,
+            register_A,
+            register_X,
+            register_Y,
+            flags.byte,
+            skip_cycles,
+            cycles,
+        };
+    }
 
     /// Skip DMA cycles.
     ///

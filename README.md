@@ -139,6 +139,11 @@ pip install nes-py
 Python 3.13 or newer is required. The supported CI wheel targets are CPython
 3.13 and 3.14.
 
+Binary wheels are published for Linux, macOS, and Windows on those supported
+Python versions. If `pip` cannot find a compatible wheel for your interpreter
+or platform, it will fall back to a source build and therefore needs a working
+native C++ toolchain in the active environment.
+
 ### Debian
 
 Make sure you have the `clang++` compiler installed:
@@ -152,6 +157,23 @@ sudo apt-get install clang
 You'll need to install the Visual-Studio 17.0 tools for Windows installation.
 The [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
 package provides these tools for free.
+
+### Native Runtime Troubleshooting
+
+`nes-py` ships a native extension, so import-time loader failures usually point
+to a compiler-runtime mismatch rather than a Python API bug.
+
+- On Linux, errors mentioning `GLIBCXX_* not found` mean the active
+  `libstdc++.so.6` is older than the one expected by the installed wheel or
+  build artifacts. Update the environment's C++ runtime, use a newer
+  distribution/toolchain, or rebuild from source inside the target
+  environment with `pip install --no-binary nes-py nes-py`.
+- On Windows, build failures usually mean the MSVC C++ build tools are missing
+  from the selected Python environment. Install Visual Studio Build Tools 2022
+  or the full Visual Studio Community package with the desktop C++ workload.
+- If you are using `conda`, `venv`, or another isolated environment manager,
+  make sure the compiler runtime loaded at import time matches the Python
+  environment where `nes-py` was installed.
 
 ## Usage
 
@@ -203,6 +225,70 @@ while not (terminated or truncated):
 
 env.close()
 ```
+
+### ML Observation Helpers
+
+`NESEnv.step` and `render` in `rgb_array` mode keep returning the default
+`(240, 256, 3)` `uint8` RGB screen view. That view is zero-copy, but it is
+strided over the native 32-bit screen buffer. Training loops that need a
+C-contiguous RGB frame or a grayscale frame can opt into explicit copy helpers
+and reuse output buffers:
+
+```python
+import numpy as np
+
+from nes_py.nes_env import NESEnv
+from nes_py.nes_env import SCREEN_SHAPE_24_BIT
+from nes_py.nes_env import SCREEN_SHAPE_GRAYSCALE
+
+env = NESEnv("<path_to_rom>")
+rgb = np.empty(SCREEN_SHAPE_24_BIT, dtype=np.uint8)
+gray = np.empty(SCREEN_SHAPE_GRAYSCALE, dtype=np.uint8)
+
+observation, info = env.reset()
+contiguous_rgb = env.observation("rgb_array_contiguous", output=rgb)
+grayscale = env.observation("grayscale", output=gray)
+```
+
+The helpers are intended for measured ML pipelines, not as a replacement for
+Gymnasium's default observation contract. Benchmark local workloads with:
+
+```shell
+python3 -m nes_py.speedtest --rom <path_to_rom> --observation-profile --no-progress
+```
+
+### Vector, RAM, and Snapshot Helpers
+
+Same-ROM training loops can opt into a native vector emulator that batches
+controller writes, frame stepping, observation copies, RAM readback, and
+per-slot resets without moving game-specific reward or info logic into
+`nes-py`:
+
+```python
+import numpy as np
+
+from nes_py.vector_env import VectorNESEmulator
+
+vector = VectorNESEmulator("<path_to_rom>", 4)
+vector.reset()
+screens = vector.step(np.array([0, 1, 2, 3], dtype=np.uint8))
+gray = vector.observation("grayscale")
+ram_values = vector.ram_values((0x0000, (0x0001, 2, "little")))
+snapshot = vector.dump_state(0)
+vector.load_state(0, snapshot)
+vector.close()
+```
+
+Scalar `NESEnv` also exposes `ram_values(specs, output=None)`,
+`dump_state()`, and `load_state(snapshot)`. Snapshots are opaque same-process
+checkpoint objects, not a stable cross-version save-state format.
+
+Design notes and benchmark decisions live in:
+
+- `docs/vector-native-emulator.md`
+- `docs/native-batch-ram-info-reads.md`
+- `docs/vector-throughput-instrumentation.md`
+- `docs/explicit-state-snapshot-api.md`
 
 ### Controls
 
@@ -292,6 +378,14 @@ and vary by machine, compiler, runner load, and display settings; they are not
 correctness criteria. Backup and restore stress options use explicit interval
 semantics, so `--backup-interval 12` runs a backup at steps 12, 24, 36, and so
 on.
+
+Additional profiles are available for ML and vector workflows:
+
+```shell
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --observation-profile --json --no-progress
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --ram-profile --json --no-progress
+python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --vector-profile --runs 5 --env-counts 1,2,4,8,16 --instrumentation --json --no-progress
+```
 
 ## Cartridge Mapper Compatibility
 

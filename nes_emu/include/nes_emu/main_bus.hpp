@@ -50,6 +50,10 @@ class MainBus {
     static const std::size_t PPU_REGISTER_COUNT = 8;
     /// Number of callback-capable I/O registers from $4014 through $4017.
     static const std::size_t IO_REGISTER_COUNT = 4;
+    /// Number of direct PRG-ROM read pages mapped at $8000-$ffff.
+    static const std::size_t DIRECT_PRG_READ_PAGE_COUNT = 4;
+    /// Byte size of each direct PRG-ROM read page.
+    static const std::size_t DIRECT_PRG_READ_PAGE_SIZE = 0x2000;
     /// The RAM on the main bus
     std::array<NES_Byte, RAM_SIZE> ram;
     /// a pointer to the mapper on the cartridge
@@ -70,6 +74,11 @@ class MainBus {
     std::array<WriteCallback, IO_REGISTER_COUNT> io_write_callbacks;
     /// Direct callback slots for $4014-$4017 register reads.
     std::array<ReadCallback, IO_REGISTER_COUNT> io_read_callbacks;
+    /// Direct PRG-ROM page pointers for mapper CPU read hot paths.
+    std::array<const NES_Byte*, DIRECT_PRG_READ_PAGE_COUNT> direct_prg_read_pages;
+
+    /// Refresh direct PRG-ROM read pages from the active mapper.
+    void refresh_direct_prg_read_pages();
 
  public:
     /// Mutable main-bus state captured by backup/restore.
@@ -84,7 +93,8 @@ class MainBus {
         cpu(nullptr),
         ppu(nullptr),
         picture_bus(nullptr),
-        controllers(nullptr) { }
+        controllers(nullptr),
+        direct_prg_read_pages{{nullptr, nullptr, nullptr, nullptr}} { }
 
     /// Return a 8-bit pointer to the RAM buffer's first address.
     ///
@@ -111,7 +121,10 @@ class MainBus {
     ///
     /// @param mapper the new mapper pointer for the bus to use
     ///
-    inline void set_mapper(Mapper* mapper) { this->mapper = mapper; }
+    inline void set_mapper(Mapper* mapper) {
+        this->mapper = mapper;
+        refresh_direct_prg_read_pages();
+    }
 
     /// Connect native device pointers for direct hot-path register dispatch.
     inline void connect_devices(

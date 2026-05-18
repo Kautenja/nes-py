@@ -8,11 +8,13 @@
 #ifndef NES_EMU_TEST_SUPPORT_SYNTHETIC_ROM_HPP
 #define NES_EMU_TEST_SUPPORT_SYNTHETIC_ROM_HPP
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <initializer_list>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -106,7 +108,8 @@ class TemporaryROM {
         const std::string& mirroring = "horizontal",
         bool chr_4k_markers = false,
         bool prg_8k_markers = false,
-        bool chr_1k_markers = false
+        bool chr_1k_markers = false,
+        std::initializer_list<NES::NES_Byte> reset_program = {}
     ) : path(temporary_path(name)) {
         std::vector<NES::NES_Byte> bytes = ines_header(
             mapper,
@@ -153,6 +156,16 @@ class TemporaryROM {
                 prg[reset_offset + 1] = 0x4c;
                 prg[reset_offset + 2] = 0x00;
                 prg[reset_offset + 3] = reset_high;
+            }
+            if (
+                reset_program.size() > 0 &&
+                reset_offset + reset_program.size() <= prg.size()
+            ) {
+                std::copy(
+                    reset_program.begin(),
+                    reset_program.end(),
+                    prg.begin() + reset_offset
+                );
             }
         }
         bytes.insert(bytes.end(), prg.begin(), prg.end());

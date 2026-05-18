@@ -44,6 +44,9 @@ class MapperUxROM : public Mapper {
     ///
     NES_Byte readPRG(NES_Address address);
 
+    /// Return a direct 8 KiB PRG read page for CPU hot paths.
+    const NES_Byte* getDirectPRGReadPage(NES_Address page_base);
+
     /// Write a byte to an address in the PRG RAM.
     ///
     /// @param address the 16-bit address to write to
@@ -58,12 +61,18 @@ class MapperUxROM : public Mapper {
     ///
     NES_Byte readCHR(NES_Address address);
 
+    /// Return a direct 1 KiB CHR read page for PPU hot paths.
+    const NES_Byte* getDirectCHRReadPage(NES_Address page_base);
+
     /// Write a byte to an address in the CHR RAM.
     ///
     /// @param address the 16-bit address to write to
     /// @param value the byte to write to the given address
     ///
     void writeCHR(NES_Address address, NES_Byte value);
+
+    /// UxROM only switches PRG banks; CHR-RAM writes are tracked by PictureBus.
+    inline bool allowsSpriteRowPrefetch() const { return true; }
 };
 
 }  // namespace NES

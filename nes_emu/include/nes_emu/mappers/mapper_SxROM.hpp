@@ -70,6 +70,9 @@ class MapperSxROM : public Mapper {
         return second_prg.read(cartridge->getROM(), address, 0xc000);
     }
 
+    /// Return a direct 8 KiB PRG read page for CPU hot paths.
+    const NES_Byte* getDirectPRGReadPage(NES_Address page_base);
+
     /// Write a byte to an address in the PRG RAM.
     ///
     /// @param address the 16-bit address to write to
@@ -89,6 +92,9 @@ class MapperSxROM : public Mapper {
             return first_chr.read(cartridge->getVROM(), address, 0x0000);
         return second_chr.read(cartridge->getVROM(), address, 0x1000);
     }
+
+    /// Return a direct 1 KiB CHR read page for PPU hot paths.
+    const NES_Byte* getDirectCHRReadPage(NES_Address page_base);
 
     /// Write a byte to an address in the CHR RAM.
     ///

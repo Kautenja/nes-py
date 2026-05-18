@@ -23,6 +23,23 @@ NES_Byte MapperUxROM::readPRG(NES_Address address) {
     return fixed_prg.read(cartridge->getROM(), address, 0xc000);
 }
 
+const NES_Byte* MapperUxROM::getDirectPRGReadPage(NES_Address page_base) {
+    if (page_base < 0xc000) {
+        return switchable_prg.readPointer(
+            cartridge->getROM(),
+            page_base,
+            0x8000,
+            0x2000
+        );
+    }
+    return fixed_prg.readPointer(
+        cartridge->getROM(),
+        page_base,
+        0xc000,
+        0x2000
+    );
+}
+
 void MapperUxROM::writePRG(NES_Address address, NES_Byte value) {
     (void) address;
     // This implementation models no bus conflicts; MainBus resolves conflicts
@@ -34,6 +51,17 @@ NES_Byte MapperUxROM::readCHR(NES_Address address) {
     if (chr_memory.usesRAM())
         return chr_memory.read(address);
     return chr_rom.read(cartridge->getVROM(), address, 0x0000);
+}
+
+const NES_Byte* MapperUxROM::getDirectCHRReadPage(NES_Address page_base) {
+    if (chr_memory.usesRAM())
+        return chr_memory.readPointer(page_base, 0x0400);
+    return chr_rom.readPointer(
+        cartridge->getVROM(),
+        page_base,
+        0x0000,
+        0x0400
+    );
 }
 
 void MapperUxROM::writeCHR(NES_Address address, NES_Byte value) {

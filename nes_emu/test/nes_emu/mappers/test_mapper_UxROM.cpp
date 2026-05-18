@@ -18,16 +18,22 @@ TEST_CASE("mapper 002 UxROM switches PRG and provides CHR RAM", "[mapper][uxrom]
 
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(0));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(3));
 
     mapper->writePRG(0x8000, 0x02);
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(2));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(2));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(3));
 
     mapper->writeCHR(0x0456, 0x3c);
     REQUIRE(mapper->readCHR(0x0456) == 0x3c);
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0456) == 0x3c);
 
     mapper->writePRG(0x8000, 0x05);
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(1));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(1));
 }
 
 TEST_CASE(
@@ -57,4 +63,7 @@ TEST_CASE(
     REQUIRE(restored.readPRG(0x9000) == NESTest::prg_bank_marker(2));
     REQUIRE(restored.readPRG(0xd000) == NESTest::prg_bank_marker(3));
     REQUIRE(restored.readCHR(0x0456) == 0x3c);
+    REQUIRE(NESTest::direct_prg_read(restored, 0x9000) == NESTest::prg_bank_marker(2));
+    REQUIRE(NESTest::direct_prg_read(restored, 0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_chr_read(restored, 0x0456) == 0x3c);
 }

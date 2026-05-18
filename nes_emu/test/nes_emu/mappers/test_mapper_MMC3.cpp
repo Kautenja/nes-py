@@ -118,6 +118,43 @@ TEST_CASE("mapper 004 MMC3 switches 2 KiB and 1 KiB CHR banks", "[mapper][mmc3]"
     REQUIRE(mapper->readCHR(0x1c00) == NESTest::chr_kib_marker(9));
 }
 
+TEST_CASE("mapper 004 MMC3 direct CHR pages stay valid with A12 observation", "[mapper][mmc3]") {
+    NESTest::TemporaryROM rom(
+        "mmc3_direct_chr_pages",
+        4,
+        2,
+        2,
+        "horizontal",
+        false,
+        false,
+        true
+    );
+    NES::Cartridge cartridge = rom.load();
+    std::unique_ptr<NES::Mapper> mapper = NESTest::mapper_for(cartridge);
+
+    REQUIRE(mapper->observesPPUAddresses());
+    REQUIRE(mapper->allowsDirectCHRReadWithPPUAddressObservations());
+    REQUIRE(mapper->allowsBackgroundTileCacheWithPPUAddressObservations());
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0000) == NESTest::chr_kib_marker(0));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0400) == NESTest::chr_kib_marker(1));
+
+    write_mmc3_bank(*mapper, 0, 7);
+    write_mmc3_bank(*mapper, 1, 8);
+    write_mmc3_bank(*mapper, 2, 10);
+    write_mmc3_bank(*mapper, 3, 11);
+    write_mmc3_bank(*mapper, 4, 12);
+    write_mmc3_bank(*mapper, 5, 13);
+
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0000) == NESTest::chr_kib_marker(6));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0400) == NESTest::chr_kib_marker(7));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0800) == NESTest::chr_kib_marker(8));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0c00) == NESTest::chr_kib_marker(9));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x1000) == NESTest::chr_kib_marker(10));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x1400) == NESTest::chr_kib_marker(11));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x1800) == NESTest::chr_kib_marker(12));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x1c00) == NESTest::chr_kib_marker(13));
+}
+
 TEST_CASE("mapper 004 MMC3 controls mirroring except four-screen carts", "[mapper][mmc3]") {
     NESTest::TemporaryROM rom("mmc3_mirroring", 4, 2, 1);
     NES::Cartridge cartridge = rom.load();
@@ -201,6 +238,28 @@ TEST_CASE("mapper 004 MMC3 clocks IRQs from filtered PPU A12 edges", "[mapper][m
     mapper->writePRG(0xe001, 0x00);
     filtered_a12_clock(*mapper);
     REQUIRE(irq_count == 2);
+}
+
+TEST_CASE("mapper 004 MMC3 only invalidates direct pages for bank-affecting writes", "[mapper][mmc3]") {
+    NESTest::TemporaryROM rom("mmc3_direct_page_invalidation", 4, 2, 1);
+    NES::Cartridge cartridge = rom.load();
+    std::unique_ptr<NES::Mapper> mapper = NESTest::mapper_for(cartridge);
+
+    REQUIRE(mapper->invalidatesDirectPRGReadPagesOnWrite(0x8000, 0x00));
+    REQUIRE(mapper->invalidatesDirectCHRReadPagesOnWrite(0x8000, 0x00));
+
+    mapper->writePRG(0x8000, 0x02);
+    REQUIRE_FALSE(mapper->invalidatesDirectPRGReadPagesOnWrite(0x8001, 0x00));
+    REQUIRE(mapper->invalidatesDirectCHRReadPagesOnWrite(0x8001, 0x00));
+
+    mapper->writePRG(0x8000, 0x06);
+    REQUIRE(mapper->invalidatesDirectPRGReadPagesOnWrite(0x8001, 0x00));
+    REQUIRE_FALSE(mapper->invalidatesDirectCHRReadPagesOnWrite(0x8001, 0x00));
+
+    REQUIRE_FALSE(mapper->invalidatesDirectPRGReadPagesOnWrite(0xc000, 0x00));
+    REQUIRE_FALSE(mapper->invalidatesDirectCHRReadPagesOnWrite(0xc000, 0x00));
+    REQUIRE_FALSE(mapper->invalidatesDirectPRGReadPagesOnWrite(0xe001, 0x00));
+    REQUIRE_FALSE(mapper->invalidatesDirectCHRReadPagesOnWrite(0xe001, 0x00));
 }
 
 TEST_CASE("mapper 004 MMC3 clone preserves mapper state", "[mapper][mmc3]") {

@@ -78,6 +78,9 @@ class MapperMMC3 : public Mapper {
     /// Read a byte from the CHR ROM/RAM.
     NES_Byte readCHR(NES_Address address);
 
+    /// Return a direct 1 KiB CHR read page for PPU hot paths.
+    const NES_Byte* getDirectCHRReadPage(NES_Address page_base);
+
     /// Write a byte to CHR RAM when present.
     void writeCHR(NES_Address address, NES_Byte value);
 
@@ -95,6 +98,28 @@ class MapperMMC3 : public Mapper {
 
     /// Return true because MMC3 IRQs are clocked by PPU A12 edges.
     inline bool observesPPUAddresses() const { return true; }
+
+    /// MMC3 A12 edge observation is compatible with direct CHR reads.
+    inline bool allowsDirectCHRReadWithPPUAddressObservations() const {
+        return true;
+    }
+
+    /// MMC3 observes PPU addresses during tile-row fetches, not readCHR().
+    inline bool allowsBackgroundTileCacheWithPPUAddressObservations() const {
+        return true;
+    }
+
+    /// Return true when a PRG-space write changes direct PRG read pages.
+    bool invalidatesDirectPRGReadPagesOnWrite(
+        NES_Address address,
+        NES_Byte value
+    ) const;
+
+    /// Return true when a PRG-space write changes direct CHR read pages.
+    bool invalidatesDirectCHRReadPagesOnWrite(
+        NES_Address address,
+        NES_Byte value
+    ) const;
 };
 
 }  // namespace NES

@@ -64,7 +64,38 @@ class Emulator {
     /// Refresh picture-bus mirroring if the mapper changed it.
     void synchronize_mapper_mirroring();
 
+    /// Advance PPU and mapper timing for one CPU cycle.
+    void advance_ppu_timing_cycle();
+
+    /// Perform a frame using the original CPU-cycle-by-cycle path.
+    void step_cycle_by_cycle();
+
+    /// Perform a frame using instruction-level CPU batching.
+    void step_instruction_batched();
+
+    /// Return true when the active mapper permits instruction batching.
+    inline bool can_batch_cpu_instructions() const {
+        return !mapper_observes_cpu_cycles;
+    }
+
  public:
+    /// Opaque emulator state used by public snapshot bindings and vector
+    /// reset plumbing. The mapper is cloned so callback wiring can be rebuilt
+    /// on load instead of preserving stale function objects.
+    struct Snapshot {
+        MainBus::State bus;
+        PictureBus::State picture_bus;
+        CPU cpu;
+        PPU::Snapshot ppu;
+        std::unique_ptr<Mapper> mapper;
+
+        Snapshot();
+        Snapshot(const Snapshot& other);
+        Snapshot& operator=(const Snapshot& other);
+        Snapshot(Snapshot&& other) noexcept = default;
+        Snapshot& operator=(Snapshot&& other) noexcept = default;
+    };
+
     /// The width of the NES screen in pixels
     static const int WIDTH = SCANLINE_VISIBLE_DOTS;
     /// The height of the NES screen in pixels
@@ -108,6 +139,18 @@ class Emulator {
 
     /// Restore the backup state on the emulator.
     void restore();
+
+    /// Return an opaque, owned snapshot of mutable emulator state.
+    Snapshot save_state() const;
+
+    /// Allocate a heap-owned snapshot for language bindings.
+    Snapshot* create_snapshot() const;
+
+    /// Restore mutable emulator state from an owned snapshot.
+    void load_state(const Snapshot& snapshot);
+
+    /// Restore mutable emulator state from a heap snapshot pointer.
+    void load_snapshot(const Snapshot* snapshot);
 
     /// Return the loaded cartridge mapper number.
     inline int get_mapper_number() { return cartridge.getMapper(); }

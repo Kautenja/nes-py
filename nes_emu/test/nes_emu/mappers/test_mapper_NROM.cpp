@@ -19,6 +19,9 @@ TEST_CASE("mapper 000 NROM maps fixed PRG and CHR data", "[mapper][nrom]") {
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(0));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(1));
     REQUIRE(mapper->readCHR(0x0100) == NESTest::chr_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(1));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0100) == NESTest::chr_bank_marker(0));
     REQUIRE(mapper->getNameTableMirroring() == NES::VERTICAL);
 }
 
@@ -29,12 +32,24 @@ TEST_CASE("mapper 000 mirrors 16 KiB PRG and snapshots PRG RAM", "[mapper][nrom]
 
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(0));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(0));
 
     mapper->writePRGRAM(0x6000, 0x2a);
     std::unique_ptr<NES::Mapper> backup = mapper->clone();
     mapper->writePRGRAM(0x6000, 0x7f);
     REQUIRE(mapper->readPRGRAM(0x6000) == 0x7f);
     REQUIRE(backup->readPRGRAM(0x6000) == 0x2a);
+}
+
+TEST_CASE("mapper 000 direct CHR RAM reads observe writes", "[mapper][nrom]") {
+    NESTest::TemporaryROM rom("nrom_chr_ram_direct", 0, 1, 0);
+    NES::Cartridge cartridge = rom.load();
+    std::unique_ptr<NES::Mapper> mapper = NESTest::mapper_for(cartridge);
+
+    mapper->writeCHR(0x0456, 0x6d);
+    REQUIRE(mapper->readCHR(0x0456) == 0x6d);
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0456) == 0x6d);
 }
 
 TEST_CASE("mapper 000 emulator save-state preserves PRG RAM", "[mapper][nrom]") {
@@ -61,6 +76,8 @@ TEST_CASE("mapper 000 emulator save-state preserves PRG RAM", "[mapper][nrom]") 
     NES::Mapper& restored = NES::EmulatorInspector::mapper(emulator);
     REQUIRE(restored.readPRGRAM(0x6000) == 0x33);
     REQUIRE(restored.readPRGRAM(0x7fff) == 0x44);
+    REQUIRE(NESTest::direct_prg_read(restored, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(restored, 0xd000) == NESTest::prg_bank_marker(1));
     REQUIRE(restored.getNameTableMirroring() == NES::VERTICAL);
 
     restored.writePRGRAM(0x6000, 0x55);

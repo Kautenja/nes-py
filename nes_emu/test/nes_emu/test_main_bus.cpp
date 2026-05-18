@@ -97,6 +97,22 @@ bool prg_rom_routes_through_mapper() {
     );
 }
 
+bool prg_rom_prefers_direct_read_pages_and_refreshes_after_writes() {
+    NESTest::DirectReadTestMapper mapper;
+    NES::MainBus bus;
+    bus.set_mapper(&mapper);
+
+    bool initial_direct = (
+        bus.read(0x8000) == 0x80 &&
+        bus.read(0xa000) == 0x81 &&
+        bus.read(0xc000) == 0x82 &&
+        bus.read(0xe000) == 0x83
+    );
+
+    bus.write(0x9000, 0x5a);
+    return initial_direct && bus.read(0x8000) == 0x5a;
+}
+
 }  // namespace
 
 TEST_CASE("main bus mirrors RAM and routes devices through fixed paths", "[bus]") {
@@ -107,4 +123,5 @@ TEST_CASE("main bus mirrors RAM and routes devices through fixed paths", "[bus]"
     REQUIRE(expansion_area_uses_mapper_when_present());
     REQUIRE(prg_ram_routes_through_mapper());
     REQUIRE(prg_rom_routes_through_mapper());
+    REQUIRE(prg_rom_prefers_direct_read_pages_and_refreshes_after_writes());
 }

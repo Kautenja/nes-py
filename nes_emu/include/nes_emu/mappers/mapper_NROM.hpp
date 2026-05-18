@@ -72,6 +72,9 @@ class MapperNROM : public Mapper {
     /// @param value the byte to write to the given address
     ///
     void writeCHR(NES_Address address, NES_Byte value);
+
+    /// NROM has a stable CHR window; CHR-RAM writes are tracked by PictureBus.
+    inline bool allowsSpriteRowPrefetch() const { return true; }
 };
 
 }  // namespace NES

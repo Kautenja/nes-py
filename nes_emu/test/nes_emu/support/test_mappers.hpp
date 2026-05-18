@@ -106,6 +106,8 @@ class ProgramTestMapper : public NES::Mapper {
     inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
         chr[address & 0x1fff] = value;
     }
+
+    inline bool allowsSpriteRowPrefetch() const { return true; }
 };
 
 inline void run_cpu_cycles(NES::CPU& cpu, NES::MainBus& bus, int cycles) {
@@ -440,6 +442,8 @@ class PictureBusTestMapper : public NES::Mapper {
     inline void writeCHR(NES::NES_Address address, NES::NES_Byte value) {
         chr[address & 0x1fff] = value;
     }
+
+    inline bool allowsSpriteRowPrefetch() const { return true; }
 };
 
 }  // namespace NESTest

@@ -36,6 +36,7 @@ class PictureBus {
     bool mapper_observes_ppu_reads;
     bool mapper_observes_ppu_writes;
     bool mapper_has_name_table_mapping;
+    bool mapper_allows_sprite_row_prefetch;
     /// Incremented whenever CPU/PPU writes can invalidate cached render data.
     std::uint64_t write_generation;
 
@@ -64,6 +65,7 @@ class PictureBus {
         mapper_observes_ppu_reads(false),
         mapper_observes_ppu_writes(false),
         mapper_has_name_table_mapping(false),
+        mapper_allows_sprite_row_prefetch(false),
         write_generation(0) { }
 
     /// Read a byte from an address on the VRAM.
@@ -99,6 +101,9 @@ class PictureBus {
         mapper_has_name_table_mapping = (
             mapper != nullptr && mapper->hasNameTableMapping()
         );
+        mapper_allows_sprite_row_prefetch = (
+            mapper != nullptr && mapper->allowsSpriteRowPrefetch()
+        );
         update_mirroring();
     }
 
@@ -118,6 +123,16 @@ class PictureBus {
             mapper_observes_ppu_addresses ||
             mapper_observes_ppu_reads ||
             mapper_observes_ppu_writes
+        );
+    }
+
+    /// Return true when sprite rows can be prefetched without mapper effects.
+    inline bool can_prefetch_sprite_rows() const {
+        return (
+            mapper != nullptr &&
+            mapper_allows_sprite_row_prefetch &&
+            !has_mapper_ppu_observers() &&
+            !mapper_has_name_table_mapping
         );
     }
 

@@ -237,6 +237,10 @@ class Mapper {
     /// Return true when this mapper needs PPU write callbacks.
     inline virtual bool observesPPUWrites() const { return false; }
 
+    /// Return true when sprite pattern rows may be prefetched one scanline
+    /// ahead without changing mapper-visible CHR behavior.
+    inline virtual bool allowsSpriteRowPrefetch() const { return false; }
+
     /// Return true when this mapper may own or remap nametable data.
     inline virtual bool hasNameTableMapping() const { return false; }
 

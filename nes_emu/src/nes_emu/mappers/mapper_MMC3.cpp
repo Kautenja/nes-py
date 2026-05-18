@@ -159,6 +159,20 @@ NES_Byte MapperMMC3::readCHR(NES_Address address) {
     return chr_windows[slot].read(cartridge->getVROM(), address, base);
 }
 
+const NES_Byte* MapperMMC3::getDirectCHRReadPage(NES_Address page_base) {
+    if (chr_memory.usesRAM())
+        return chr_memory.readPointer(page_base, CHR_WINDOW_SIZE);
+
+    const std::size_t slot = (page_base & 0x1fff) / CHR_WINDOW_SIZE;
+    const NES_Address base = static_cast<NES_Address>(slot * CHR_WINDOW_SIZE);
+    return chr_windows[slot].readPointer(
+        cartridge->getVROM(),
+        page_base,
+        base,
+        CHR_WINDOW_SIZE
+    );
+}
+
 void MapperMMC3::writeCHR(NES_Address address, NES_Byte value) {
     if (chr_memory.usesRAM())
         chr_memory.write(address, value);
@@ -212,6 +226,30 @@ void MapperMMC3::onPPUAddress(NES_Address address) {
     }
     last_ppu_a12 = true;
     ppu_a12_low_observations = 0;
+}
+
+bool MapperMMC3::invalidatesDirectPRGReadPagesOnWrite(
+    NES_Address address,
+    NES_Byte value
+) const {
+    (void) value;
+    if (address > 0x9fff)
+        return false;
+    if ((address & 0x0001) == 0)
+        return true;
+    return (bank_select & 0x07) >= 6;
+}
+
+bool MapperMMC3::invalidatesDirectCHRReadPagesOnWrite(
+    NES_Address address,
+    NES_Byte value
+) const {
+    (void) value;
+    if (address > 0x9fff)
+        return false;
+    if ((address & 0x0001) == 0)
+        return true;
+    return (bank_select & 0x07) <= 5;
 }
 
 }  // namespace NES

@@ -158,10 +158,26 @@ void MainBus::write(NES_Address address, NES_Byte value) {
         if (mapper != nullptr)
             mapper->writePRGRAM(address, value);
     } else {
-        mapper->writePRG(address, mapper->resolveBusConflict(address, value));
-        refresh_direct_prg_read_pages();
-        if (picture_bus != nullptr)
+        const NES_Byte resolved_value =
+            mapper->resolveBusConflict(address, value);
+        mapper->writePRG(address, resolved_value);
+        if (
+            mapper->invalidatesDirectPRGReadPagesOnWrite(
+                address,
+                resolved_value
+            )
+        ) {
+            refresh_direct_prg_read_pages();
+        }
+        if (
+            picture_bus != nullptr &&
+            mapper->invalidatesDirectCHRReadPagesOnWrite(
+                address,
+                resolved_value
+            )
+        ) {
             picture_bus->refresh_direct_chr_read_pages();
+        }
     }
 }
 

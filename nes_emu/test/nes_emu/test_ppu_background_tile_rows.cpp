@@ -71,6 +71,28 @@ void prepare_scrolled_background(
     ppu.set_mask(mask);
 }
 
+class CacheablePPUAddressMapper : public NESTest::PictureBusTestMapper {
+ public:
+    int address_observations;
+    std::vector<NES::NES_Address> address_sequence;
+
+    CacheablePPUAddressMapper() :
+        NESTest::PictureBusTestMapper(NES::VERTICAL),
+        address_observations(0),
+        address_sequence() { }
+
+    inline void onPPUAddress(NES::NES_Address address) {
+        ++address_observations;
+        address_sequence.push_back(address);
+    }
+
+    inline bool observesPPUAddresses() const { return true; }
+
+    inline bool allowsBackgroundTileCacheWithPPUAddressObservations() const {
+        return true;
+    }
+};
+
 }  // namespace
 
 TEST_CASE(
@@ -220,5 +242,27 @@ TEST_CASE(
 
     REQUIRE(mapper.address_observations == 8);
     REQUIRE(mapper.read_observations == 8);
+    REQUIRE(mapper.address_sequence == expected);
+}
+
+TEST_CASE(
+    "background tile row batching can preserve mapper PPU address observations",
+    "[ppu][background][mapper]"
+) {
+    CacheablePPUAddressMapper mapper;
+    NES::PictureBus bus;
+    NES::PPU ppu;
+    const std::vector<NES::NES_Address> expected = {
+        0x2000, 0x0000, 0x0008, 0x23c0,
+    };
+
+    bus.set_mapper(&mapper);
+    REQUIRE(bus.has_mapper_ppu_observers());
+    REQUIRE(bus.can_cache_background_tile_rows());
+    ppu.reset();
+
+    run_cycles(ppu, bus, PRE_RENDER_CYCLES + 2);
+
+    REQUIRE(mapper.address_observations == 4);
     REQUIRE(mapper.address_sequence == expected);
 }

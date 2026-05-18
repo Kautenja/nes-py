@@ -41,6 +41,7 @@ class PictureBus {
     bool mapper_observes_ppu_writes;
     bool mapper_has_name_table_mapping;
     bool mapper_allows_sprite_row_prefetch;
+    bool mapper_allows_background_tile_cache_with_ppu_address_observations;
     /// Direct CHR page pointers for mapper PPU read hot paths.
     std::array<const NES_Byte*, DIRECT_CHR_READ_PAGE_COUNT> direct_chr_read_pages;
     /// Incremented whenever CPU/PPU writes can invalidate cached render data.
@@ -72,6 +73,7 @@ class PictureBus {
         mapper_observes_ppu_writes(false),
         mapper_has_name_table_mapping(false),
         mapper_allows_sprite_row_prefetch(false),
+        mapper_allows_background_tile_cache_with_ppu_address_observations(false),
         direct_chr_read_pages{{
             nullptr, nullptr, nullptr, nullptr,
             nullptr, nullptr, nullptr, nullptr
@@ -114,6 +116,10 @@ class PictureBus {
         mapper_allows_sprite_row_prefetch = (
             mapper != nullptr && mapper->allowsSpriteRowPrefetch()
         );
+        mapper_allows_background_tile_cache_with_ppu_address_observations = (
+            mapper != nullptr &&
+            mapper->allowsBackgroundTileCacheWithPPUAddressObservations()
+        );
         refresh_direct_chr_read_pages();
         update_mirroring();
     }
@@ -144,6 +150,20 @@ class PictureBus {
             mapper_allows_sprite_row_prefetch &&
             !has_mapper_ppu_observers() &&
             !mapper_has_name_table_mapping
+        );
+    }
+
+    /// Return true when background tile rows can be cached safely.
+    inline bool can_cache_background_tile_rows() const {
+        return (
+            mapper != nullptr &&
+            !mapper_observes_ppu_reads &&
+            !mapper_observes_ppu_writes &&
+            !mapper_has_name_table_mapping &&
+            (
+                !mapper_observes_ppu_addresses ||
+                mapper_allows_background_tile_cache_with_ppu_address_observations
+            )
         );
     }
 

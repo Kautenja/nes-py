@@ -193,6 +193,26 @@ class Mapper {
         return nullptr;
     }
 
+    /// Return true when a PRG-space write invalidates direct PRG read pages.
+    inline virtual bool invalidatesDirectPRGReadPagesOnWrite(
+        NES_Address address,
+        NES_Byte value
+    ) const {
+        (void) address;
+        (void) value;
+        return true;
+    }
+
+    /// Return true when a PRG-space write invalidates direct CHR read pages.
+    inline virtual bool invalidatesDirectCHRReadPagesOnWrite(
+        NES_Address address,
+        NES_Byte value
+    ) const {
+        (void) address;
+        (void) value;
+        return true;
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read
@@ -234,6 +254,19 @@ class Mapper {
 
     /// Return true when this mapper needs PPU address callbacks.
     inline virtual bool observesPPUAddresses() const { return false; }
+
+    /// Return true when direct CHR page reads remain safe with PPU address
+    /// observations enabled.
+    inline virtual bool allowsDirectCHRReadWithPPUAddressObservations() const {
+        return false;
+    }
+
+    /// Return true when decoded background tile rows can be cached while
+    /// PPU address observations remain enabled.
+    inline virtual bool allowsBackgroundTileCacheWithPPUAddressObservations()
+        const {
+        return false;
+    }
 
     /// Observe a PPU read after data is resolved.
     inline virtual void onPPURead(NES_Address address, NES_Byte value) {

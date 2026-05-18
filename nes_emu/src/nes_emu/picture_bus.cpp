@@ -14,7 +14,12 @@ void PictureBus::refresh_direct_chr_read_pages() {
     direct_chr_read_pages.fill(nullptr);
     if (
         mapper == nullptr ||
-        has_mapper_ppu_observers() ||
+        mapper_observes_ppu_reads ||
+        mapper_observes_ppu_writes ||
+        (
+            mapper_observes_ppu_addresses &&
+            !mapper->allowsDirectCHRReadWithPPUAddressObservations()
+        ) ||
         mapper_has_name_table_mapping
     ) {
         return;

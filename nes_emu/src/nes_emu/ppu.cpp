@@ -333,7 +333,7 @@ void PPU::cycle(PictureBus& bus) {
                 if (is_showing_background) {
                     auto x_fine = (fine_x_scroll + x) % 8;
                     if (!is_hiding_edge_background || x >= 8) {
-                        bool can_cache = !bus.has_mapper_ppu_observers();
+                        bool can_cache = bus.can_cache_background_tile_rows();
                         auto generation = bus.get_write_generation();
 
                         if (can_cache) {

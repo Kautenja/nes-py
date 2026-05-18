@@ -27,7 +27,10 @@ If applicable, add screenshots to help explain your problem.
 
 -   Operating System:
 -   Python version:
+-   `nes-py` version:
+-   Install method (`pip install`, editable install, source build, conda + pip, etc.):
 -   C++ compiler and version:
+-   If Linux: output of `strings /path/to/libstdc++.so.6 | grep GLIBCXX | tail` if relevant
 
 ### Additional context
 

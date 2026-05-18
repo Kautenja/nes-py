@@ -139,6 +139,11 @@ pip install nes-py
 Python 3.13 or newer is required. The supported CI wheel targets are CPython
 3.13 and 3.14.
 
+Binary wheels are published for Linux, macOS, and Windows on those supported
+Python versions. If `pip` cannot find a compatible wheel for your interpreter
+or platform, it will fall back to a source build and therefore needs a working
+native C++ toolchain in the active environment.
+
 ### Debian
 
 Make sure you have the `clang++` compiler installed:
@@ -152,6 +157,23 @@ sudo apt-get install clang
 You'll need to install the Visual-Studio 17.0 tools for Windows installation.
 The [Visual Studio Community](https://visualstudio.microsoft.com/downloads/)
 package provides these tools for free.
+
+### Native Runtime Troubleshooting
+
+`nes-py` ships a native extension, so import-time loader failures usually point
+to a compiler-runtime mismatch rather than a Python API bug.
+
+- On Linux, errors mentioning `GLIBCXX_* not found` mean the active
+  `libstdc++.so.6` is older than the one expected by the installed wheel or
+  build artifacts. Update the environment's C++ runtime, use a newer
+  distribution/toolchain, or rebuild from source inside the target
+  environment with `pip install --no-binary nes-py nes-py`.
+- On Windows, build failures usually mean the MSVC C++ build tools are missing
+  from the selected Python environment. Install Visual Studio Build Tools 2022
+  or the full Visual Studio Community package with the desktop C++ workload.
+- If you are using `conda`, `venv`, or another isolated environment manager,
+  make sure the compiler runtime loaded at import time matches the Python
+  environment where `nes-py` was installed.
 
 ## Usage
 

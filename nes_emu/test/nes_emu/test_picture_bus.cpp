@@ -24,6 +24,37 @@ bool pattern_table_addresses_route_to_mapper_chr() {
     );
 }
 
+bool pattern_table_reads_use_direct_pages_when_available() {
+    NESTest::DirectReadTestMapper mapper;
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    return (
+        bus.read(0x0000) == 0x40 &&
+        bus.read(0x0400) == 0x41 &&
+        bus.read(0x1c00) == 0x47
+    );
+}
+
+bool mapper_ppu_read_hooks_disable_direct_chr_pages() {
+    NESTest::DirectReadPPUHookMapper mapper;
+    NES::PictureBus bus;
+    bus.set_mapper(&mapper);
+    return bus.read(0x0000) == 0x22 && mapper.read_observations == 1;
+}
+
+bool cpu_mapper_writes_refresh_picture_bus_direct_pages() {
+    NESTest::DirectReadTestMapper mapper;
+    NES::MainBus main_bus;
+    NES::PictureBus picture_bus;
+    main_bus.set_mapper(&mapper);
+    picture_bus.set_mapper(&mapper);
+    main_bus.connect_devices(nullptr, nullptr, &picture_bus, nullptr);
+
+    bool initial_direct = picture_bus.read(0x0000) == 0x40;
+    main_bus.write(0x9000, 0x6e);
+    return initial_direct && picture_bus.read(0x0000) == 0x6e;
+}
+
 bool vertical_nametable_mirroring_matches_address_aliases() {
     NESTest::PictureBusTestMapper mapper(NES::VERTICAL);
     NES::PictureBus bus;
@@ -175,6 +206,9 @@ bool ppu_render_pipeline_emits_expected_mapper_hook_sequence() {
 
 TEST_CASE("picture bus and PPU addressing behavior is stable", "[ppu]") {
     REQUIRE(pattern_table_addresses_route_to_mapper_chr());
+    REQUIRE(pattern_table_reads_use_direct_pages_when_available());
+    REQUIRE(mapper_ppu_read_hooks_disable_direct_chr_pages());
+    REQUIRE(cpu_mapper_writes_refresh_picture_bus_direct_pages());
     REQUIRE(vertical_nametable_mirroring_matches_address_aliases());
     REQUIRE(four_screen_mirroring_keeps_all_tables_separate());
     REQUIRE(one_screen_mirroring_selects_lower_and_higher_pages());

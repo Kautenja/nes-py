@@ -19,11 +19,16 @@ TEST_CASE("mapper 003 CNROM switches CHR banks and masks selects", "[mapper][cnr
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(0));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(1));
     REQUIRE(mapper->readCHR(0x0100) == NESTest::chr_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(1));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0100) == NESTest::chr_bank_marker(0));
 
     mapper->writePRG(0x8000, 0x02);
     REQUIRE(mapper->readCHR(0x0100) == NESTest::chr_bank_marker(2));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0100) == NESTest::chr_bank_marker(2));
     mapper->writePRG(0x8000, 0x03);
     REQUIRE(mapper->readCHR(0x0100) == NESTest::chr_bank_marker(3));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0100) == NESTest::chr_bank_marker(3));
 }
 
 TEST_CASE("mapper 003 masks CHR bank selects to available banks", "[mapper][cnrom]") {
@@ -33,6 +38,7 @@ TEST_CASE("mapper 003 masks CHR bank selects to available banks", "[mapper][cnro
 
     mapper->writePRG(0x8000, 0x03);
     REQUIRE(mapper->readCHR(0x0100) == NESTest::chr_bank_marker(1));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0100) == NESTest::chr_bank_marker(1));
 }
 
 TEST_CASE("mapper 003 emulator save-state preserves selected CHR bank", "[mapper][cnrom]") {
@@ -57,4 +63,7 @@ TEST_CASE("mapper 003 emulator save-state preserves selected CHR bank", "[mapper
     REQUIRE(restored.readPRG(0x9000) == NESTest::prg_bank_marker(0));
     REQUIRE(restored.readPRG(0xd000) == NESTest::prg_bank_marker(1));
     REQUIRE(restored.readCHR(0x0100) == NESTest::chr_bank_marker(2));
+    REQUIRE(NESTest::direct_prg_read(restored, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(restored, 0xd000) == NESTest::prg_bank_marker(1));
+    REQUIRE(NESTest::direct_chr_read(restored, 0x0100) == NESTest::chr_bank_marker(2));
 }

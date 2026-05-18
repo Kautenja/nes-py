@@ -23,6 +23,10 @@ class PictureBus {
     static const std::size_t NAME_TABLE_RAM_SIZE = 0x1000;
     /// Number of bytes in local palette RAM.
     static const std::size_t PALETTE_RAM_SIZE = 0x20;
+    /// Number of direct CHR read pages mapped at PPU $0000-$1fff.
+    static const std::size_t DIRECT_CHR_READ_PAGE_COUNT = 8;
+    /// Byte size of each direct CHR read page.
+    static const std::size_t DIRECT_CHR_READ_PAGE_SIZE = 0x0400;
     /// the VRAM on the picture bus
     std::array<NES_Byte, NAME_TABLE_RAM_SIZE> ram;
     /// indexes where they start in RAM vector
@@ -37,6 +41,8 @@ class PictureBus {
     bool mapper_observes_ppu_writes;
     bool mapper_has_name_table_mapping;
     bool mapper_allows_sprite_row_prefetch;
+    /// Direct CHR page pointers for mapper PPU read hot paths.
+    std::array<const NES_Byte*, DIRECT_CHR_READ_PAGE_COUNT> direct_chr_read_pages;
     /// Incremented whenever CPU/PPU writes can invalidate cached render data.
     std::uint64_t write_generation;
 
@@ -66,6 +72,10 @@ class PictureBus {
         mapper_observes_ppu_writes(false),
         mapper_has_name_table_mapping(false),
         mapper_allows_sprite_row_prefetch(false),
+        direct_chr_read_pages{{
+            nullptr, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr
+        }},
         write_generation(0) { }
 
     /// Read a byte from an address on the VRAM.
@@ -104,6 +114,7 @@ class PictureBus {
         mapper_allows_sprite_row_prefetch = (
             mapper != nullptr && mapper->allowsSpriteRowPrefetch()
         );
+        refresh_direct_chr_read_pages();
         update_mirroring();
     }
 
@@ -153,6 +164,9 @@ class PictureBus {
 
     /// Update the mirroring and name table from the mapper.
     void update_mirroring();
+
+    /// Refresh direct CHR read pages from the active mapper.
+    void refresh_direct_chr_read_pages();
 };
 
 }  // namespace NES

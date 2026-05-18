@@ -21,12 +21,16 @@ TEST_CASE(
 
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(0));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(0));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(3));
 
     NESTest::write_mmc1_register(*mapper, 0x8000, 0x0e);
     REQUIRE(mapper->getNameTableMirroring() == NES::VERTICAL);
     NESTest::write_mmc1_register(*mapper, 0xe000, 0x02);
     REQUIRE(mapper->readPRG(0x9000) == NESTest::prg_bank_marker(2));
     REQUIRE(mapper->readPRG(0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0x9000) == NESTest::prg_bank_marker(2));
+    REQUIRE(NESTest::direct_prg_read(*mapper, 0xd000) == NESTest::prg_bank_marker(3));
 
     NESTest::write_mmc1_register(*mapper, 0x8000, 0x0f);
     REQUIRE(mapper->getNameTableMirroring() == NES::HORIZONTAL);
@@ -95,12 +99,16 @@ TEST_CASE("mapper 001 supports 4 KiB and 8 KiB CHR banking", "[mapper][sxrom]") 
     NESTest::write_mmc1_register(*mapper, 0xa000, 0x03);
     REQUIRE(mapper->readCHR(0x0000) == NESTest::chr_page_marker(2));
     REQUIRE(mapper->readCHR(0x1000) == NESTest::chr_page_marker(3));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0000) == NESTest::chr_page_marker(2));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x1000) == NESTest::chr_page_marker(3));
 
     NESTest::write_mmc1_register(*mapper, 0x8000, 0x1e);
     NESTest::write_mmc1_register(*mapper, 0xa000, 0x05);
     NESTest::write_mmc1_register(*mapper, 0xc000, 0x06);
     REQUIRE(mapper->readCHR(0x0000) == NESTest::chr_page_marker(5));
     REQUIRE(mapper->readCHR(0x1000) == NESTest::chr_page_marker(6));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x0000) == NESTest::chr_page_marker(5));
+    REQUIRE(NESTest::direct_chr_read(*mapper, 0x1000) == NESTest::chr_page_marker(6));
 }
 
 TEST_CASE("mapper 001 protects PRG RAM and clones CHR RAM state", "[mapper][sxrom]") {
@@ -132,6 +140,9 @@ TEST_CASE("mapper 001 protects PRG RAM and clones CHR RAM state", "[mapper][sxro
     REQUIRE(backup->readPRG(0x9000) == NESTest::prg_bank_marker(1));
     REQUIRE(backup->readPRG(0xd000) == NESTest::prg_bank_marker(3));
     REQUIRE(backup->readCHR(0x0123) == 0x5a);
+    REQUIRE(NESTest::direct_prg_read(*backup, 0x9000) == NESTest::prg_bank_marker(1));
+    REQUIRE(NESTest::direct_prg_read(*backup, 0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_chr_read(*backup, 0x0123) == 0x5a);
     REQUIRE(backup->getNameTableMirroring() == NES::HORIZONTAL);
 }
 
@@ -163,6 +174,9 @@ TEST_CASE("mapper 001 emulator save-state preserves MMC1 state", "[mapper][sxrom
     REQUIRE(restored.readPRG(0x9000) == NESTest::prg_bank_marker(1));
     REQUIRE(restored.readPRG(0xd000) == NESTest::prg_bank_marker(3));
     REQUIRE(restored.readCHR(0x0123) == 0x5a);
+    REQUIRE(NESTest::direct_prg_read(restored, 0x9000) == NESTest::prg_bank_marker(1));
+    REQUIRE(NESTest::direct_prg_read(restored, 0xd000) == NESTest::prg_bank_marker(3));
+    REQUIRE(NESTest::direct_chr_read(restored, 0x0123) == 0x5a);
     REQUIRE(restored.readPRGRAM(0x6000) == 0x33);
     REQUIRE(restored.getNameTableMirroring() == NES::HORIZONTAL);
 

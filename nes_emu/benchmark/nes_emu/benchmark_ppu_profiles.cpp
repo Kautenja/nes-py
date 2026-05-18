@@ -24,6 +24,7 @@ namespace {
 const int CPU_CYCLES_PER_FRAME = 29781;
 const int PPU_CYCLES_PER_FRAME = CPU_CYCLES_PER_FRAME * 3;
 const int CHR_STRESS_READS = 8192;
+const int PRG_STRESS_READS = 8192;
 
 volatile std::uint64_t benchmark_ppu_sink = 0;
 
@@ -51,6 +52,32 @@ void write_fme7_command(
 ) {
     mapper.writePRG(0x8000, command);
     mapper.writePRG(0xa000, value);
+}
+
+void write_mmc1_register(
+    NES::Mapper& mapper,
+    NES::NES_Address address,
+    NES::NES_Byte value
+) {
+    for (int bit = 0; bit < 5; ++bit) {
+        mapper.writePRG(
+            address,
+            static_cast<NES::NES_Byte>((value >> bit) & 0x01)
+        );
+    }
+}
+
+void configure_sxrom_prg_profile(NES::Mapper& mapper) {
+    write_mmc1_register(mapper, 0x8000, 0x0c);
+    write_mmc1_register(mapper, 0xe000, 0x02);
+}
+
+void configure_uxrom_prg_profile(NES::Mapper& mapper) {
+    mapper.writePRG(0x8000, 0x02);
+}
+
+void configure_cnrom_chr_profile(NES::Mapper& mapper) {
+    mapper.writePRG(0x8000, 0x02);
 }
 
 void configure_mmc3_chr_profile(NES::Mapper& mapper) {
@@ -233,6 +260,43 @@ class MapperCHRReadHarness {
     }
 };
 
+class MapperPRGReadHarness {
+ private:
+    NESTest::TemporaryROM rom;
+    NES::Cartridge cartridge;
+    std::unique_ptr<NES::Mapper> mapper;
+    NES::MainBus bus;
+
+ public:
+    MapperPRGReadHarness(
+        const std::string& name,
+        std::uint16_t mapper_id,
+        std::size_t prg_banks,
+        std::size_t chr_banks,
+        MapperSetup setup = nullptr
+    ) :
+        rom(name, mapper_id, prg_banks, chr_banks),
+        cartridge(rom.load()),
+        mapper(NES::MapperFactory(&cartridge)),
+        bus() {
+        REQUIRE(mapper != nullptr);
+        if (setup != nullptr)
+            setup(*mapper);
+        bus.set_mapper(mapper.get());
+    }
+
+    void run_reads() {
+        NES::NES_Byte value = 0;
+        for (int index = 0; index < PRG_STRESS_READS; ++index) {
+            NES::NES_Address address = static_cast<NES::NES_Address>(
+                0x8000 | ((index * 67) & 0x7fff)
+            );
+            value ^= bus.read(address);
+        }
+        benchmark_ppu_sink ^= value;
+    }
+};
+
 class ROMFrameHarness {
  private:
     std::string path;
@@ -290,7 +354,48 @@ MapperCHRReadHarness& mapper_2_chr_harness() {
 }
 
 MapperCHRReadHarness& mapper_3_chr_harness() {
-    static MapperCHRReadHarness harness("benchmark_mapper_003_cnrom", 3, 2, 4);
+    static MapperCHRReadHarness harness(
+        "benchmark_mapper_003_cnrom",
+        3,
+        2,
+        4,
+        false,
+        false,
+        false,
+        configure_cnrom_chr_profile
+    );
+    return harness;
+}
+
+MapperPRGReadHarness& mapper_0_prg_harness() {
+    static MapperPRGReadHarness harness("benchmark_prg_mapper_000_nrom", 0, 2, 1);
+    return harness;
+}
+
+MapperPRGReadHarness& mapper_1_prg_harness() {
+    static MapperPRGReadHarness harness(
+        "benchmark_prg_mapper_001_sxrom",
+        1,
+        4,
+        1,
+        configure_sxrom_prg_profile
+    );
+    return harness;
+}
+
+MapperPRGReadHarness& mapper_2_prg_harness() {
+    static MapperPRGReadHarness harness(
+        "benchmark_prg_mapper_002_uxrom",
+        2,
+        4,
+        0,
+        configure_uxrom_prg_profile
+    );
+    return harness;
+}
+
+MapperPRGReadHarness& mapper_3_prg_harness() {
+    static MapperPRGReadHarness harness("benchmark_prg_mapper_003_cnrom", 3, 2, 4);
     return harness;
 }
 
@@ -514,6 +619,32 @@ TEST_CASE("native mapper CHR read benchmark profiles", "[benchmark][ppu]") {
         "operation=8192-picture-bus-reads"
     ) {
         mapper_69_chr_harness().run_reads();
+    };
+}
+
+TEST_CASE("native mapper PRG read benchmark profiles", "[benchmark][mapper]") {
+    BENCHMARK(
+        "cpu mapper=0 rom=synthetic-nrom operation=8192-main-bus-prg-reads"
+    ) {
+        mapper_0_prg_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "cpu mapper=1 rom=synthetic-sxrom operation=8192-main-bus-prg-reads"
+    ) {
+        mapper_1_prg_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "cpu mapper=2 rom=synthetic-uxrom operation=8192-main-bus-prg-reads"
+    ) {
+        mapper_2_prg_harness().run_reads();
+    };
+
+    BENCHMARK(
+        "cpu mapper=3 rom=synthetic-cnrom operation=8192-main-bus-prg-reads"
+    ) {
+        mapper_3_prg_harness().run_reads();
     };
 }
 

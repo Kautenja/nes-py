@@ -29,6 +29,30 @@ inline void write_mmc1_register(
         mapper.writePRG(address, static_cast<NES::NES_Byte>((value >> bit) & 1));
 }
 
+inline NES::NES_Byte direct_prg_read(
+    NES::Mapper& mapper,
+    NES::NES_Address address
+) {
+    NES::NES_Address page_base = static_cast<NES::NES_Address>(
+        0x8000 + (((address - 0x8000) / 0x2000) * 0x2000)
+    );
+    const NES::NES_Byte* page = mapper.getDirectPRGReadPage(page_base);
+    REQUIRE(page != nullptr);
+    return page[address & 0x1fff];
+}
+
+inline NES::NES_Byte direct_chr_read(
+    NES::Mapper& mapper,
+    NES::NES_Address address
+) {
+    NES::NES_Address page_base = static_cast<NES::NES_Address>(
+        (address / 0x0400) * 0x0400
+    );
+    const NES::NES_Byte* page = mapper.getDirectCHRReadPage(page_base);
+    REQUIRE(page != nullptr);
+    return page[address & 0x03ff];
+}
+
 }  // namespace NESTest
 
 #endif  // NES_EMU_TEST_SUPPORT_MAPPER_TEST_HELPERS_HPP

@@ -10,12 +10,35 @@
 
 namespace NES {
 
+void PictureBus::refresh_direct_chr_read_pages() {
+    direct_chr_read_pages.fill(nullptr);
+    if (
+        mapper == nullptr ||
+        has_mapper_ppu_observers() ||
+        mapper_has_name_table_mapping
+    ) {
+        return;
+    }
+
+    for (std::size_t page = 0; page < direct_chr_read_pages.size(); ++page) {
+        NES_Address page_base = static_cast<NES_Address>(
+            page * DIRECT_CHR_READ_PAGE_SIZE
+        );
+        direct_chr_read_pages[page] = mapper->getDirectCHRReadPage(page_base);
+    }
+}
+
 NES_Byte PictureBus::read(NES_Address address) {
     address &= 0x3fff;
     if (address < 0x2000) {
         if (mapper_observes_ppu_addresses)
             mapper->onPPUAddress(address);
-        NES_Byte value = mapper->readCHR(address);
+        const NES_Byte* direct_page = direct_chr_read_pages[
+            address / DIRECT_CHR_READ_PAGE_SIZE
+        ];
+        NES_Byte value = direct_page == nullptr ?
+            mapper->readCHR(address) :
+            direct_page[address & (DIRECT_CHR_READ_PAGE_SIZE - 1)];
         if (mapper_observes_ppu_reads)
             mapper->onPPURead(address, value);
         return value;

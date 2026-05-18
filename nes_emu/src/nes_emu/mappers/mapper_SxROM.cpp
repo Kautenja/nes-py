@@ -78,6 +78,23 @@ void MapperSxROM::calculatePRGWindows() {
     }
 }
 
+const NES_Byte* MapperSxROM::getDirectPRGReadPage(NES_Address page_base) {
+    if (page_base < 0xc000) {
+        return first_prg.readPointer(
+            cartridge->getROM(),
+            page_base,
+            0x8000,
+            0x2000
+        );
+    }
+    return second_prg.readPointer(
+        cartridge->getROM(),
+        page_base,
+        0xc000,
+        0x2000
+    );
+}
+
 void MapperSxROM::calculateCHRWindows() {
     if (chr_memory.usesRAM())
         return;
@@ -90,6 +107,25 @@ void MapperSxROM::calculateCHRWindows() {
         first_chr.selectBank(vrom_size, 0x1000, register_chr0);
         second_chr.selectBank(vrom_size, 0x1000, register_chr1);
     }
+}
+
+const NES_Byte* MapperSxROM::getDirectCHRReadPage(NES_Address page_base) {
+    if (chr_memory.usesRAM())
+        return chr_memory.readPointer(page_base, 0x0400);
+    if (page_base < 0x1000) {
+        return first_chr.readPointer(
+            cartridge->getVROM(),
+            page_base,
+            0x0000,
+            0x0400
+        );
+    }
+    return second_chr.readPointer(
+        cartridge->getVROM(),
+        page_base,
+        0x1000,
+        0x0400
+    );
 }
 
 void MapperSxROM::writeCHR(NES_Address address, NES_Byte value) {

@@ -177,6 +177,22 @@ class Mapper {
         return nullptr;
     }
 
+    /// Return a direct PRG-ROM read page for CPU reads, or null if unsafe.
+    inline virtual const NES_Byte* getDirectPRGReadPage(
+        NES_Address page_base
+    ) {
+        (void) page_base;
+        return nullptr;
+    }
+
+    /// Return a direct CHR read page for PPU reads, or null if unsafe.
+    inline virtual const NES_Byte* getDirectCHRReadPage(
+        NES_Address page_base
+    ) {
+        (void) page_base;
+        return nullptr;
+    }
+
     /// Read a byte from the PRG RAM.
     ///
     /// @param address the 16-bit address of the byte to read

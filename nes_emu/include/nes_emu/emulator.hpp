@@ -64,6 +64,20 @@ class Emulator {
     /// Refresh picture-bus mirroring if the mapper changed it.
     void synchronize_mapper_mirroring();
 
+    /// Advance PPU and mapper timing for one CPU cycle.
+    void advance_ppu_timing_cycle();
+
+    /// Perform a frame using the original CPU-cycle-by-cycle path.
+    void step_cycle_by_cycle();
+
+    /// Perform a frame using instruction-level CPU batching.
+    void step_instruction_batched();
+
+    /// Return true when the active mapper permits instruction batching.
+    inline bool can_batch_cpu_instructions() const {
+        return !mapper_observes_cpu_cycles;
+    }
+
  public:
     /// The width of the NES screen in pixels
     static const int WIDTH = SCANLINE_VISIBLE_DOTS;

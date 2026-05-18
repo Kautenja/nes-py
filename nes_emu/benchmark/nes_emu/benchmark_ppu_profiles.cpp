@@ -16,6 +16,7 @@
 #include "nes_emu/mapper_factory.hpp"
 #include "nes_emu/picture_bus.hpp"
 #include "nes_emu/ppu.hpp"
+#include "nes_emu/test/nes_emu/support/emulator_inspector.hpp"
 #include "nes_emu/test/nes_emu/support/synthetic_rom.hpp"
 #include "nes_emu/test/nes_emu/support/test_mappers.hpp"
 
@@ -29,6 +30,12 @@ const int PRG_STRESS_READS = 8192;
 volatile std::uint64_t benchmark_ppu_sink = 0;
 
 typedef void (*MapperSetup)(NES::Mapper&);
+
+enum FrameStepMode {
+    DEFAULT_STEP,
+    CYCLE_BY_CYCLE_STEP,
+    INSTRUCTION_BATCHED_STEP,
+};
 
 bool file_exists(const std::string& path) {
     std::ifstream stream(path.c_str(), std::ios::binary);
@@ -301,25 +308,72 @@ class ROMFrameHarness {
  private:
     std::string path;
     int expected_mapper;
+    FrameStepMode mode;
     std::unique_ptr<NES::Emulator> emulator;
 
  public:
-    ROMFrameHarness(const std::string& path, int expected_mapper) :
+    ROMFrameHarness(
+        const std::string& path,
+        int expected_mapper,
+        FrameStepMode mode = DEFAULT_STEP
+    ) :
         path(path),
         expected_mapper(expected_mapper),
+        mode(mode),
         emulator() {
         REQUIRE(file_exists(path));
         emulator.reset(new NES::Emulator(path));
         REQUIRE(emulator->get_mapper_number() == expected_mapper);
         emulator->reset();
         emulator->backup();
+        if (mode == INSTRUCTION_BATCHED_STEP)
+            REQUIRE(NES::EmulatorInspector::uses_instruction_batching(*emulator));
     }
 
     void run_frame() {
         emulator->restore();
-        emulator->step();
+        switch (mode) {
+            case DEFAULT_STEP:
+                emulator->step();
+                break;
+            case CYCLE_BY_CYCLE_STEP:
+                NES::EmulatorInspector::step_cycle_by_cycle(*emulator);
+                break;
+            case INSTRUCTION_BATCHED_STEP:
+                NES::EmulatorInspector::step_instruction_batched(*emulator);
+                break;
+        }
         consume_screen(emulator->get_screen_buffer());
         benchmark_ppu_sink ^= static_cast<std::uint64_t>(expected_mapper);
+    }
+};
+
+class SyntheticROMFrameHarness {
+ private:
+    NESTest::TemporaryROM rom;
+    ROMFrameHarness harness;
+
+ public:
+    explicit SyntheticROMFrameHarness(FrameStepMode mode) :
+        rom(
+            "benchmark_render_off_frame",
+            0,
+            1,
+            1,
+            "horizontal",
+            false,
+            false,
+            false,
+            {
+                0xa9, 0x00,       // LDA #$00
+                0x8d, 0x01, 0x20, // STA PPUMASK
+                0x4c, 0x05, 0x80  // JMP $8005
+            }
+        ),
+        harness(rom.filename(), 0, mode) { }
+
+    void run_frame() {
+        harness.run_frame();
     }
 };
 
@@ -335,6 +389,16 @@ SyntheticPPUHarness& background_only_harness() {
 
 SyntheticPPUHarness& sprite_heavy_harness() {
     static SyntheticPPUHarness harness(0x1e, true);
+    return harness;
+}
+
+SyntheticROMFrameHarness& render_off_cycle_frame_harness() {
+    static SyntheticROMFrameHarness harness(CYCLE_BY_CYCLE_STEP);
+    return harness;
+}
+
+SyntheticROMFrameHarness& render_off_batched_frame_harness() {
+    static SyntheticROMFrameHarness harness(INSTRUCTION_BATCHED_STEP);
     return harness;
 }
 
@@ -468,10 +532,46 @@ ROMFrameHarness& mapper_0_rom_harness() {
     return harness;
 }
 
+ROMFrameHarness& mapper_0_rom_cycle_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/super-mario-bros-1.nes",
+        0,
+        CYCLE_BY_CYCLE_STEP
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_0_rom_batched_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/super-mario-bros-1.nes",
+        0,
+        INSTRUCTION_BATCHED_STEP
+    );
+    return harness;
+}
+
 ROMFrameHarness& mapper_1_rom_harness() {
     static ROMFrameHarness harness(
         "nes_py/tests/games/the-legend-of-zelda.nes",
         1
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_1_rom_cycle_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/the-legend-of-zelda.nes",
+        1,
+        CYCLE_BY_CYCLE_STEP
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_1_rom_batched_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/the-legend-of-zelda.nes",
+        1,
+        INSTRUCTION_BATCHED_STEP
     );
     return harness;
 }
@@ -484,10 +584,46 @@ ROMFrameHarness& mapper_2_rom_harness() {
     return harness;
 }
 
+ROMFrameHarness& mapper_2_rom_cycle_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/mega-man.nes",
+        2,
+        CYCLE_BY_CYCLE_STEP
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_2_rom_batched_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/mega-man.nes",
+        2,
+        INSTRUCTION_BATCHED_STEP
+    );
+    return harness;
+}
+
 ROMFrameHarness& mapper_3_rom_harness() {
     static ROMFrameHarness harness(
         "nes_py/tests/games/adventure-island.nes",
         3
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_3_rom_cycle_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/adventure-island.nes",
+        3,
+        CYCLE_BY_CYCLE_STEP
+    );
+    return harness;
+}
+
+ROMFrameHarness& mapper_3_rom_batched_harness() {
+    static ROMFrameHarness harness(
+        "nes_py/tests/games/adventure-island.nes",
+        3,
+        INSTRUCTION_BATCHED_STEP
     );
     return harness;
 }
@@ -645,6 +781,81 @@ TEST_CASE("native mapper PRG read benchmark profiles", "[benchmark][mapper]") {
         "cpu mapper=3 rom=synthetic-cnrom operation=8192-main-bus-prg-reads"
     ) {
         mapper_3_prg_harness().run_reads();
+    };
+}
+
+TEST_CASE(
+    "native CPU frame stepping benchmark profiles",
+    "[benchmark][cpu][batching]"
+) {
+    BENCHMARK(
+        "cpu mapper=0 rom=synthetic-render-off render-mode=mask-off "
+        "step-mode=cycle-by-cycle operation=restore-and-step-one-frame"
+    ) {
+        render_off_cycle_frame_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=0 rom=synthetic-render-off render-mode=mask-off "
+        "step-mode=instruction-batched operation=restore-and-step-one-frame"
+    ) {
+        render_off_batched_frame_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=0 rom=super-mario-bros-1 render-mode=full-frame "
+        "step-mode=cycle-by-cycle operation=restore-and-step-one-frame"
+    ) {
+        mapper_0_rom_cycle_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=0 rom=super-mario-bros-1 render-mode=full-frame "
+        "step-mode=instruction-batched operation=restore-and-step-one-frame"
+    ) {
+        mapper_0_rom_batched_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=1 rom=the-legend-of-zelda render-mode=full-frame "
+        "step-mode=cycle-by-cycle operation=restore-and-step-one-frame"
+    ) {
+        mapper_1_rom_cycle_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=1 rom=the-legend-of-zelda render-mode=full-frame "
+        "step-mode=instruction-batched operation=restore-and-step-one-frame"
+    ) {
+        mapper_1_rom_batched_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=2 rom=mega-man render-mode=full-frame "
+        "step-mode=cycle-by-cycle operation=restore-and-step-one-frame"
+    ) {
+        mapper_2_rom_cycle_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=2 rom=mega-man render-mode=full-frame "
+        "step-mode=instruction-batched operation=restore-and-step-one-frame"
+    ) {
+        mapper_2_rom_batched_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=3 rom=adventure-island render-mode=full-frame "
+        "step-mode=cycle-by-cycle operation=restore-and-step-one-frame"
+    ) {
+        mapper_3_rom_cycle_harness().run_frame();
+    };
+
+    BENCHMARK(
+        "cpu mapper=3 rom=adventure-island render-mode=full-frame "
+        "step-mode=instruction-batched operation=restore-and-step-one-frame"
+    ) {
+        mapper_3_rom_batched_harness().run_frame();
     };
 }
 

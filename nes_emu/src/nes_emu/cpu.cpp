@@ -622,6 +622,37 @@ bool CPU::execute_opcode(MainBus &bus, NES_Byte opcode) {
     return false;
 }
 
+int CPU::execute_instruction(MainBus &bus) {
+    // Match CPU::cycle's ordering: the CPU cycle is counted before the opcode
+    // performs bus I/O, which keeps OAM DMA odd/even penalties unchanged.
+    ++cycles;
+
+    // This API is normally called only at an instruction boundary. If a caller
+    // reaches it during DMA or interrupt stall time, consume one CPU cycle using
+    // the same skip counter semantics as CPU::cycle.
+    if (skip_cycles-- > 1)
+        return 1;
+
+    skip_cycles = 0;
+    NES_Byte op = bus.read(register_PC++);
+    if (execute_opcode(bus, op))
+        skip_cycles += OPERATION_CYCLES[op];
+    else
+        std::cout << "failed to execute opcode: " << std::hex << +op << std::endl;
+
+    return skip_cycles > 0 ? skip_cycles : 1;
+}
+
+void CPU::consume_pending_cycles(int count) {
+    if (count <= 0)
+        return;
+
+    cycles += count;
+    skip_cycles -= count;
+    if (skip_cycles < 1)
+        skip_cycles = 1;
+}
+
 void CPU::cycle(MainBus &bus) {
     // increment the number of cycles
     ++cycles;

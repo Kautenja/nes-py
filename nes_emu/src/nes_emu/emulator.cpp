@@ -8,6 +8,7 @@
 #include "nes_emu/emulator.hpp"
 #include "nes_emu/mapper_factory.hpp"
 #include "nes_emu/log.hpp"
+#include <algorithm>
 #include <stdexcept>
 
 namespace NES {
@@ -41,18 +42,55 @@ void Emulator::synchronize_mapper_mirroring() {
         picture_bus.update_mirroring();
 }
 
-void Emulator::step() {
-    // render a single frame on the emulator
+void Emulator::advance_ppu_timing_cycle() {
+    // 3 PPU steps per CPU step
+    ppu.cycle(picture_bus);
+    ppu.cycle(picture_bus);
+    ppu.cycle(picture_bus);
+    if (mapper_observes_cpu_cycles)
+        mapper->onCPUCycle();
+}
+
+void Emulator::step_cycle_by_cycle() {
     for (int i = 0; i < CYCLES_PER_FRAME; i++) {
-        // 3 PPU steps per CPU step
-        ppu.cycle(picture_bus);
-        ppu.cycle(picture_bus);
-        ppu.cycle(picture_bus);
-        if (mapper_observes_cpu_cycles)
-            mapper->onCPUCycle();
+        advance_ppu_timing_cycle();
         cpu.cycle(bus);
         synchronize_mapper_mirroring();
     }
+}
+
+void Emulator::step_instruction_batched() {
+    for (int i = 0; i < CYCLES_PER_FRAME; ) {
+        advance_ppu_timing_cycle();
+
+        if (!cpu.can_execute_instruction()) {
+            cpu.cycle(bus);
+            synchronize_mapper_mirroring();
+            ++i;
+            continue;
+        }
+
+        int instruction_cycles = cpu.execute_instruction(bus);
+        synchronize_mapper_mirroring();
+        ++i;
+
+        const int remaining_frame_cycles = CYCLES_PER_FRAME - i;
+        const int batched_cycles = std::min(
+            instruction_cycles - 1,
+            remaining_frame_cycles
+        );
+        for (int cycle = 0; cycle < batched_cycles; ++cycle)
+            advance_ppu_timing_cycle();
+        cpu.consume_pending_cycles(batched_cycles);
+        i += batched_cycles;
+    }
+}
+
+void Emulator::step() {
+    if (can_batch_cpu_instructions())
+        step_instruction_batched();
+    else
+        step_cycle_by_cycle();
 }
 
 void Emulator::backup() {

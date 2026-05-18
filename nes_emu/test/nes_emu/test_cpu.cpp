@@ -10,6 +10,13 @@
 
 namespace {
 
+int run_ready_instruction(NES::CPU& cpu, NES::MainBus& bus) {
+    REQUIRE(cpu.can_execute_instruction());
+    int cycles = cpu.execute_instruction(bus);
+    cpu.consume_pending_cycles(cycles - 1);
+    return cycles;
+}
+
 bool reset_vector_starts_program_counter() {
     NESTest::ProgramTestMapper mapper;
     NES::MainBus bus;
@@ -91,6 +98,148 @@ bool addressing_modes_resolve_expected_memory() {
         bus.read(0x0022) == 0x99 &&
         bus.read(0x0023) == 0xaa &&
         bus.read(0x0026) == 0xbb
+    );
+}
+
+bool instruction_api_reports_representative_cycle_counts() {
+    NESTest::ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    bus.write(0x0010, 0x33);
+    bus.write(0x0200, 0x44);
+    bus.write(0x0201, 0x55);
+    mapper.load(0x8000, {
+        0xa2, 0x01,       // LDX #$01 -> 2
+        0xa9, 0x7f,       // LDA #$7f -> 2
+        0x85, 0x10,       // STA $10 -> 3
+        0xbd, 0xff, 0x01, // LDA $01ff,X -> page cross -> 5
+        0xbd, 0x00, 0x02, // LDA $0200,X -> no page cross -> 4
+        0xf0, 0x01,       // BEQ not taken -> 2
+        0xea,             // NOP -> 2
+        0xa9, 0x00,       // LDA #$00 -> 2
+        0xf0, 0x01,       // BEQ taken same page -> 3
+        0xea,             // skipped NOP
+        0x48,             // PHA -> 3
+        0x68,             // PLA -> 4
+        0x20, 0x20, 0x80, // JSR $8020 -> 6
+        0x4c, 0x1c, 0x80  // JMP end -> 3
+    });
+    mapper.load(0x8020, {
+        0x60              // RTS -> 6
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+
+    return (
+        run_ready_instruction(cpu, bus) == 2 &&
+        run_ready_instruction(cpu, bus) == 2 &&
+        run_ready_instruction(cpu, bus) == 3 &&
+        run_ready_instruction(cpu, bus) == 5 &&
+        run_ready_instruction(cpu, bus) == 4 &&
+        run_ready_instruction(cpu, bus) == 2 &&
+        run_ready_instruction(cpu, bus) == 2 &&
+        run_ready_instruction(cpu, bus) == 2 &&
+        run_ready_instruction(cpu, bus) == 3 &&
+        run_ready_instruction(cpu, bus) == 3 &&
+        run_ready_instruction(cpu, bus) == 4 &&
+        run_ready_instruction(cpu, bus) == 6 &&
+        run_ready_instruction(cpu, bus) == 6 &&
+        bus.read(0x0010) == 0x7f
+    );
+}
+
+bool instruction_api_reports_branch_page_cross_penalty() {
+    NESTest::ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    mapper.setResetVector(0x80fa);
+    mapper.load(0x80fa, {
+        0xa9, 0x00,       // LDA #$00 -> set Z
+        0xf0, 0x05,       // BEQ $8103, crossing $80xx to $81xx
+        0xea,
+        0xea,
+        0xea,
+        0xea,
+        0xea
+    });
+    mapper.load(0x8103, {
+        0xa9, 0x01        // LDA #$01
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+
+    return (
+        run_ready_instruction(cpu, bus) == 2 &&
+        run_ready_instruction(cpu, bus) == 5 &&
+        run_ready_instruction(cpu, bus) == 2
+    );
+}
+
+bool instruction_api_consumes_interrupt_entry_stalls() {
+    NESTest::IRQTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    bus.set_mapper(&mapper);
+    mapper.setIRQCallback([&]() {
+        cpu.interrupt(bus, NES::CPU::IRQ_INTERRUPT);
+    });
+    cpu.reset(bus);
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);  // CLI
+
+    mapper.triggerIRQ();
+    int stall_cycles = 0;
+    while (!cpu.can_execute_instruction())
+        stall_cycles += cpu.execute_instruction(bus);
+
+    int handler_cycles = run_ready_instruction(cpu, bus);
+    int store_cycles = run_ready_instruction(cpu, bus);
+    return (
+        stall_cycles == 7 &&
+        handler_cycles == 2 &&
+        store_cycles == 3 &&
+        bus.read(0x0002) == 0x42
+    );
+}
+
+bool instruction_api_reports_dma_stalls() {
+    NESTest::ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::PictureBus picture_bus;
+    NES::PPU ppu;
+    NES::CPU cpu;
+    NES::Controller controllers[2];
+    mapper.load(0x8000, {
+        0xa9, 0x02,       // LDA #$02
+        0x8d, 0x14, 0x40, // STA $4014
+        0xa9, 0x55,       // LDA #$55
+        0x85, 0x06        // STA $06
+    });
+    bus.set_mapper(&mapper);
+    picture_bus.set_mapper(&mapper);
+    ppu.reset();
+    bus.connect_devices(&cpu, &ppu, &picture_bus, controllers);
+    bus.write(0x0200, 0xcc);
+    cpu.reset(bus);
+
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);
+    int dma_instruction_cycles = cpu.execute_instruction(bus);
+    bool has_dma_stall = dma_instruction_cycles == 518;
+    cpu.consume_pending_cycles(40);
+    bool still_stalled = !cpu.can_execute_instruction();
+    cpu.consume_pending_cycles(dma_instruction_cycles - 1 - 40);
+    bool ready_after_dma = cpu.can_execute_instruction();
+    int load_cycles = run_ready_instruction(cpu, bus);
+    int store_cycles = run_ready_instruction(cpu, bus);
+    bus.write(NES::OAMADDR, 0x00);
+
+    return (
+        has_dma_stall &&
+        still_stalled &&
+        ready_after_dma &&
+        load_cycles == 2 &&
+        store_cycles == 3 &&
+        bus.read(0x0006) == 0x55 &&
+        bus.read(NES::OAMDATA) == 0xcc
     );
 }
 
@@ -221,4 +370,14 @@ TEST_CASE("CPU reset, addressing, interrupts, and flags are stable", "[cpu]") {
     REQUIRE(mapper_irq_enters_interrupt_handler());
     REQUIRE(oam_dma_stalls_cpu_before_next_instruction());
     REQUIRE(status_flags_match_zero_negative_overflow_and_carry_behavior());
+}
+
+TEST_CASE(
+    "CPU instruction-level API reports cycles and preserves stalls",
+    "[cpu][batching]"
+) {
+    REQUIRE(instruction_api_reports_representative_cycle_counts());
+    REQUIRE(instruction_api_reports_branch_page_cross_penalty());
+    REQUIRE(instruction_api_consumes_interrupt_entry_stalls());
+    REQUIRE(instruction_api_reports_dma_stalls());
 }

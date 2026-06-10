@@ -90,6 +90,14 @@ class PictureBus {
     ///
     NES_Byte read(NES_Address address);
 
+    /// Read sprite pattern data for visible pixel composition.
+    ///
+    /// Mappers such as MMC3 observe sprite-fetch addresses during the PPU's
+    /// sprite-fetch phase. Visible sprite composition must not emit another
+    /// mapper-visible PPU address for the same pattern data.
+    ///
+    NES_Byte read_sprite_pattern(NES_Address address);
+
     /// Write a byte to an address in the VRAM.
     ///
     /// @param address the 16-bit address to write the byte to in VRAM

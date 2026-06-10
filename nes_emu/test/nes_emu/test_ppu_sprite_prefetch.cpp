@@ -6,6 +6,7 @@
 //
 
 #include <catch2/catch_test_macros.hpp>
+#include <vector>
 #include "nes_emu/palette.hpp"
 #include "nes_emu/picture_bus.hpp"
 #include "nes_emu/ppu.hpp"
@@ -28,6 +29,28 @@ class CountingSpriteMapper : public NESTest::ProgramTestMapper {
     inline NES::NES_Byte readCHR(NES::NES_Address address) {
         ++chr_reads;
         return NESTest::ProgramTestMapper::readCHR(address);
+    }
+};
+
+class SpriteFetchAddressMapper : public NESTest::PictureBusTestMapper {
+ public:
+    int address_observations;
+    std::vector<NES::NES_Address> address_sequence;
+
+    SpriteFetchAddressMapper() :
+        NESTest::PictureBusTestMapper(),
+        address_observations(0),
+        address_sequence() { }
+
+    inline void onPPUAddress(NES::NES_Address address) {
+        ++address_observations;
+        address_sequence.push_back(address);
+    }
+
+    inline bool observesPPUAddresses() const { return true; }
+
+    inline bool requiresPPUSpriteFetchAddressObservations() const {
+        return true;
     }
 };
 
@@ -225,4 +248,28 @@ TEST_CASE(
     REQUIRE(mapper.address_sequence[1] == 0x0018);
     REQUIRE(mapper.address_sequence[2] == 0x0010);
     REQUIRE(mapper.address_sequence[3] == 0x0018);
+}
+
+TEST_CASE(
+    "visible sprite composition does not clock sprite-fetch observers",
+    "[ppu][sprite][mapper]"
+) {
+    SpriteFetchAddressMapper mapper;
+    NES::PictureBus bus;
+    NES::PPU ppu;
+
+    bus.set_mapper(&mapper);
+    ppu.reset();
+    ppu.control(0x08);
+    ppu.set_mask(0x14);
+    hide_all_sprites(ppu);
+    write_sprite(ppu, 0, 0x00, 0x01, 0x00, 0x00);
+
+    run_cycles(ppu, bus, FIRST_SPRITE_SCANLINE_CYCLES);
+    REQUIRE(mapper.address_observations == 2);
+    REQUIRE(mapper.address_sequence[0] == 0x1ff0);
+    REQUIRE(mapper.address_sequence[1] == 0x1ff8);
+
+    run_cycles(ppu, bus, 8);
+    REQUIRE(mapper.address_observations == 2);
 }

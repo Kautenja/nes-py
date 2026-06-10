@@ -479,8 +479,15 @@ void PPU::cycle(PictureBus& bus) {
                             NES_Address address =
                                 sprite_pattern_address(tile, y_offset);
 
-                            sprColor = (bus.read(address) >> (x_shift)) & 1; //bit 0 of palette entry
-                            sprColor |= ((bus.read(address + 8) >> (x_shift)) & 1) << 1; //bit 1
+                            sprColor = (
+                                bus.read_sprite_pattern(address) >> (x_shift)
+                            ) & 1; //bit 0 of palette entry
+                            sprColor |= (
+                                (
+                                    bus.read_sprite_pattern(address + 8) >>
+                                    (x_shift)
+                                ) & 1
+                            ) << 1; //bit 1
 
                             if (!(sprOpaque = sprColor)) {
                                 sprColor = 0;

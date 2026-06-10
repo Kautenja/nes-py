@@ -73,6 +73,25 @@ NES_Byte PictureBus::read(NES_Address address) {
     return 0;
 }
 
+NES_Byte PictureBus::read_sprite_pattern(NES_Address address) {
+    if (
+        !mapper_requires_ppu_sprite_fetch_address_observations ||
+        mapper_observes_ppu_reads ||
+        mapper_observes_ppu_writes ||
+        mapper_has_name_table_mapping
+    ) {
+        return read(address);
+    }
+
+    address &= 0x1fff;
+    const NES_Byte* direct_page = direct_chr_read_pages[
+        address / DIRECT_CHR_READ_PAGE_SIZE
+    ];
+    return direct_page == nullptr ?
+        mapper->readCHR(address) :
+        direct_page[address & (DIRECT_CHR_READ_PAGE_SIZE - 1)];
+}
+
 void PictureBus::write(NES_Address address, NES_Byte value) {
     address &= 0x3fff;
     if (address < 0x2000) {

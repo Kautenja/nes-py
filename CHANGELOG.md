@@ -11,6 +11,8 @@ Notable release notes for `nes-py` are collected here from the
 
 - Added mapper-visible dummy sprite fetches for mappers that clock scanline IRQs
   from PPU A12 during the sprite-fetch phase.
+- Kept visible sprite rendering from emitting duplicate sprite-fetch address
+  observations, which keeps MMC3 IRQ split baselines stable when sprites move.
 - Fixed corrupted split-screen status bars in MMC3 titles such as
   Super Mario Bros. 3.
 - Added native PPU/MMC3 regression coverage for sprite-fetch address

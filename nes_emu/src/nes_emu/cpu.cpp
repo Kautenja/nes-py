@@ -498,6 +498,24 @@ bool CPU::type2(MainBus &bus, NES_Byte opcode) {
     return true;
 }
 
+bool CPU::unofficial(MainBus &bus, NES_Byte opcode) {
+    switch (opcode) {
+        case 0xdf: {
+            NES_Address location = read_address(bus, register_PC);
+            register_PC += 2;
+            location += register_X;
+            NES_Byte operand = bus.read(location) - 1;
+            bus.write(location, operand);
+            NES_Address diff = register_A - operand;
+            flags.set_C((diff & 0x100) == 0);
+            set_ZN(diff);
+            break;
+        }
+        default: return false;
+    }
+    return true;
+}
+
 void CPU::reset(NES_Address start_address) {
     skip_cycles = 0;
     cycles = 0;
@@ -541,6 +559,13 @@ CPU::InstructionFamily CPU::instruction_family(NES_Byte opcode) {
         std::array<InstructionFamily, 0x100> table{};
         for (int index = 0; index < 0x100; ++index) {
             NES_Byte value = static_cast<NES_Byte>(index);
+            switch (value) {
+                case 0xdf:
+                    table[index] = UNOFFICIAL_INSTRUCTION;
+                    continue;
+                default:
+                    break;
+            }
             switch (static_cast<OperationImplied>(value)) {
                 case BRK:
                 case PHP:
@@ -616,6 +641,8 @@ bool CPU::execute_opcode(MainBus &bus, NES_Byte opcode) {
             return type2(bus, opcode);
         case TYPE0_INSTRUCTION:
             return type0(bus, opcode);
+        case UNOFFICIAL_INSTRUCTION:
+            return unofficial(bus, opcode);
         case INVALID_INSTRUCTION:
             return false;
     }

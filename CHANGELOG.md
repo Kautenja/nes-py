@@ -3,6 +3,11 @@
 Notable release notes for `nes-py` are collected here from the
 [GitHub Releases](https://github.com/Kautenja/nes-py/releases) history.
 
+## Unreleased
+
+- Added CPU support for the undocumented `$DF` (`DCP absolute,X`) opcode used
+  by some commercial NES ROM paths.
+
 ## [9.0.0](https://github.com/Kautenja/nes-py/releases/tag/9.0.0) - 2026-05-17
 
 **Migrate to Gymnasium**

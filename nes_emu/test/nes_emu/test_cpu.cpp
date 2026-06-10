@@ -360,6 +360,61 @@ bool status_flags_match_zero_negative_overflow_and_carry_behavior() {
     );
 }
 
+bool unofficial_dcp_absolute_x_decrements_and_compares() {
+    NESTest::ProgramTestMapper mapper;
+    NES::MainBus bus;
+    NES::CPU cpu;
+    bus.write(0x0204, 0x40);
+    bus.write(0x0205, 0x01);
+    bus.write(0x0206, 0x00);
+    mapper.load(0x8000, {
+        0xa2, 0x04,       // LDX #$04
+        0xa9, 0x40,       // LDA #$40
+        0xdf, 0x00, 0x02, // DCP $0200,X -> $0204
+        0xa9, 0x00,       // LDA #$00
+        0xdf, 0x01, 0x02, // DCP $0201,X -> $0205
+        0xa2, 0x00,       // LDX #$00
+        0xa9, 0x7f,       // LDA #$7f
+        0xdf, 0x06, 0x02  // DCP $0206,X -> $0206
+    });
+    bus.set_mapper(&mapper);
+    cpu.reset(bus);
+
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);
+    int dcp_positive_cycles = run_ready_instruction(cpu, bus);
+    NES::CPU::Snapshot positive = cpu.save_state();
+
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);
+    int dcp_zero_cycles = run_ready_instruction(cpu, bus);
+    NES::CPU::Snapshot zero = cpu.save_state();
+
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);
+    REQUIRE(run_ready_instruction(cpu, bus) == 2);
+    int dcp_negative_cycles = run_ready_instruction(cpu, bus);
+    NES::CPU::Snapshot negative = cpu.save_state();
+
+    CHECK(dcp_positive_cycles == 7);
+    CHECK(positive.register_PC == 0x8007);
+    CHECK(bus.read(0x0204) == 0x3f);
+    CHECK(positive.flags & NES::CPU_Flags::FLAG_CARRY);
+    CHECK(!(positive.flags & NES::CPU_Flags::FLAG_ZERO));
+    CHECK(!(positive.flags & NES::CPU_Flags::FLAG_NEGATIVE));
+    CHECK(dcp_zero_cycles == 7);
+    CHECK(zero.register_PC == 0x800c);
+    CHECK(bus.read(0x0205) == 0x00);
+    CHECK(zero.flags & NES::CPU_Flags::FLAG_CARRY);
+    CHECK(zero.flags & NES::CPU_Flags::FLAG_ZERO);
+    CHECK(!(zero.flags & NES::CPU_Flags::FLAG_NEGATIVE));
+    CHECK(dcp_negative_cycles == 7);
+    CHECK(negative.register_PC == 0x8013);
+    CHECK(bus.read(0x0206) == 0xff);
+    CHECK(!(negative.flags & NES::CPU_Flags::FLAG_CARRY));
+    CHECK(!(negative.flags & NES::CPU_Flags::FLAG_ZERO));
+    CHECK(negative.flags & NES::CPU_Flags::FLAG_NEGATIVE);
+    return true;
+}
+
 }  // namespace
 
 TEST_CASE("CPU reset, addressing, interrupts, and flags are stable", "[cpu]") {
@@ -370,6 +425,7 @@ TEST_CASE("CPU reset, addressing, interrupts, and flags are stable", "[cpu]") {
     REQUIRE(mapper_irq_enters_interrupt_handler());
     REQUIRE(oam_dma_stalls_cpu_before_next_instruction());
     REQUIRE(status_flags_match_zero_negative_overflow_and_carry_behavior());
+    REQUIRE(unofficial_dcp_absolute_x_decrements_and_compares());
 }
 
 TEST_CASE(

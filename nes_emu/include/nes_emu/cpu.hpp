@@ -24,6 +24,7 @@ class CPU {
         TYPE1_INSTRUCTION,
         TYPE2_INSTRUCTION,
         TYPE0_INSTRUCTION,
+        UNOFFICIAL_INSTRUCTION,
         INVALID_INSTRUCTION,
     };
 
@@ -135,6 +136,14 @@ class CPU {
     /// @return true if the instruction succeeds
     ///
     bool type2(MainBus &bus, NES_Byte opcode);
+
+    /// Execute an unofficial 6502 instruction used by some commercial ROMs.
+    ///
+    /// @param bus the bus to read and write data from and to
+    /// @param opcode the opcode of the operation to perform
+    /// @return true if the instruction succeeds
+    ///
+    bool unofficial(MainBus &bus, NES_Byte opcode);
 
     /// Reset the emulator using the given starting address.
     ///

@@ -5,6 +5,7 @@
 //  Copyright (c) 2019 Christian Kauten. All rights reserved.
 //
 
+#include <algorithm>
 #include <catch2/catch_test_macros.hpp>
 #include <vector>
 #include "nes_emu/palette.hpp"
@@ -89,6 +90,13 @@ class CacheablePPUAddressMapper : public NESTest::PictureBusTestMapper {
     inline bool observesPPUAddresses() const { return true; }
 
     inline bool allowsBackgroundTileCacheWithPPUAddressObservations() const {
+        return true;
+    }
+};
+
+class SpriteFetchPPUAddressMapper : public NESTest::PPUHookMapper {
+ public:
+    inline bool requiresPPUSpriteFetchAddressObservations() const {
         return true;
     }
 };
@@ -265,4 +273,33 @@ TEST_CASE(
 
     REQUIRE(mapper.address_observations == 4);
     REQUIRE(mapper.address_sequence == expected);
+}
+
+TEST_CASE(
+    "PPU emits dummy sprite fetches for mappers that observe sprite A12",
+    "[ppu][sprite][mapper]"
+) {
+    SpriteFetchPPUAddressMapper mapper;
+    NES::PictureBus bus;
+    NES::PPU ppu;
+
+    bus.set_mapper(&mapper);
+    ppu.reset();
+    hide_all_sprites(ppu);
+    ppu.control(0x08);
+
+    run_cycles(
+        ppu,
+        bus,
+        PRE_RENDER_CYCLES + NES::SCANLINE_VISIBLE_DOTS + 5
+    );
+
+    const auto low = std::find(
+        mapper.address_sequence.begin(),
+        mapper.address_sequence.end(),
+        0x1ff0
+    );
+    REQUIRE(low != mapper.address_sequence.end());
+    REQUIRE(std::next(low) != mapper.address_sequence.end());
+    REQUIRE(*std::next(low) == 0x1ff8);
 }

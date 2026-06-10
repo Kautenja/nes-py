@@ -5,6 +5,19 @@ Notable release notes for `nes-py` are collected here from the
 
 ## Unreleased
 
+## [9.0.1](https://github.com/Kautenja/nes-py/releases/tag/9.0.1) - 2026-06-10
+
+**Fix MMC3 sprite-fetch IRQ timing**
+
+- Added mapper-visible dummy sprite fetches for mappers that clock scanline IRQs
+  from PPU A12 during the sprite-fetch phase.
+- Fixed corrupted split-screen status bars in MMC3 titles such as
+  Super Mario Bros. 3.
+- Added native PPU/MMC3 regression coverage for sprite-fetch address
+  observations.
+
+**CPU compatibility**
+
 - Added CPU support for the undocumented `$DF` (`DCP absolute,X`) opcode used
   by some commercial NES ROM paths.
 

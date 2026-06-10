@@ -268,6 +268,12 @@ class Mapper {
         return false;
     }
 
+    /// Return true when this mapper needs PPU sprite-fetch address events even
+    /// when the renderer does not need to draw sprite pixels for a scanline.
+    inline virtual bool requiresPPUSpriteFetchAddressObservations() const {
+        return false;
+    }
+
     /// Observe a PPU read after data is resolved.
     inline virtual void onPPURead(NES_Address address, NES_Byte value) {
         (void) address;

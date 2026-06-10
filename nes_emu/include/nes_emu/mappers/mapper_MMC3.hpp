@@ -109,6 +109,11 @@ class MapperMMC3 : public Mapper {
         return true;
     }
 
+    /// MMC3 IRQ timing depends on sprite-fetch A12 edges.
+    inline bool requiresPPUSpriteFetchAddressObservations() const {
+        return true;
+    }
+
     /// Return true when a PRG-space write changes direct PRG read pages.
     bool invalidatesDirectPRGReadPagesOnWrite(
         NES_Address address,

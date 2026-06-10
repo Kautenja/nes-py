@@ -173,6 +173,10 @@ class PPU {
     /// Return the pattern address for a sprite row after vertical selection.
     NES_Address sprite_pattern_address(NES_Byte tile, int y_offset) const;
 
+    /// Emit mapper-visible sprite fetches that the simplified renderer does
+    /// not otherwise need for pixel composition.
+    void observe_dummy_sprite_fetch(PictureBus& bus) const;
+
     /// Prefetch rows for sprites selected for the next scanline.
     void prefetch_scanline_sprite_rows(PictureBus& bus);
 

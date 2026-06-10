@@ -135,6 +135,7 @@ TEST_CASE("mapper 004 MMC3 direct CHR pages stay valid with A12 observation", "[
     REQUIRE(mapper->observesPPUAddresses());
     REQUIRE(mapper->allowsDirectCHRReadWithPPUAddressObservations());
     REQUIRE(mapper->allowsBackgroundTileCacheWithPPUAddressObservations());
+    REQUIRE(mapper->requiresPPUSpriteFetchAddressObservations());
     REQUIRE(NESTest::direct_chr_read(*mapper, 0x0000) == NESTest::chr_kib_marker(0));
     REQUIRE(NESTest::direct_chr_read(*mapper, 0x0400) == NESTest::chr_kib_marker(1));
 

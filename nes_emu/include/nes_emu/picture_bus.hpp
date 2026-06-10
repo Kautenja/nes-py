@@ -42,6 +42,7 @@ class PictureBus {
     bool mapper_has_name_table_mapping;
     bool mapper_allows_sprite_row_prefetch;
     bool mapper_allows_background_tile_cache_with_ppu_address_observations;
+    bool mapper_requires_ppu_sprite_fetch_address_observations;
     /// Direct CHR page pointers for mapper PPU read hot paths.
     std::array<const NES_Byte*, DIRECT_CHR_READ_PAGE_COUNT> direct_chr_read_pages;
     /// Incremented whenever CPU/PPU writes can invalidate cached render data.
@@ -74,6 +75,7 @@ class PictureBus {
         mapper_has_name_table_mapping(false),
         mapper_allows_sprite_row_prefetch(false),
         mapper_allows_background_tile_cache_with_ppu_address_observations(false),
+        mapper_requires_ppu_sprite_fetch_address_observations(false),
         direct_chr_read_pages{{
             nullptr, nullptr, nullptr, nullptr,
             nullptr, nullptr, nullptr, nullptr
@@ -87,6 +89,14 @@ class PictureBus {
     /// @return the byte located at the given address
     ///
     NES_Byte read(NES_Address address);
+
+    /// Read sprite pattern data for visible pixel composition.
+    ///
+    /// Mappers such as MMC3 observe sprite-fetch addresses during the PPU's
+    /// sprite-fetch phase. Visible sprite composition must not emit another
+    /// mapper-visible PPU address for the same pattern data.
+    ///
+    NES_Byte read_sprite_pattern(NES_Address address);
 
     /// Write a byte to an address in the VRAM.
     ///
@@ -119,6 +129,10 @@ class PictureBus {
         mapper_allows_background_tile_cache_with_ppu_address_observations = (
             mapper != nullptr &&
             mapper->allowsBackgroundTileCacheWithPPUAddressObservations()
+        );
+        mapper_requires_ppu_sprite_fetch_address_observations = (
+            mapper != nullptr &&
+            mapper->requiresPPUSpriteFetchAddressObservations()
         );
         refresh_direct_chr_read_pages();
         update_mirroring();
@@ -165,6 +179,11 @@ class PictureBus {
                 mapper_allows_background_tile_cache_with_ppu_address_observations
             )
         );
+    }
+
+    /// Return true when the mapper needs the PPU's sprite fetch address phase.
+    inline bool requires_sprite_fetch_address_observations() const {
+        return mapper_requires_ppu_sprite_fetch_address_observations;
     }
 
     /// Return the current write generation for render-cache invalidation.

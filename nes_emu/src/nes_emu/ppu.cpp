@@ -191,6 +191,12 @@ NES_Address PPU::sprite_pattern_address(NES_Byte tile, int y_offset) const {
     return address;
 }
 
+void PPU::observe_dummy_sprite_fetch(PictureBus& bus) const {
+    const NES_Address address = sprite_pattern_address(0xff, 0);
+    bus.read(address);
+    bus.read(address + 8);
+}
+
 void PPU::prefetch_scanline_sprite_rows(PictureBus& bus) {
     std::fill(
         scanline_sprite_rows.begin(),
@@ -473,8 +479,15 @@ void PPU::cycle(PictureBus& bus) {
                             NES_Address address =
                                 sprite_pattern_address(tile, y_offset);
 
-                            sprColor = (bus.read(address) >> (x_shift)) & 1; //bit 0 of palette entry
-                            sprColor |= ((bus.read(address + 8) >> (x_shift)) & 1) << 1; //bit 1
+                            sprColor = (
+                                bus.read_sprite_pattern(address) >> (x_shift)
+                            ) & 1; //bit 0 of palette entry
+                            sprColor |= (
+                                (
+                                    bus.read_sprite_pattern(address + 8) >>
+                                    (x_shift)
+                                ) & 1
+                            ) << 1; //bit 1
 
                             if (!(sprOpaque = sprColor)) {
                                 sprColor = 0;
@@ -534,6 +547,13 @@ void PPU::cycle(PictureBus& bus) {
                 data_address &= ~0x41f;
                 data_address |= temp_address & 0x41f;
                 invalidate_background_tile_cache();
+            }
+            else if (
+                cycles == SCANLINE_VISIBLE_DOTS + 4 &&
+                is_showing_sprites &&
+                bus.requires_sprite_fetch_address_observations()
+            ) {
+                observe_dummy_sprite_fetch(bus);
             }
 
 //                 if (cycles > 257 && cycles < 320)

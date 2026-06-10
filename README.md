@@ -401,6 +401,9 @@ python -m nes_py.speedtest --rom nes_py/tests/games/super-mario-bros-1.nes --vec
 9.  MMC2 / PxROM
 69. Sunsoft FME-7 / Sunsoft 5B
 
+MMC3 support includes PPU A12 observations during the sprite-fetch phase, which
+keeps scanline IRQ split-screen effects such as Super Mario Bros. 3 status bars
+aligned with the rendered frame.
 MMC5 vertical split rendering and MMC5 pulse/PCM audio are not implemented yet.
 Sunsoft 5B audio register state is preserved, but expansion-audio mixing is not
 implemented yet. Planned mapper expansion is tracked in the umbrella

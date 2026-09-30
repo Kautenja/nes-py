@@ -319,6 +319,9 @@ Both the `threading` and `multiprocessing` packages are supported by
 
 ## Development
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contributor setup, architecture,
+testing, release preparation, and the pull request workflow.
+
 To design a custom environment, introduce new emulator features, or fix a bug,
 start with the [Wiki](https://github.com/Kautenja/nes-py/wiki). It includes:
 

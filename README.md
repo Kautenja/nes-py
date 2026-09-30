@@ -413,7 +413,13 @@ repository's [mapper specs](https://github.com/Kautenja/gym-nes/tree/main/specs/
 
 Please cite `nes-py` if you use it in your research.
 
-```tex
+Download [CITATION.bib](CITATION.bib) or copy the BibTeX entry below. The
+entry retains the existing citation key and bibliographic details, including
+the year 2018, for consistency with prior publications. [CITATION.cff](CITATION.cff)
+provides the same preferred citation for GitHub's **Cite this repository** feature.
+Please also identify the software version or commit used in your research.
+
+```bibtex
 @misc{nes-py,
   author = {Christian Kauten},
   howpublished = {GitHub},

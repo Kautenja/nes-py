@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: >-
+  If you use nes-py in your research, please cite the preferred citation below
+  and identify the software version or commit used. CITATION.bib preserves the
+  existing nes-py BibTeX entry for consistency with prior publications.
+type: software
+title: "NES-py: An NES Emulator and Gymnasium Interface"
+abstract: >-
+  nes-py is a native Nintendo Entertainment System emulator with a Gymnasium
+  interface for reinforcement learning, scripted gameplay, emulator
+  experimentation, and custom environment design.
+authors:
+  - family-names: Kauten
+    given-names: Christian
+repository-code: "https://github.com/Kautenja/nes-py"
+url: "https://github.com/Kautenja/nes-py"
+license: MIT
+keywords:
+  - Nintendo Entertainment System
+  - emulation
+  - reinforcement learning
+  - Gymnasium
+  - Python
+  - C++
+preferred-citation:
+  type: software
+  title: "NES-py: An NES Emulator and Gymnasium Interface"
+  authors:
+    - family-names: Kauten
+      given-names: Christian
+  publisher:
+    name: GitHub
+  year: 2018
+  url: "https://github.com/Kautenja/nes-py"

@@ -432,6 +432,12 @@ Please also identify the software version or commit used in your research.
 }
 ```
 
+## Licensing
+
+The repository declares the [MIT License](LICENSE). See
+[LICENSING.md](LICENSING.md) for source attribution, the upstream SimpleNES
+licensing distinction, third-party materials, and distribution notices.
+
 ## Disclaimer
 
 **This project is provided for educational purposes only. It is not

@@ -24,7 +24,8 @@ Discuss substantial API or emulator behavior changes in an issue first.
 
 Read the [README](README.md) and the relevant design and benchmark notes in
 [docs](docs). Preserve the attribution and license notices in the source and
-[LICENSE](LICENSE). Follow the Python style guidance linked by the
+[LICENSE](LICENSE), and read [LICENSING.md](LICENSING.md) for third-party
+provenance and scope. Follow the Python style guidance linked by the
 [pull request template](.github/PULL_REQUEST_TEMPLATE.md), and match the
 surrounding Cython and C++ conventions. Keep formatting changes focused on the
 code being changed.
